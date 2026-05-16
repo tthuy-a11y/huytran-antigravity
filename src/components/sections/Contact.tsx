@@ -23,7 +23,7 @@ export default function Contact() {
             <div className="inline-flex items-center gap-3 mb-6">
               <Sparkles className="w-8 h-8 text-cyan-300" />
               <h2 className="text-5xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-purple-300">
-                Liên hệ
+                Liên hế
               </h2>
             </div>
 
