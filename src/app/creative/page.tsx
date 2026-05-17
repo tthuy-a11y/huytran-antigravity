@@ -182,15 +182,15 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                     <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
                   </div>
 
-                  {/* FLOATING LABEL - CHỮ SIÊU TO */}
-                  <div className={`absolute -top-32 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-                    <div className="bg-black/90 backdrop-blur-2xl border border-white/40 px-6 py-3 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color }}>
-                      <div className="text-3xl md:text-4xl font-black text-white tracking-widest leading-none drop-shadow-lg">{p.name}</div>
-                      <div className="text-base md:text-lg font-mono text-white/90 mt-2 flex items-center justify-center gap-3">
-                        <span>{p.code}</span><span className="w-px h-4 bg-white/40" /><span style={{ color: p.color }} className="font-bold drop-shadow-md">Nhóm: {p.type}</span>
+                  {/* FLOATING LABEL - CHỮ SIÊU TO (chỉ hiện khi hover) */}
+                  <div className={`absolute -top-36 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center transition-all duration-500 ${isHovered ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-4'}`}>
+                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color, boxShadow: `0 0 40px ${p.color}50` }}>
+                      <div className="text-4xl md:text-5xl font-black text-white tracking-widest leading-none drop-shadow-lg">{p.name}</div>
+                      <div className="text-lg md:text-xl font-mono text-white/90 mt-3 flex items-center justify-center gap-3">
+                        <span>{p.code}</span><span className="w-px h-5 bg-white/40" /><span style={{ color: p.color }} className="font-bold drop-shadow-md">Nhóm: {p.type}</span>
                       </div>
                     </div>
-                    <div className="mt-3 text-sm md:text-base font-mono bg-black/80 px-5 py-1.5 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
+                    <div className="mt-3 text-base md:text-lg font-mono bg-black/80 px-6 py-2 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
                       <span className="animate-pulse">⚡</span><span>Tốc độ: {p.speed}s / vòng</span>
                     </div>
                   </div>
@@ -293,7 +293,7 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
   );
 })
 
-HolographicModal.displayName = 'HolographicModal';
+CentralHUD.displayName = 'CentralHUD';
 
 // ================= 4. MAIN WRAPPER =================
 export default function CosmicOdysseyPage() {
@@ -451,6 +451,8 @@ export default function CosmicOdysseyPage() {
 
         @keyframes orbit-spin { from { transform: rotateZ(0deg); } to { transform: rotateZ(360deg); } }
         @keyframes orbit-anti-spin { from { transform: rotateZ(0deg); } to { transform: rotateZ(-360deg); } }
+        .orbit-spin { animation: orbit-spin 20s linear infinite; }
+        .orbit-anti-spin { animation: orbit-anti-spin 20s linear infinite; }
         .system-paused * { animation-play-state: paused !important; }
 
         .warp-engine { background-image: radial-gradient(2px 50px at 60px 150px, #00f2fe, transparent), radial-gradient(2px 40px at 100px 250px, #fff, transparent); background-size: 200px 300px; animation: warpSpeed 0.3s linear infinite; transform-origin: center; }
