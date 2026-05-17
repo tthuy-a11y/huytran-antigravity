@@ -537,21 +537,21 @@ export default function ExodusGodTier() {
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-10 glitch-trans">
           <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" />
           
-          <button onClick={abortMission} onMouseEnter={() => sfx?.play('hover')} className={`absolute top-6 left-6 md:top-10 md:left-10 cyber-clip-sm bg-red-950/40 border border-red-500/50 px-5 py-2.5 flex items-center gap-2 text-red-400 hover:bg-red-500 hover:text-white transition-colors z-[100] group backdrop-blur-md ${deployState !== 'idle' ? 'hidden' : ''}`}>
-            <X className="w-4 h-4 group-hover:rotate-90 transition-transform" /> <span className="font-mono text-[10px] tracking-[0.2em] font-bold">ABORT</span>
+          <button onClick={abortMission} onMouseEnter={() => sfx?.play('hover')} className={`absolute top-6 left-6 md:top-10 md:left-10 cyber-clip-sm bg-cyan-950/40 border border-cyan-500/50 px-6 py-3 flex items-center gap-3 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-colors z-[100] group backdrop-blur-md ${deployState !== 'idle' ? 'hidden' : ''}`}>
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-sm tracking-[0.2em] font-bold">QUAY LẠI HẠM ĐỘI</span>
           </button>
 
           <div className={`w-full max-w-[1600px] h-full flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10 perspective-[1500px] transition-all duration-700 ${deployState === 'deployed' ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}`}>
             
             {/* TRÁI: METRICS */}
             <div className={`hidden lg:flex flex-col w-[300px] h-[75vh] justify-between transition-transform duration-500 ${deployState !== 'idle' ? '-translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
-              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-md border border-white/10 p-6 shadow-[0_0_30px_rgba(0,0,0,0.5)] transform-style-3d rotate-y-[10deg]">
-                <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-3"><ShieldAlert className="w-5 h-5 animate-pulse" style={{ color: activeData.hex }} /><span className="font-mono text-xs tracking-widest text-white/70">SYS.METRICS</span></div>
-                <div className="space-y-5">
+              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-md border border-white/10 p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] transform-style-3d rotate-y-[10deg]">
+                <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4"><ShieldAlert className="w-6 h-6 animate-pulse" style={{ color: activeData.hex }} /><span className="font-mono text-sm tracking-widest text-white/70">SYS.METRICS</span></div>
+                <div className="space-y-6">
                   {['SPEED', 'CORE', 'NEURAL', 'HEAT'].map((lbl, i) => (
                     <div key={lbl}>
-                      <div className="flex justify-between font-mono text-[9px] text-white/50 tracking-widest mb-1.5"><span>{lbl}</span> <span style={{ color: activeData.hex }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
-                      <div className="h-1 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
+                      <div className="flex justify-between font-mono text-xs text-white/60 tracking-widest mb-2"><span>{lbl}</span> <span style={{ color: activeData.hex, fontWeight: 'bold' }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
+                      <div className="h-2 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
                     </div>
                   ))}
                 </div>
@@ -576,21 +576,21 @@ export default function ExodusGodTier() {
             </div>
 
             {/* PHẢI: DATA STREAM & ACTION */}
-            <div className={`w-full lg:w-[420px] h-[75vh] relative transform-style-3d rotate-y-[-10deg] transition-transform duration-500 ${deployState !== 'idle' ? 'translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
-              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-2xl border border-white/10 p-8 shadow-[0_0_50px_rgba(0,0,0,0.6)] h-full relative z-10 flex flex-col overflow-hidden">
+            <div className={`w-full lg:w-[480px] h-[75vh] relative transform-style-3d rotate-y-[-10deg] transition-transform duration-500 ${deployState !== 'idle' ? 'translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
+              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-2xl border border-white/10 p-10 shadow-[0_0_50px_rgba(0,0,0,0.6)] h-full relative z-10 flex flex-col overflow-hidden">
                 <MatrixRain color={activeData.hex} active={deployState === 'idle'} />
                 <div className="absolute inset-0 w-full h-[10%] scanline pointer-events-none opacity-30 z-10" />
 
-                <div className="mb-6 border-b border-white/10 pb-4 relative z-20">
-                  <div className="flex items-center gap-2 mb-2 font-mono text-[10px] tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-4 h-4 animate-pulse" /> PAYLOAD_DATA</div>
-                  <h3 className="text-2xl font-bold text-white uppercase tracking-widest">{activeData.code}</h3>
+                <div className="mb-8 border-b border-white/10 pb-5 relative z-20">
+                  <div className="flex items-center gap-2 mb-3 font-mono text-xs tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-5 h-5 animate-pulse" /> PAYLOAD_DATA</div>
+                  <h3 className="text-4xl font-black text-white uppercase tracking-widest drop-shadow-md">{activeData.code}</h3>
                 </div>
 
-                <ul className="space-y-6 flex-1 relative z-20 overflow-y-auto pr-2 custom-scrollbar">
+                <ul className="space-y-8 flex-1 relative z-20 overflow-y-auto pr-4 custom-scrollbar">
                   {activeData.items.map((item, i) => (
-                    <li key={i} className="flex gap-4 items-start group">
-                      <div className="mt-1.5 w-2 h-2 shrink-0 bg-white/20 cyber-clip-sm group-hover:scale-150 transition-transform" style={{ backgroundColor: activeData.hex, boxShadow: `0 0 10px ${activeData.hex}` }} />
-                      <span className="text-sm text-cyan-50/80 leading-relaxed font-sans group-hover:text-white transition-colors"><ScrambleText text={item} active={true} delay={400 + i * 150} /></span>
+                    <li key={i} className="flex gap-5 items-start group">
+                      <div className="mt-2 w-2.5 h-2.5 shrink-0 bg-white/20 cyber-clip-sm group-hover:scale-150 transition-transform" style={{ backgroundColor: activeData.hex, boxShadow: `0 0 12px ${activeData.hex}` }} />
+                      <span className="text-base lg:text-lg text-cyan-50/90 leading-relaxed font-sans group-hover:text-white transition-colors font-medium"><ScrambleText text={item} active={true} delay={400 + i * 150} /></span>
                     </li>
                   ))}
                 </ul>
@@ -598,10 +598,10 @@ export default function ExodusGodTier() {
                 <div className="mt-6 pt-6 border-t border-white/10 relative z-20">
                   <button 
                     onClick={handleDeploy} onMouseEnter={() => sfx?.play('hover')}
-                    className="w-full cyber-clip-sm py-4 font-mono text-sm tracking-[0.3em] font-bold uppercase text-black transition-all flex items-center justify-center gap-2 hover:scale-[1.02]" 
-                    style={{ backgroundColor: activeData.hex, boxShadow: `0 0 20px ${activeData.hex}80` }}
+                    className="w-full cyber-clip-sm py-5 font-mono text-base tracking-[0.3em] font-black uppercase text-black transition-all flex items-center justify-center gap-3 hover:scale-[1.02]" 
+                    style={{ backgroundColor: activeData.hex, boxShadow: `0 0 30px ${activeData.hex}90` }}
                   >
-                    <TerminalSquare className="w-4 h-4" /> DEPLOY PROTOCOL
+                    <TerminalSquare className="w-5 h-5" /> DEPLOY PROTOCOL
                   </button>
                 </div>
               </div>
