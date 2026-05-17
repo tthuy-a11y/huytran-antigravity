@@ -245,12 +245,12 @@ export default function ExodusGodTier() {
   });
 
   const fleet: FleetShip[] = useMemo(() => [
-    { id: 0, icon: Cpu, code: "NEXUS-01", title: "AI & Machine Learning", shipName: "PHI THUYỀN AI AGENTIC", hex: "#00f2fe", shape: 'sleek' as ShipShape, stats: [98, 95, 92, 88], items: ["Lõi trí tuệ tự trị - Tự động hóa toàn bộ quy trình", "Phân tích Big Data, trích xuất Insight tức thời", "Tối ưu 300% tốc độ xử lý nghiệp vụ", "Khởi tạo AI Agent từ prompt tự nhiên"], link: "/ai" },
-    { id: 1, icon: Globe, code: "UIX-99", title: "Web Generative & 3D", shipName: "PHI THUYỀN WEB 3D", hex: "#b026ff", shape: 'agile' as ShipShape, stats: [90, 88, 96, 85], items: ["Thiết kế giao diện 3D immersive", "Trải nghiệm người dùng đỉnh cao WebGL/Three.js", "Animation & Motion Design siêu mượt", "Responsive trên mọi thiết bị"], link: "/web3d" },
-    { id: 2, icon: Zap, code: "PRMPT-X", title: "Prompt Engineering", shipName: "PHI THUYỀN PROMPT", hex: "#ff0844", shape: 'command' as ShipShape, stats: [95, 92, 88, 90], items: ["Kiến trúc sư ngôn ngữ cho AI", "Tạo sinh hình ảnh & nội dung cực nhanh", "Chain-of-Thought & Tree-of-Thought", "Multi-modal Prompt Mastery"], link: "/prompt" },
-    { id: 3, icon: Rocket, code: "PHYS-42", title: "Physics Coding", shipName: "PHI THUYỀN PHYSICS", hex: "#00ff87", shape: 'heavy' as ShipShape, stats: [92, 90, 99, 95], items: ["Animation theo quy luật vật lý thực tế", "Particle Systems & Fluid Dynamics", "Collision Detection & Response", "Real-time Physics Simulation"], link: "/physics" },
-    { id: 4, icon: Database, code: "CLOUD-7", title: "Big Data & Cloud", shipName: "PHI THUYỀN DATA CLOUD", hex: "#f5a623", shape: 'heavy' as ShipShape, stats: [85, 99, 90, 80], items: ["Kiến trúc phân tán siêu tốc", "ETL Pipeline & Data Warehouse", "Cloud-native Architecture", "Real-time Analytics Dashboard"], link: "/data" },
-    { id: 5, icon: ShieldAlert, code: "SHIELD-X", title: "Cyber Security", shipName: "PHI THUYỀN SECURITY", hex: "#ff007f", shape: 'command' as ShipShape, stats: [88, 92, 85, 98], items: ["Mã hóa & bảo mật đa lớp", "Penetration Testing & Audit", "Zero-Trust Architecture", "Incident Response Protocol"], link: "/security" },
+    { id: 0, icon: Cpu, code: "NEXUS-01", title: "Trí Tuệ Nhân Tạo", shipName: "PHI THUYỀN AI", hex: "#00f2fe", shape: 'sleek' as ShipShape, stats: [98, 95, 92, 88], items: ["Tự động hóa toàn bộ quy trình thông minh", "Phân tích dữ liệu lớn, trích xuất thông tin tức thời", "Tối ưu 300% tốc độ xử lý công việc", "Tạo trợ lý AI từ câu lệnh tự nhiên"], link: "/ai" },
+    { id: 1, icon: Globe, code: "UIX-99", title: "Thiết Kế Web 3D", shipName: "PHI THUYỀN WEB", hex: "#b026ff", shape: 'agile' as ShipShape, stats: [90, 88, 96, 85], items: ["Thiết kế giao diện không gian 3 chiều", "Trải nghiệm người dùng đỉnh cao", "Hiệu ứng chuyển động siêu mượt mà", "Hiển thị hoàn hảo trên mọi thiết bị"], link: "/web3d" },
+    { id: 2, icon: Zap, code: "PRMPT-X", title: "Kỹ Thuật Prompt", shipName: "PHI THUYỀN PROMPT", hex: "#ff0844", shape: 'command' as ShipShape, stats: [95, 92, 88, 90], items: ["Kiến trúc sư ngôn ngữ cho AI", "Tạo hình ảnh và nội dung cực nhanh", "Tư duy chuỗi và tư duy phân nhánh", "Làm chủ câu lệnh đa phương thức"], link: "/prompt" },
+    { id: 3, icon: Rocket, code: "PHYS-42", title: "Lập Trình Vật Lý", shipName: "PHI THUYỀN VẬT LÝ", hex: "#00ff87", shape: 'heavy' as ShipShape, stats: [92, 90, 99, 95], items: ["Hoạt hình theo quy luật vật lý thực tế", "Hệ thống hạt và mô phỏng chất lỏng", "Phát hiện và xử lý va chạm", "Mô phỏng vật lý thời gian thực"], link: "/physics" },
+    { id: 4, icon: Database, code: "CLOUD-7", title: "Dữ Liệu & Đám Mây", shipName: "PHI THUYỀN DỮ LIỆU", hex: "#f5a623", shape: 'heavy' as ShipShape, stats: [85, 99, 90, 80], items: ["Kiến trúc phân tán siêu tốc độ", "Đường ống xử lý và kho dữ liệu", "Kiến trúc ứng dụng đám mây", "Bảng điều khiển phân tích thời gian thực"], link: "/data" },
+    { id: 5, icon: ShieldAlert, code: "SHIELD-X", title: "An Ninh Mạng", shipName: "PHI THUYỀN BẢO MẬT", hex: "#ff007f", shape: 'command' as ShipShape, stats: [88, 92, 85, 98], items: ["Mã hóa và bảo mật đa lớp", "Kiểm thử xâm nhập và đánh giá", "Kiến trúc không tin cậy (Zero-Trust)", "Quy trình ứng phó sự cố"], link: "/security" },
   ], []);
 
   // --- Actions ---
@@ -468,7 +468,7 @@ export default function ExodusGodTier() {
         
         <header className="p-6 md:p-12 flex justify-between items-start">
           <Link href="/" className="group flex items-center gap-4 cyber-clip bg-[#02050f]/60 backdrop-blur-md border border-white/10 px-6 py-2 hover:border-cyan-500 hover:bg-cyan-950/40 transition-colors" onMouseEnter={() => sfx?.play('hover')} onClick={() => sfx?.play('click')}>
-            <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Exit Hub</span>
+            <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Trang Chủ</span>
           </Link>
           <div className="text-right">
             <h1 className="text-2xl md:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]">Trạm Tốc Độ Cao</h1>
@@ -476,12 +476,12 @@ export default function ExodusGodTier() {
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full">
-          <div className="text-center mb-10 md:mb-16 px-4">
-            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Chọn Phi Thuyền</h2>
-            <div className="mt-4 font-mono text-cyan-400/60 text-xs tracking-widest uppercase"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Khởi Động Hành Trình Vô Tận</div>
+          <div className="text-center mb-6 md:mb-10 px-4">
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Chọn Phi Thuyền</h2>
+            <div className="mt-3 font-mono text-cyan-400/60 text-sm tracking-widest"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Nhấn vào phi thuyền để khám phá</div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 px-4 md:px-8 w-full max-w-[1400px] z-40">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 px-3 md:px-6 w-full max-w-[1200px] z-40">
             {fleet.map((ship, idx) => {
               const isRushing = rushingShipId === ship.id;
               const isOtherRushing = rushingShipId !== null && rushingShipId !== ship.id;
@@ -494,32 +494,32 @@ export default function ExodusGodTier() {
                     style={{ '--theme': ship.hex } as React.CSSProperties}
                   >
                     {/* SPACESHIP BODY */}
-                    <div className={`relative w-[280px] h-[340px] md:w-[320px] md:h-[380px] ${isRushing ? 'ship-rush-active' : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 80 : 25}px ${ship.hex})`, transition: 'filter .3s' }}>
+                    <div className={`relative w-[160px] h-[200px] md:w-[200px] md:h-[250px] ${isRushing ? 'ship-rush-active' : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
                       {/* Impact Particles */}
                       {isRushing && impactParticles.map(p => (
                         <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius:'50%', background:ship.hex, boxShadow:`0 0 8px ${ship.hex}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />
                       ))}
                       {/* Ship Hull */}
                       <div className="w-full h-full relative overflow-hidden" style={{ clipPath: getClipPath(ship.shape) }}>
-                        <div className="absolute inset-0" style={{ background:`linear-gradient(180deg,${ship.hex}15 0%,#000 50%,${ship.hex}08 100%)`, border:`2px solid ${ship.hex}50`, borderRadius:20 }} />
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft:'50px solid transparent', borderRight:'50px solid transparent', borderBottom:`80px solid ${ship.hex}40` }} />
-                        <div className="absolute top-[45%] left-3 w-3 h-24 rounded-full -skew-y-12 rotate-12" style={{ background:`${ship.hex}30` }} />
-                        <div className="absolute top-[45%] right-3 w-3 h-24 rounded-full skew-y-12 -rotate-12" style={{ background:`${ship.hex}30` }} />
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity animate-pulse" style={{ background:ship.hex }} />
-                        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:8px_8px]" />
+                        <div className="absolute inset-0" style={{ background:`linear-gradient(180deg,${ship.hex}15 0%,#000 50%,${ship.hex}08 100%)`, border:`2px solid ${ship.hex}50`, borderRadius:16 }} />
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft:'30px solid transparent', borderRight:'30px solid transparent', borderBottom:`50px solid ${ship.hex}40` }} />
+                        <div className="absolute top-[45%] left-2 w-2 h-16 rounded-full -skew-y-12 rotate-12" style={{ background:`${ship.hex}30` }} />
+                        <div className="absolute top-[45%] right-2 w-2 h-16 rounded-full skew-y-12 -rotate-12" style={{ background:`${ship.hex}30` }} />
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity animate-pulse" style={{ background:ship.hex }} />
+                        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:6px_6px]" />
                       </div>
                       {/* TEXT ON SHIP */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5 z-20 pointer-events-none">
-                        <div className="text-lg md:text-xl font-black tracking-widest leading-tight text-white uppercase" style={{ textShadow:`0 2px 15px ${ship.hex}80` }}>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 z-20 pointer-events-none">
+                        <div className="text-sm md:text-base font-black tracking-wider leading-tight text-white uppercase" style={{ textShadow:`0 2px 12px ${ship.hex}80` }}>
                           {ship.shipName}
                         </div>
-                        <div className="mt-3 text-[11px] md:text-xs font-mono bg-black/50 px-3 py-1 rounded text-white/80">{ship.title}</div>
-                        <div className="mt-5 text-[10px] font-mono px-4 py-1.5 rounded-full border border-white/20" style={{ color:ship.hex, background:'rgba(0,0,0,.7)', boxShadow:`0 0 10px ${ship.hex}30` }}>
+                        <div className="mt-1.5 text-[9px] md:text-[10px] font-mono bg-black/50 px-2 py-0.5 rounded text-white/80">{ship.title}</div>
+                        <div className="mt-2.5 text-[8px] md:text-[9px] font-mono px-3 py-1 rounded-full border border-white/20" style={{ color:ship.hex, background:'rgba(0,0,0,.7)', boxShadow:`0 0 8px ${ship.hex}30` }}>
                           {ship.code}
                         </div>
                       </div>
                       {/* Ship Icon */}
-                      <ship.icon className="absolute bottom-7 left-1/2 -translate-x-1/2 w-8 h-8 text-white/70 z-20 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />
+                      <ship.icon className="absolute bottom-4 left-1/2 -translate-x-1/2 w-5 h-5 text-white/70 z-20 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />
                     </div>
                   </div>
                 </div>
@@ -546,9 +546,9 @@ export default function ExodusGodTier() {
             {/* TRÁI: METRICS */}
             <div className={`hidden lg:flex flex-col w-[300px] h-[75vh] justify-between transition-transform duration-500 ${deployState !== 'idle' ? '-translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
               <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-md border border-white/10 p-8 shadow-[0_0_30px_rgba(0,0,0,0.5)] transform-style-3d rotate-y-[10deg]">
-                <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4"><ShieldAlert className="w-6 h-6 animate-pulse" style={{ color: activeData.hex }} /><span className="font-mono text-sm tracking-widest text-white/70">SYS.METRICS</span></div>
+                <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-4"><ShieldAlert className="w-6 h-6 animate-pulse" style={{ color: activeData.hex }} /><span className="font-mono text-sm tracking-widest text-white/70">CHỈ SỐ HỆ THỐNG</span></div>
                 <div className="space-y-6">
-                  {['SPEED', 'CORE', 'NEURAL', 'HEAT'].map((lbl, i) => (
+                  {['TỐC ĐỘ', 'LÕI XỬ LÝ', 'TRÍ TUỆ', 'NHIỆT ĐỘ'].map((lbl, i) => (
                     <div key={lbl}>
                       <div className="flex justify-between font-mono text-sm text-white/70 tracking-widest mb-2.5"><span className="font-bold">{lbl}</span> <span style={{ color: activeData.hex, fontWeight: 'bold', fontSize: '1rem' }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
                       <div className="h-2.5 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
@@ -567,7 +567,7 @@ export default function ExodusGodTier() {
               
               <div className="px-12 py-5 bg-black/80 border-y-2 cyber-clip-sm flex flex-col items-center text-center transition-colors duration-300 backdrop-blur-md" style={{ borderColor: deployState !== 'idle' ? '#ff0000' : activeData.hex }}>
                 <span className="text-sm font-mono tracking-widest uppercase text-white/60 mb-2 flex items-center gap-2">
-                  {deployState === 'idle' ? <><Target className="w-3.5 h-3.5 text-red-500 animate-spin" /> ENGAGED</> : <><AlertTriangle className="w-3.5 h-3.5 text-red-500 animate-ping" /> UPLINKING...</>}
+                  {deployState === 'idle' ? <><Target className="w-3.5 h-3.5 text-red-500 animate-spin" /> ĐANG KẾT NỐI</> : <><AlertTriangle className="w-3.5 h-3.5 text-red-500 animate-ping" /> ĐANG TẢI LÊN...</>}
                 </span>
                 <span className="text-4xl md:text-5xl font-black uppercase tracking-widest text-white" style={{ textShadow: `0 0 20px ${deployState !== 'idle' ? 'red' : activeData.hex}` }}>
                   <ScrambleText text={activeData.title} active={true} delay={100} />
@@ -582,7 +582,7 @@ export default function ExodusGodTier() {
                 <div className="absolute inset-0 w-full h-[10%] scanline pointer-events-none opacity-30 z-10" />
 
                 <div className="mb-8 border-b border-white/10 pb-5 relative z-20">
-                  <div className="flex items-center gap-3 mb-3 font-mono text-base tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-6 h-6 animate-pulse" /> PAYLOAD_DATA</div>
+                  <div className="flex items-center gap-3 mb-3 font-mono text-base tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-6 h-6 animate-pulse" /> DỮ LIỆU CHI TIẾT</div>
                   <h3 className="text-5xl font-black text-white uppercase tracking-widest drop-shadow-lg">{activeData.code}</h3>
                 </div>
 
