@@ -15,7 +15,7 @@ type Planet = {
   id: string; name: string; code: string; desc: string;
   color: string; darkColor: string; size: number; orbit: number; speed: number;
   icon: React.ElementType; moons: number; ring: boolean; type: string; freq: string;
-  link: string; stats: PlanetStats; surface: string; tiltX: number; tiltY: number; tiltZ: number;
+  link: string; stats: PlanetStats; surface: string; tiltX: number; tiltY: number; tiltZ: number; startDelay: number;
 };
 
 interface PlanetNodeProps {
@@ -35,13 +35,13 @@ interface HolographicModalProps {
 }
 
 const planets: Planet[] = [
-  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 68, orbit: 240, speed: 20, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, tiltX: 15, tiltY: 30, tiltZ: 0, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
-  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 84, orbit: 380, speed: 30, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, tiltX: -20, tiltY: 45, tiltZ: 10, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
-  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 52, orbit: 520, speed: 40, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, tiltX: 40, tiltY: -15, tiltZ: -20, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
-  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 64, orbit: 660, speed: 50, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, tiltX: -35, tiltY: -40, tiltZ: 30, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
-  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 56, orbit: 800, speed: 60, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, tiltX: 60, tiltY: 10, tiltZ: -45, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
-  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 92, orbit: 960, speed: 75, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, tiltX: -10, tiltY: 70, tiltZ: 15, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
-  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 48, orbit: 1120, speed: 90, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, tiltX: 25, tiltY: -60, tiltZ: -30, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
+  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 68, orbit: 240, speed: 12, startDelay: -15, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, tiltX: 15, tiltY: 30, tiltZ: 0, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
+  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 84, orbit: 380, speed: 18, startDelay: -45, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, tiltX: -20, tiltY: 45, tiltZ: 10, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
+  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 52, orbit: 520, speed: 25, startDelay: -80, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, tiltX: 40, tiltY: -15, tiltZ: -20, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
+  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 64, orbit: 660, speed: 32, startDelay: -22, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, tiltX: -35, tiltY: -40, tiltZ: 30, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
+  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 56, orbit: 800, speed: 40, startDelay: -67, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, tiltX: 60, tiltY: 10, tiltZ: -45, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
+  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 92, orbit: 960, speed: 50, startDelay: -9, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, tiltX: -10, tiltY: 70, tiltZ: 15, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
+  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 48, orbit: 1120, speed: 60, startDelay: -53, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, tiltX: 25, tiltY: -60, tiltZ: -30, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
 ];
 
 const LOCAL_NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`;
@@ -131,7 +131,7 @@ CanvasStarfield.displayName = 'CanvasStarfield';
 
 // 3.3 Node Hành Tinh (Tách nhỏ Component)
 const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHover, onLeave, onClick }: PlanetNodeProps) => {
-  const delay = `-${(index / total) * p.speed * 0.8}s`;
+  const delay = `${p.startDelay}s`;
   const isHovered = hoveredPlanet === p.id;
   const isDimmed = (hoveredPlanet && !isHovered) || isPaused;
   const Icon = p.icon;
@@ -153,8 +153,8 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
       {/* 2. VỆT SAO CHỔI */}
       <div className="absolute pointer-events-none orbit-spin transform-style-3d" 
            style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, animationDuration: `${p.speed}s`, animationDelay: delay }}>
-        <div className="absolute top-0 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-sm"
-             style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color}90, transparent)` }} />
+        <div className="absolute top-1/2 left-1/2 h-[2px] -translate-y-1/2 origin-left blur-[1px] opacity-50"
+             style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color})` }} />
       </div>
 
       {/* 3. HÀNH TINH */}
@@ -182,14 +182,14 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                 </div>
 
                 {/* FLOATING LABEL */}
-                <div className={`absolute -top-16 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-[200] transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                <div className={`absolute -top-24 md:-top-32 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-[200] transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                   <div className="bg-black/80 backdrop-blur-xl border border-white/30 px-5 py-2 rounded-2xl text-center shadow-2xl whitespace-nowrap" style={{ borderColor: p.color }}>
-                    <div className="text-lg font-black text-white tracking-widest leading-none">{p.name}</div>
-                    <div className="text-xs font-mono text-white/70 mt-1 flex items-center justify-center gap-2">
+                    <div className="text-2xl md:text-3xl font-black text-white tracking-widest leading-none">{p.name}</div>
+                    <div className="text-sm md:text-base font-mono text-white/80 mt-1 flex items-center justify-center gap-2">
                       <span>{p.code}</span><span className="w-px h-3 bg-white/30" /><span style={{ color: p.color }} className="font-bold">Nhóm: {p.type}</span>
                     </div>
                   </div>
-                  <div className="mt-2 text-[10px] font-mono bg-black/70 px-3 py-px rounded-full text-cyan-300 flex items-center gap-1">
+                  <div className="mt-2 text-xs md:text-sm font-mono bg-black/70 px-4 py-1 py-px rounded-full text-cyan-300 flex items-center gap-1">
                     <span className="animate-pulse">⚡</span><span>Tốc độ: {p.speed} THz</span>
                   </div>
                 </div>
