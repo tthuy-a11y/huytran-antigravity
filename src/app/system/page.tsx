@@ -550,8 +550,8 @@ export default function ExodusGodTier() {
                 <div className="space-y-6">
                   {['SPEED', 'CORE', 'NEURAL', 'HEAT'].map((lbl, i) => (
                     <div key={lbl}>
-                      <div className="flex justify-between font-mono text-xs text-white/60 tracking-widest mb-2"><span>{lbl}</span> <span style={{ color: activeData.hex, fontWeight: 'bold' }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
-                      <div className="h-2 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
+                      <div className="flex justify-between font-mono text-sm text-white/70 tracking-widest mb-2.5"><span className="font-bold">{lbl}</span> <span style={{ color: activeData.hex, fontWeight: 'bold', fontSize: '1rem' }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
+                      <div className="h-2.5 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
                     </div>
                   ))}
                 </div>
@@ -565,11 +565,11 @@ export default function ExodusGodTier() {
               
               <InteractiveHologram icon={activeData.icon} color={deployState !== 'idle' ? '#ff0000' : activeData.hex} />
               
-              <div className="px-10 py-3 bg-black/80 border-y-2 cyber-clip-sm flex flex-col items-center text-center transition-colors duration-300 backdrop-blur-md" style={{ borderColor: deployState !== 'idle' ? '#ff0000' : activeData.hex }}>
-                <span className="text-[10px] font-mono tracking-widest uppercase text-white/50 mb-1 flex items-center gap-2">
-                  {deployState === 'idle' ? <><Target className="w-2.5 h-2.5 text-red-500 animate-spin" /> ENGAGED</> : <><AlertTriangle className="w-2.5 h-2.5 text-red-500 animate-ping" /> UPLINKING...</>}
+              <div className="px-12 py-5 bg-black/80 border-y-2 cyber-clip-sm flex flex-col items-center text-center transition-colors duration-300 backdrop-blur-md" style={{ borderColor: deployState !== 'idle' ? '#ff0000' : activeData.hex }}>
+                <span className="text-sm font-mono tracking-widest uppercase text-white/60 mb-2 flex items-center gap-2">
+                  {deployState === 'idle' ? <><Target className="w-3.5 h-3.5 text-red-500 animate-spin" /> ENGAGED</> : <><AlertTriangle className="w-3.5 h-3.5 text-red-500 animate-ping" /> UPLINKING...</>}
                 </span>
-                <span className="text-3xl font-black uppercase tracking-widest text-white" style={{ textShadow: `0 0 15px ${deployState !== 'idle' ? 'red' : activeData.hex}` }}>
+                <span className="text-4xl md:text-5xl font-black uppercase tracking-widest text-white" style={{ textShadow: `0 0 20px ${deployState !== 'idle' ? 'red' : activeData.hex}` }}>
                   <ScrambleText text={activeData.title} active={true} delay={100} />
                 </span>
               </div>
@@ -582,26 +582,26 @@ export default function ExodusGodTier() {
                 <div className="absolute inset-0 w-full h-[10%] scanline pointer-events-none opacity-30 z-10" />
 
                 <div className="mb-8 border-b border-white/10 pb-5 relative z-20">
-                  <div className="flex items-center gap-2 mb-3 font-mono text-xs tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-5 h-5 animate-pulse" /> PAYLOAD_DATA</div>
-                  <h3 className="text-4xl font-black text-white uppercase tracking-widest drop-shadow-md">{activeData.code}</h3>
+                  <div className="flex items-center gap-3 mb-3 font-mono text-base tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-6 h-6 animate-pulse" /> PAYLOAD_DATA</div>
+                  <h3 className="text-5xl font-black text-white uppercase tracking-widest drop-shadow-lg">{activeData.code}</h3>
                 </div>
 
                 <ul className="space-y-8 flex-1 relative z-20 overflow-y-auto pr-4 custom-scrollbar">
                   {activeData.items.map((item, i) => (
                     <li key={i} className="flex gap-5 items-start group">
-                      <div className="mt-2 w-2.5 h-2.5 shrink-0 bg-white/20 cyber-clip-sm group-hover:scale-150 transition-transform" style={{ backgroundColor: activeData.hex, boxShadow: `0 0 12px ${activeData.hex}` }} />
-                      <span className="text-base lg:text-lg text-cyan-50/90 leading-relaxed font-sans group-hover:text-white transition-colors font-medium"><ScrambleText text={item} active={true} delay={400 + i * 150} /></span>
+                      <div className="mt-2.5 w-3 h-3 shrink-0 bg-white/20 cyber-clip-sm group-hover:scale-150 transition-transform" style={{ backgroundColor: activeData.hex, boxShadow: `0 0 14px ${activeData.hex}` }} />
+                      <span className="text-lg lg:text-xl text-cyan-50/95 leading-relaxed font-sans group-hover:text-white transition-colors font-semibold"><ScrambleText text={item} active={true} delay={400 + i * 150} /></span>
                     </li>
                   ))}
                 </ul>
 
                 <div className="mt-6 pt-6 border-t border-white/10 relative z-20">
                   <button 
-                    onClick={handleDeploy} onMouseEnter={() => sfx?.play('hover')}
-                    className="w-full cyber-clip-sm py-5 font-mono text-base tracking-[0.3em] font-black uppercase text-black transition-all flex items-center justify-center gap-3 hover:scale-[1.02]" 
-                    style={{ backgroundColor: activeData.hex, boxShadow: `0 0 30px ${activeData.hex}90` }}
+                    onClick={abortMission} onMouseEnter={() => sfx?.play('hover')}
+                    className="w-full cyber-clip-sm py-5 font-mono text-lg tracking-[0.3em] font-black uppercase text-white transition-all flex items-center justify-center gap-3 hover:scale-[1.02] hover:text-black" 
+                    style={{ backgroundColor: 'transparent', border: `2px solid ${activeData.hex}`, boxShadow: `0 0 30px ${activeData.hex}60` }}
                   >
-                    <TerminalSquare className="w-5 h-5" /> DEPLOY PROTOCOL
+                    <ArrowLeft className="w-6 h-6" /> QUAY LẠI HẠM ĐỘI
                   </button>
                 </div>
               </div>
