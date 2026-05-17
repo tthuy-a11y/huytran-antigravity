@@ -1,16 +1,18 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback, memo, useMemo } from 'react';
-import { ArrowLeft, Zap, Database, GitBranch, Cpu, Target, Activity, Waves, Lock, X, Fingerprint, Orbit, Play, TerminalSquare, Rocket, ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Zap, Database, GitBranch, Cpu, Target, Activity, Waves, Lock, X, Fingerprint, Orbit, Play, TerminalSquare, Rocket, ShieldAlert, CheckCircle2, AlertTriangle, Globe } from 'lucide-react';
 import Link from 'next/link';
 
 // ============================================================================
 // 1. TYPESCRIPT INTERFACES
 // ============================================================================
 type ShipStats = [number, number, number, number];
+type ShipShape = 'sleek' | 'agile' | 'heavy' | 'command';
 interface FleetShip {
-  id: number; icon: React.ElementType; code: string; title: string; hex: string; stats: ShipStats; items: string[]; link: string;
+  id: number; icon: React.ElementType; code: string; title: string; hex: string; stats: ShipStats; items: string[]; link: string; shape: ShipShape; shipName: string;
 }
+const getClipPath = (s: ShipShape) => ({ sleek: 'polygon(50% 0%, 100% 80%, 80% 100%, 50% 90%, 20% 100%, 0% 80%)', agile: 'polygon(50% 10%, 90% 40%, 100% 90%, 50% 80%, 0% 90%, 10% 40%)', heavy: 'polygon(30% 0%, 70% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)', command: 'polygon(50% 0%, 100% 30%, 80% 100%, 50% 80%, 20% 100%, 0% 30%)' }[s]);
 
 // ============================================================================
 // 2. SYNTHETIC AUDIO ENGINE (WEB AUDIO API)
@@ -230,6 +232,8 @@ export default function ExodusGodTier() {
   const [warpSpeed, setWarpSpeed] = useState(false);
   const [deployState, setDeployState] = useState<'idle' | 'charging' | 'deployed'>('idle');
   const [showGate, setShowGate] = useState(false);
+  const [rushingShipId, setRushingShipId] = useState<number | null>(null);
+  const [impactParticles, setImpactParticles] = useState<Array<{id:number;x:number;y:number;s:number;d:number}>>([]);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -241,18 +245,25 @@ export default function ExodusGodTier() {
   });
 
   const fleet: FleetShip[] = useMemo(() => [
-    { id: 0, icon: Zap, code: "X1-STRIKER", title: "Tăng Tốc Làm Việc", hex: "#06b6d4", stats: [98, 85, 92, 70], items: ["Soạn thảo văn bản, email, báo cáo siêu tốc", "Phân tích Big Data, trích xuất Insight tức thời", "Lên Timeline dự án và phân công nhân sự", "Khởi tạo Slide trình bày từ ý tưởng thô"], link: "/speed" },
-    { id: 1, icon: Database, code: "N-VAULT", title: "Quản Lý Dữ Liệu", hex: "#10b981", stats: [75, 99, 95, 60], items: ["Tự động phân loại, sắp xếp và lưu trữ File", "OCR Trích xuất thông tin Hóa đơn, Hợp đồng", "Xây dựng Knowledge Base doanh nghiệp", "Tìm kiếm đa nền tảng bằng ngôn ngữ tự nhiên"], link: "/data" },
-    { id: 2, icon: GitBranch, code: "AUTO-CRUISER", title: "Hệ Thống Tự Động", hex: "#d946ef", stats: [88, 92, 85, 80], items: ["Dựng Dashboard nội bộ, CRM, Quản lý kho", "Luồng phê duyệt tự động và Form thông minh", "Tích hợp API kết nối hàng vạn quy trình", "Phát triển Mini-App theo dõi báo cáo Real-time"], link: "/automation" },
-    { id: 3, icon: Cpu, code: "CORE-AEGIS", title: "Lõi Lập Trình", hex: "#f43f5e", stats: [95, 90, 99, 95], items: ["Sinh mã nguồn End-to-End cho Web/App", "Rà quét, Refactor và sửa Bug Real-time", "Tạo nhanh MVP/Prototype có thể tương tác", "Tối ưu hóa kiến trúc hạ tầng phần mềm"], link: "/dev" }
+    { id: 0, icon: Cpu, code: "NEXUS-01", title: "AI & Machine Learning", shipName: "PHI THUYỀN AI AGENTIC", hex: "#00f2fe", shape: 'sleek' as ShipShape, stats: [98, 95, 92, 88], items: ["Lõi trí tuệ tự trị - Tự động hóa toàn bộ quy trình", "Phân tích Big Data, trích xuất Insight tức thời", "Tối ưu 300% tốc độ xử lý nghiệp vụ", "Khởi tạo AI Agent từ prompt tự nhiên"], link: "/ai" },
+    { id: 1, icon: Globe, code: "UIX-99", title: "Web Generative & 3D", shipName: "PHI THUYỀN WEB 3D", hex: "#b026ff", shape: 'agile' as ShipShape, stats: [90, 88, 96, 85], items: ["Thiết kế giao diện 3D immersive", "Trải nghiệm người dùng đỉnh cao WebGL/Three.js", "Animation & Motion Design siêu mượt", "Responsive trên mọi thiết bị"], link: "/web3d" },
+    { id: 2, icon: Zap, code: "PRMPT-X", title: "Prompt Engineering", shipName: "PHI THUYỀN PROMPT", hex: "#ff0844", shape: 'command' as ShipShape, stats: [95, 92, 88, 90], items: ["Kiến trúc sư ngôn ngữ cho AI", "Tạo sinh hình ảnh & nội dung cực nhanh", "Chain-of-Thought & Tree-of-Thought", "Multi-modal Prompt Mastery"], link: "/prompt" },
+    { id: 3, icon: Rocket, code: "PHYS-42", title: "Physics Coding", shipName: "PHI THUYỀN PHYSICS", hex: "#00ff87", shape: 'heavy' as ShipShape, stats: [92, 90, 99, 95], items: ["Animation theo quy luật vật lý thực tế", "Particle Systems & Fluid Dynamics", "Collision Detection & Response", "Real-time Physics Simulation"], link: "/physics" },
+    { id: 4, icon: Database, code: "CLOUD-7", title: "Big Data & Cloud", shipName: "PHI THUYỀN DATA CLOUD", hex: "#f5a623", shape: 'heavy' as ShipShape, stats: [85, 99, 90, 80], items: ["Kiến trúc phân tán siêu tốc", "ETL Pipeline & Data Warehouse", "Cloud-native Architecture", "Real-time Analytics Dashboard"], link: "/data" },
+    { id: 5, icon: ShieldAlert, code: "SHIELD-X", title: "Cyber Security", shipName: "PHI THUYỀN SECURITY", hex: "#ff007f", shape: 'command' as ShipShape, stats: [88, 92, 85, 98], items: ["Mã hóa & bảo mật đa lớp", "Penetration Testing & Audit", "Zero-Trust Architecture", "Incident Response Protocol"], link: "/security" },
   ], []);
 
   // --- Actions ---
   const engageShip = useCallback((id: number) => {
-    if (activeShip === id) return;
-    sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400;
-    setTimeout(() => { setActiveShip(id); setWarpSpeed(false); engineRef.current.targetSpeed = 0.5; }, 1200);
-  }, [activeShip]);
+    if (activeShip === id || rushingShipId !== null) return;
+    sfx?.play('click'); setRushingShipId(id);
+    // 500ms: impact particles
+    setTimeout(() => { setImpactParticles(Array.from({length:25},(_,i)=>({id:i,x:(Math.random()-.5)*350,y:(Math.random()-.5)*350,s:Math.random()*6+2,d:Math.random()*.15}))); }, 500);
+    // 900ms: warp phase
+    setTimeout(() => { sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400; setImpactParticles([]); }, 900);
+    // 1500ms: show HUD
+    setTimeout(() => { setActiveShip(id); setWarpSpeed(false); setRushingShipId(null); engineRef.current.targetSpeed = 0.5; }, 1500);
+  }, [activeShip, rushingShipId]);
 
   const abortMission = useCallback(() => {
     if (activeShip === null || deployState !== 'idle') return;
@@ -419,6 +430,27 @@ export default function ExodusGodTier() {
         
         .transform-style-3d { transform-style: preserve-3d; }
         .custom-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* SHIP RUSH ANIMATION - 0.9s fast & cinematic */
+        @keyframes shipRush {
+          0%   { transform: translateY(0) scale(1) rotate(0deg); opacity:1; }
+          10%  { transform: translateY(15px) scale(.93) rotate(-2deg); opacity:1; }
+          30%  { transform: translateY(-130px) scale(1.2) rotate(8deg); opacity:1; }
+          40%  { transform: translateY(-110px) scale(1.1) rotate(-16deg); opacity:1; }
+          50%  { transform: translateY(-150px) scale(1.25) rotate(14deg); opacity:1; }
+          55%  { transform: translateY(-140px) translateX(-12px) scale(1.2) rotate(3deg); }
+          58%  { transform: translateY(-145px) translateX(14px) scale(1.22) rotate(-3deg); }
+          62%  { transform: translateY(-140px) translateX(0) scale(1.2) rotate(0deg); }
+          80%  { transform: translateY(-110px) scale(1) rotate(720deg); opacity:.7; }
+          100% { transform: translateY(-500px) scale(.15) rotate(1080deg); opacity:0; }
+        }
+        .ship-rush-active { animation: shipRush .9s cubic-bezier(.22,.9,.3,1) forwards; }
+
+        @keyframes particleBurst {
+          0%   { transform: translate(0,0) scale(1); opacity:1; }
+          100% { transform: translate(var(--px),var(--py)) scale(0); opacity:0; }
+        }
+        .particle-burst { animation: particleBurst .5s ease-out forwards; }
       `}} />
 
       <div className="crt-overlay" />
@@ -439,34 +471,60 @@ export default function ExodusGodTier() {
             <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Exit Hub</span>
           </Link>
           <div className="text-right">
-            <h1 className="text-2xl md:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]">Logic & Tốc Độ</h1>
+            <h1 className="text-2xl md:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]">Trạm Tốc Độ Cao</h1>
           </div>
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full">
           <div className="text-center mb-10 md:mb-16 px-4">
-            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Khai Thác Tối Đa</h2>
-            <div className="mt-4 font-mono text-cyan-400/60 text-xs tracking-widest uppercase"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Select Payload Core</div>
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Chọn Phi Thuyền</h2>
+            <div className="mt-4 font-mono text-cyan-400/60 text-xs tracking-widest uppercase"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Khởi Động Hành Trình Vô Tận</div>
           </div>
 
-          <div className="flex overflow-x-auto snap-x snap-mandatory px-8 md:px-4 w-full custom-scrollbar pb-8 pt-4 gap-8 md:justify-center z-40">
-            {fleet.map((ship, idx) => (
-              <div key={ship.id} className="snap-center shrink-0">
-                <div onClick={() => engageShip(ship.id)} onPointerEnter={() => sfx?.play('hover')} className={`group relative w-44 h-56 flex flex-col items-center justify-center transition-transform duration-500 will-change-transform hover:z-50 hover:scale-105 cursor-crosshair animate-in fade-in slide-in-from-bottom-12`} style={{ '--theme': ship.hex, animationDelay: `${idx * 0.15}s` } as React.CSSProperties}>
-                  <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 text-center pointer-events-none hidden md:block">
-                    <span className="font-mono text-[9px] tracking-[0.3em] uppercase block mb-1 text-white/80">[{ship.code}]</span>
-                    <span className="text-sm font-black text-white tracking-widest whitespace-nowrap drop-shadow-[0_0_10px_rgba(0,0,0,1)]">{ship.title}</span>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent p-[1px] cyber-clip shadow-[0_20px_40px_rgba(0,0,0,0.6)] group-hover:shadow-[0_0_50px_var(--theme)] transition-all duration-300">
-                    <div className="w-full h-full bg-[#02040a]/90 backdrop-blur-md cyber-clip flex items-center justify-center relative overflow-hidden">
-                      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:8px_8px] z-0" />
-                      <div className={`absolute w-20 h-20 rounded-full blur-[25px] opacity-20 group-hover:opacity-80 transition-all z-1`} style={{ background: ship.hex }} />
-                      <ship.icon className="w-12 h-12 text-white relative z-10 drop-shadow-[0_0_15px_var(--theme)] group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 px-4 md:px-8 w-full max-w-[1400px] z-40">
+            {fleet.map((ship, idx) => {
+              const isRushing = rushingShipId === ship.id;
+              const isOtherRushing = rushingShipId !== null && rushingShipId !== ship.id;
+              return (
+                <div key={ship.id} className={`flex justify-center transition-all duration-500 ${isOtherRushing ? 'scale-90 opacity-10 blur-sm pointer-events-none' : ''}`}>
+                  <div
+                    onClick={() => engageShip(ship.id)}
+                    onPointerEnter={() => sfx?.play('hover')}
+                    className={`group relative cursor-crosshair transition-all duration-300 ${isRushing ? '' : 'hover:scale-105 hover:z-50'}`}
+                    style={{ '--theme': ship.hex } as React.CSSProperties}
+                  >
+                    {/* SPACESHIP BODY */}
+                    <div className={`relative w-[280px] h-[340px] md:w-[320px] md:h-[380px] ${isRushing ? 'ship-rush-active' : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 80 : 25}px ${ship.hex})`, transition: 'filter .3s' }}>
+                      {/* Impact Particles */}
+                      {isRushing && impactParticles.map(p => (
+                        <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius:'50%', background:ship.hex, boxShadow:`0 0 8px ${ship.hex}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />
+                      ))}
+                      {/* Ship Hull */}
+                      <div className="w-full h-full relative overflow-hidden" style={{ clipPath: getClipPath(ship.shape) }}>
+                        <div className="absolute inset-0" style={{ background:`linear-gradient(180deg,${ship.hex}15 0%,#000 50%,${ship.hex}08 100%)`, border:`2px solid ${ship.hex}50`, borderRadius:20 }} />
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft:'50px solid transparent', borderRight:'50px solid transparent', borderBottom:`80px solid ${ship.hex}40` }} />
+                        <div className="absolute top-[45%] left-3 w-3 h-24 rounded-full -skew-y-12 rotate-12" style={{ background:`${ship.hex}30` }} />
+                        <div className="absolute top-[45%] right-3 w-3 h-24 rounded-full skew-y-12 -rotate-12" style={{ background:`${ship.hex}30` }} />
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full blur-2xl opacity-0 group-hover:opacity-60 transition-opacity animate-pulse" style={{ background:ship.hex }} />
+                        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:8px_8px]" />
+                      </div>
+                      {/* TEXT ON SHIP */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5 z-20 pointer-events-none">
+                        <div className="text-lg md:text-xl font-black tracking-widest leading-tight text-white uppercase" style={{ textShadow:`0 2px 15px ${ship.hex}80` }}>
+                          {ship.shipName}
+                        </div>
+                        <div className="mt-3 text-[11px] md:text-xs font-mono bg-black/50 px-3 py-1 rounded text-white/80">{ship.title}</div>
+                        <div className="mt-5 text-[10px] font-mono px-4 py-1.5 rounded-full border border-white/20" style={{ color:ship.hex, background:'rgba(0,0,0,.7)', boxShadow:`0 0 10px ${ship.hex}30` }}>
+                          {ship.code}
+                        </div>
+                      </div>
+                      {/* Ship Icon */}
+                      <ship.icon className="absolute bottom-7 left-1/2 -translate-x-1/2 w-8 h-8 text-white/70 z-20 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
