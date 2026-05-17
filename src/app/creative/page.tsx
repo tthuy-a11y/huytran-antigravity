@@ -211,87 +211,90 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
 
 PlanetNode.displayName = 'PlanetNode';
 
-// 3.4 Modal Split-Screen Hologram 
+// 3.4 Centered Info Modal (Click planet -> show info centered)
 const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicModalProps) => {
   const router = useRouter();
   const Icon = activePlanet.icon;
+  const p = activePlanet;
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setActivePlanet(null); };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
   }, [setActivePlanet]);
-  
+
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md pointer-events-auto transition-all duration-700 animate-hud-glitch" onClick={() => setActivePlanet(null)}>
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
-
-      {/* CENTRAL GIANT PLANET */}
-      <div className="relative w-72 h-72 md:w-[400px] md:h-[400px] flex items-center justify-center transform-style-3d animate-[float_6s_ease-in-out_infinite] z-20 pointer-events-none">
-        <div className="absolute w-[140%] h-[140%] rounded-full border-[2px] border-dashed border-white/20 animate-[spin_30s_linear_infinite]" style={{ transform: 'rotateX(75deg)', borderColor: `${activePlanet.color}50` }} />
-        <div className="absolute w-[180%] h-[180%] rounded-full border-t-[3px] border-b-[1px] border-white/30 animate-[spin_20s_linear_infinite_reverse]" style={{ transform: 'rotateX(60deg) rotateY(30deg)', borderColor: `${activePlanet.color}80` }} />
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-lg pointer-events-auto animate-hud-glitch cursor-pointer" onClick={() => { setActivePlanet(null); setHoveredPlanet(null); }}>
+      
+      {/* CENTERED CARD */}
+      <div className="relative max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-8 md:p-12 pointer-events-auto cursor-default"
+           onClick={(e) => e.stopPropagation()}
+           style={{ 
+             borderColor: `${p.color}80`, 
+             background: `linear-gradient(135deg, rgba(5,5,15,0.97) 0%, rgba(10,10,30,0.97) 100%)`,
+             boxShadow: `0 0 80px ${p.color}30, inset 0 0 40px rgba(0,0,0,0.5)` 
+           }}>
         
-        <div className="w-full h-full rounded-full relative overflow-hidden shadow-[0_0_150px_rgba(0,0,0,1)] border-2 border-white/30 transition-transform duration-1000 scale-in-center"
-             style={{ background: `radial-gradient(circle at 30% 30%, ${activePlanet.color} 0%, ${activePlanet.darkColor} 70%)`, boxShadow: `0 0 150px ${activePlanet.color}80, inset -40px -40px 80px rgba(0,0,0,0.9)` }}>
-          <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: activePlanet.surface }} />
-          <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ backgroundImage: LOCAL_NOISE }} />
-          <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:40px_40px] mix-blend-overlay [mask-image:radial-gradient(circle,black_40%,transparent_100%)] animate-[spin_40s_linear_infinite]" />
-          <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 text-white drop-shadow-[0_0_30px_rgba(255,255,255,1)] z-10" strokeWidth={1.5} />
-        </div>
-      </div>
+        {/* CLOSE */}
+        <button onClick={() => setActivePlanet(null)} className="absolute top-4 right-4 p-3 bg-red-500/10 hover:bg-red-500/30 border border-red-500/40 rounded-xl transition-all group z-50">
+          <X className="w-5 h-5 text-red-400 group-hover:text-white group-hover:rotate-90 transition-all" />
+        </button>
 
-      {/* FLOATING HUD PANELS */}
-      <div className="absolute inset-0 max-w-7xl mx-auto w-full h-full pointer-events-none flex flex-col justify-between p-8 md:p-12 z-30">
-        
-        {/* TOP: Header */}
-        <div className="flex justify-between items-start w-full pointer-events-auto">
-          <div className="bg-black/40 backdrop-blur-xl border border-white/20 p-6 clip-path-tech-large max-w-md shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-left">
-            <div className="inline-flex items-center gap-3 mb-2 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 clip-path-angled">
-              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-base md:text-xl font-mono tracking-[0.2em] uppercase font-black"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
-            </div>
-            <h2 className="text-6xl md:text-8xl font-black text-white mb-6 uppercase tracking-tighter leading-none font-space drop-shadow-[0_0_40px_rgba(255,255,255,0.6)]" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
-              <DecryptText text={activePlanet.name} delay={400} />
-            </h2>
-            <div className="flex gap-4 text-white/90 text-base md:text-xl font-mono tracking-widest font-bold">
-              <span>{activePlanet.code}</span>
-              <span className="text-cyan-400">SIG: <DecryptText text={activePlanet.freq} delay={600} /></span>
+        {/* PLANET ICON + NAME */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 mb-6">
+            <div className="absolute inset-0 rounded-full animate-pulse" style={{ boxShadow: `0 0 60px ${p.color}60` }} />
+            <div className="w-full h-full rounded-full relative overflow-hidden border-2 border-white/30"
+                 style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 70%)`, boxShadow: `0 0 80px ${p.color}50, inset -20px -20px 40px rgba(0,0,0,0.8)` }}>
+              <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ background: p.surface }} />
+              <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] z-10" strokeWidth={1.5} />
             </div>
           </div>
-
-          <button onClick={() => setActivePlanet(null)} className="p-4 z-50 bg-red-500/10 hover:bg-red-500/30 border border-red-500/50 transition-all flex items-center gap-2 group clip-path-angled cursor-pointer shadow-[0_0_20px_rgba(255,0,0,0.2)]">
-            <span className="text-[10px] font-mono uppercase text-red-400 group-hover:text-white hidden sm:block font-bold tracking-widest">THOÁT</span>
-            <X className="w-6 h-6 text-red-400 group-hover:text-white" />
-          </button>
-        </div>
-
-        {/* BOTTOM: Stats & Action */}
-        <div className="flex flex-col md:flex-row justify-between items-end w-full gap-8 pointer-events-auto">
           
-          <div className="bg-black/40 backdrop-blur-xl border-l-[3px] p-6 max-w-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-bottom relative" style={{ borderColor: activePlanet.color }}>
-            <div className="absolute -left-[3px] top-0 w-1.5 h-1/3 bg-white animate-scan-vertical-fast shadow-[0_0_10px_#fff]" />
-            <p className="text-white text-xl md:text-3xl leading-relaxed font-medium drop-shadow-lg"><DecryptText text={activePlanet.desc} delay={700} /></p>
+          <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-wider leading-none font-space mb-3" style={{ textShadow: `0 0 30px ${p.color}80` }}>
+            <DecryptText text={p.name} delay={200} />
+          </h2>
+          <div className="flex gap-4 text-base md:text-lg font-mono text-white/80 tracking-widest">
+            <span className="font-bold" style={{ color: p.color }}>{p.code}</span>
+            <span>|</span>
+            <span>{p.type}</span>
+            <span>|</span>
+            <span style={{ color: p.color }}>{p.freq}</span>
           </div>
-
-          <div className="bg-[#05050A]/80 backdrop-blur-xl border border-white/20 p-6 clip-path-angled min-w-[300px] shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-right">
-            <div className="text-sm text-white/70 font-mono uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><BarChart className="w-4 h-4 text-cyan-400" /> System Diagnostics</div>
-            <div className="space-y-4 mb-6">
-              {[ { label: "Core Power", val: activePlanet.stats.power, color: "bg-[#ff5500]" }, { label: "Neural Sync", val: activePlanet.stats.sync, color: "bg-[#00f2fe]" }, { label: "Stability", val: activePlanet.stats.stability, color: "bg-[#00ff87]" } ].map((stat, i) => (
-                <div key={i} className="flex items-center gap-4 group">
-                  <div className="w-32 text-xs md:text-sm font-mono text-white/70 uppercase tracking-widest">{stat.label}</div>
-                  <div className="flex-1 h-1.5 bg-white/10 relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 h-full ${stat.color} shadow-[0_0_10px_currentColor] transition-all duration-1000`} style={{ '--target-width': `${stat.val}%`, animation: `fillBar 1s ${1 + i * 0.2}s forwards` } as React.CSSProperties} />
-                  </div>
-                  <div className="w-12 text-right text-sm font-mono text-white font-bold">{stat.val}%</div>
-                </div>
-              ))}
-            </div>
-            
-            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-2xl clip-path-tech-large font-black hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-              <Zap className="w-5 h-5" fill="currentColor" /> Kích hoạt Phân Khu
-            </button>
-          </div>
-
         </div>
+
+        {/* DESCRIPTION */}
+        <div className="border-l-4 pl-6 mb-8" style={{ borderColor: p.color }}>
+          <p className="text-xl md:text-2xl text-white/90 leading-relaxed font-medium">
+            <DecryptText text={p.desc} delay={400} />
+          </p>
+        </div>
+
+        {/* STATS */}
+        <div className="grid grid-cols-3 gap-6 mb-8">
+          {[
+            { label: "Sức Mạnh", val: p.stats.power, color: "#ff5500" },
+            { label: "Đồng Bộ", val: p.stats.sync, color: "#00f2fe" },
+            { label: "Ổn Định", val: p.stats.stability, color: "#00ff87" }
+          ].map((stat, i) => (
+            <div key={i} className="text-center">
+              <div className="text-3xl md:text-4xl font-black font-space mb-1" style={{ color: stat.color, textShadow: `0 0 20px ${stat.color}60` }}>{stat.val}%</div>
+              <div className="text-sm font-mono text-white/60 uppercase tracking-widest">{stat.label}</div>
+              <div className="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${stat.val}%`, backgroundColor: stat.color, boxShadow: `0 0 10px ${stat.color}` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ACTION BUTTON */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); router.push(p.link); }} 
+          className="w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xl md:text-2xl text-black transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-3 cursor-pointer"
+          style={{ backgroundColor: p.color, boxShadow: `0 0 40px ${p.color}60` }}
+        >
+          <Zap className="w-6 h-6" fill="currentColor" /> Khám Phá Phân Khu
+        </button>
       </div>
     </div>
   );
@@ -387,11 +390,11 @@ export default function CosmicOdysseyPage() {
       {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
         <div className={`camera-rig transform-style-3d ease-warp w-full h-full flex items-center justify-center will-change-transform transition-all duration-[1500ms]
-             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.35] md:scale-[0.45] translate-x-[15%] translate-y-[15%] opacity-20 blur-md pointer-events-none system-paused' : hoveredPlanet ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
+             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused opacity-30 blur-sm pointer-events-none' : hoveredPlanet ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
              style={{ transform: isPaused || isWarping ? '' : `rotateX(calc(75deg + var(--mouse-y))) rotateY(calc(0deg + var(--mouse-x)))` }}>
           
           {/* LÕI HỐ ĐEN */}
-          <div className={`absolute transform-style-3d pointer-events-auto  transition-all duration-700 ${hoveredPlanet ? 'opacity-60 scale-95 grayscale-[30%]' : 'opacity-100 scale-100'}`}>
+          <div className={`absolute transform-style-3d pointer-events-auto transition-all duration-1000 ${hoveredPlanet ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
             <div className="transform-style-3d transition-transform duration-100" style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
               <div className="relative flex items-center justify-center w-72 h-72 group cursor-crosshair">
                 <div className="absolute w-[1000px] h-[1000px] rounded-full border-t-[12px] border-orange-400/80 animate-[spin_8s_linear_infinite] transform-style-3d blur-[4px] shadow-[0_0_100px_#ff5500]" style={{ transform: 'rotateX(75deg) rotateY(-10deg)' }} />
