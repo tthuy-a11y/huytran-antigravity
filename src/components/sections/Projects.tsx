@@ -39,18 +39,13 @@ export default function Projects() {
 
   return (
     <section id="projects" ref={sectionRef} className="py-24 relative overflow-hidden bg-black">
-      {/* Subtle grid background */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:80px_80px] opacity-20 pointer-events-none" />
 
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 relative z-10">
-        {/* Heading neon */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-3 mb-4">
             <Sparkles className="w-8 h-8 text-cyan-300" />
-            <h2
-              className="text-5xl md:text-6xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300"
-              style={{ textShadow: '0 0 30px #67e8f9, 0 0 60px #a78bfa' }}
-            >
+            <h2 className="text-5xl md:text-6xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300" style={{ textShadow: '0 0 30px #67e8f9, 0 0 60px #a78bfa' }}>
               Projects
             </h2>
           </div>
@@ -59,19 +54,13 @@ export default function Projects() {
           </p>
         </div>
 
-        {/* Projects Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {projectsData.map((project) => (
-            <div
-              key={project.id}
-              className="group bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden hover:border-cyan-400/40 hover:-translate-y-6 hover:shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500"
-            >
-              {/* Project visual placeholder */}
+            <div key={project.id} className="group bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden hover:border-cyan-400/40 hover:-translate-y-6 hover:shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500">
               <div className={`h-56 bg-gradient-to-br from-${project.color}-900/30 to-black flex items-center justify-center border-b border-white/10 relative overflow-hidden`}>
                 <div className="text-8xl font-black text-white/10 group-hover:text-white/20 transition-colors tracking-tighter">
                   {project.title.split(' ')[0]}
                 </div>
-                <div className={`absolute inset-0 bg-gradient-to-br from-${project.color}-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
               </div>
 
               <div className="p-8">
@@ -82,48 +71,25 @@ export default function Projects() {
                   {project.desc}
                 </p>
 
-                {/* Tech tags */}
                 <div className="flex flex-wrap gap-2 mb-8">
                   {project.tech.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-4 py-1 text-xs uppercase tracking-widest font-medium border border-white/30 text-white/70 rounded-3xl hover:border-purple-400 hover:text-purple-300 transition-all"
-                    >
+                    <span key={tag} className="px-4 py-1 text-xs uppercase tracking-widest font-medium border border-white/30 text-white/70 rounded-3xl hover:border-purple-400 hover:text-purple-300 transition-all">
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                {/* Action buttons */}
                 <div className="flex items-center justify-between">
-                  <Link
-                    href={project.link}
-                    className="inline-flex items-center gap-2 text-cyan-300 hover:text-white transition-colors text-sm font-medium"
-                  >
-                    Xem dự án
-                    <ExternalLink className="w-4 h-4" />
+                  <Link href={project.link} className="inline-flex items-center gap-2 text-cyan-300 hover:text-white transition-colors text-sm font-medium">
+                    Xem dự án <ExternalLink className="w-4 h-4" />
                   </Link>
-                  <Link
-                    href={project.github}
-                    className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors"
-                  >
+                  <Link href={project.github} className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors">
                     <Github className="w-5 h-5" />
                   </Link>
                 </div>
               </div>
             </div>
           ))}
-        </div>
-
-        {/* View more button */}
-        <div className="text-center mt-16">
-          <Link
-            href="#"
-            className="inline-flex items-center gap-3 px-10 py-5 text-lg font-medium border border-white/30 hover:border-cyan-400 hover:text-cyan-300 rounded-3xl transition-all group"
-          >
-            Khám phá tất cả dự án
-            <span className="text-2xl group-active:rotate-45 transition-transform">→</span>
-          </Link>
         </div>
       </div>
     </section>
