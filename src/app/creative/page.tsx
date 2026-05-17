@@ -172,7 +172,7 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                      onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
                      onMouseLeave={() => !isPaused && onLeave()}>
                   
-                  <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-30 blur-[20px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
+                  <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-100 blur-[30px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
                   {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
                   
                   <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/20"
@@ -243,12 +243,12 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
         <div className="flex justify-between items-start w-full pointer-events-auto">
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 p-6 clip-path-tech-large max-w-md shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-left">
             <div className="inline-flex items-center gap-3 mb-2 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 clip-path-angled">
-              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-[10px] font-mono tracking-[0.2em] uppercase font-bold"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
+              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-sm md:text-base font-mono tracking-[0.2em] uppercase font-bold"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-black text-white mb-2 uppercase tracking-tighter leading-none font-space" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
+            <h2 className="text-5xl md:text-7xl font-black text-white mb-4 uppercase tracking-tighter leading-none font-space drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
               <DecryptText text={activePlanet.name} delay={400} />
             </h2>
-            <div className="flex gap-4 text-white/50 text-[10px] font-mono tracking-widest">
+            <div className="flex gap-4 text-white/70 text-sm md:text-base font-mono tracking-widest">
               <span>{activePlanet.code}</span>
               <span className="text-cyan-400">SIG: <DecryptText text={activePlanet.freq} delay={600} /></span>
             </div>
@@ -265,24 +265,24 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
           
           <div className="bg-black/40 backdrop-blur-xl border-l-[3px] p-6 max-w-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-bottom relative" style={{ borderColor: activePlanet.color }}>
             <div className="absolute -left-[3px] top-0 w-1.5 h-1/3 bg-white animate-scan-vertical-fast shadow-[0_0_10px_#fff]" />
-            <p className="text-white/90 text-sm md:text-base leading-relaxed font-light"><DecryptText text={activePlanet.desc} delay={700} /></p>
+            <p className="text-white text-lg md:text-2xl leading-relaxed font-normal drop-shadow-md"><DecryptText text={activePlanet.desc} delay={700} /></p>
           </div>
 
           <div className="bg-[#05050A]/80 backdrop-blur-xl border border-white/20 p-6 clip-path-angled min-w-[300px] shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-right">
-            <div className="text-[10px] text-white/50 font-mono uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><BarChart className="w-4 h-4 text-cyan-400" /> System Diagnostics</div>
+            <div className="text-sm text-white/70 font-mono uppercase tracking-[0.2em] mb-6 flex items-center gap-2"><BarChart className="w-4 h-4 text-cyan-400" /> System Diagnostics</div>
             <div className="space-y-4 mb-6">
               {[ { label: "Core Power", val: activePlanet.stats.power, color: "bg-[#ff5500]" }, { label: "Neural Sync", val: activePlanet.stats.sync, color: "bg-[#00f2fe]" }, { label: "Stability", val: activePlanet.stats.stability, color: "bg-[#00ff87]" } ].map((stat, i) => (
                 <div key={i} className="flex items-center gap-4 group">
-                  <div className="w-24 text-[10px] font-mono text-white/50 uppercase tracking-widest">{stat.label}</div>
+                  <div className="w-32 text-xs md:text-sm font-mono text-white/70 uppercase tracking-widest">{stat.label}</div>
                   <div className="flex-1 h-1.5 bg-white/10 relative overflow-hidden">
                     <div className={`absolute top-0 left-0 h-full ${stat.color} shadow-[0_0_10px_currentColor] transition-all duration-1000`} style={{ '--target-width': `${stat.val}%`, animation: `fillBar 1s ${1 + i * 0.2}s forwards` } as React.CSSProperties} />
                   </div>
-                  <div className="w-8 text-right text-[10px] font-mono text-white">{stat.val}%</div>
+                  <div className="w-12 text-right text-sm font-mono text-white font-bold">{stat.val}%</div>
                 </div>
               ))}
             </div>
             
-            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-lg clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
               <Zap className="w-5 h-5" fill="currentColor" /> Kích hoạt Phân Khu
             </button>
           </div>
@@ -330,7 +330,7 @@ export default function CosmicOdysseyPage() {
   const handlePlanetHover = useCallback((id: string) => setHoveredPlanet(id), []);
   const handlePlanetLeave = useCallback(() => setHoveredPlanet(null), []);
 
-  const isPaused = activePlanet !== null;
+  const isPaused = activePlanet !== null || hoveredPlanet !== null;
 
   return (
     <div role="main" 
