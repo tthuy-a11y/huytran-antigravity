@@ -1,4 +1,4 @@
-sssssss'use client';
+'use client';
 
 import { Mail, Code2, Link, Sparkles, Send } from 'lucide-react';
 import { useState } from 'react';
