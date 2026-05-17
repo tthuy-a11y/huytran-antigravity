@@ -132,7 +132,8 @@ CanvasStarfield.displayName = 'CanvasStarfield';
 // 3.3 Node Hành Tinh (Tách nhỏ Component)
 const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHover, onLeave, onClick }: PlanetNodeProps) => {
   const isHovered = hoveredPlanet === p.id;
-  const isDimmed = (hoveredPlanet && !isHovered) || isPaused;
+  const isOtherHovered = hoveredPlanet !== null && !isHovered;
+  const isDimmed = isOtherHovered || isPaused;
   const Icon = p.icon;
 
   return (
@@ -166,11 +167,11 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
                 {/* QUẢ CẦU HÀNH TINH VÀ CHỮ (Leaf container, can flatten safely here) */}
-                <div className={`absolute flex items-center justify-center cursor-crosshair group transition-all duration-1000 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : 'opacity-100 scale-100'}`}
+                <div className={`absolute flex items-center justify-center cursor-crosshair group transition-all duration-700 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : isHovered ? 'opacity-100 scale-150 z-[200]' : 'opacity-100 scale-100'}`}
                      style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
                      onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
-                     onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
-                     onMouseLeave={() => !isPaused && onLeave()}>
+                     onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
+                     onMouseLeave={() => onLeave()}>
                   
                   <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-100 blur-[30px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
                   {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
@@ -330,7 +331,8 @@ export default function CosmicOdysseyPage() {
   const handlePlanetHover = useCallback((id: string) => setHoveredPlanet(id), []);
   const handlePlanetLeave = useCallback(() => setHoveredPlanet(null), []);
 
-  const isPaused = activePlanet !== null || hoveredPlanet !== null;
+  const isPaused = activePlanet !== null;
+  const isSystemFrozen = activePlanet !== null || hoveredPlanet !== null;
 
   return (
     <div role="main" 
@@ -382,7 +384,7 @@ export default function CosmicOdysseyPage() {
       {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
         <div className={`camera-rig transform-style-3d ease-warp w-full h-full flex items-center justify-center will-change-transform transition-all duration-[1500ms]
-             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.35] md:scale-[0.45] translate-x-[15%] translate-y-[15%] opacity-20 blur-md pointer-events-none system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
+             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.35] md:scale-[0.45] translate-x-[15%] translate-y-[15%] opacity-20 blur-md pointer-events-none system-paused' : hoveredPlanet ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
              style={{ transform: isPaused || isWarping ? '' : `rotateX(calc(75deg + var(--mouse-y))) rotateY(calc(0deg + var(--mouse-x)))` }}>
           
           {/* LÕI HỐ ĐEN */}
