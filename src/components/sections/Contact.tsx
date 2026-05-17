@@ -1,6 +1,6 @@
-'use client';
+sssssss'use client';
 
-import { Mail, Github, Link, Sparkles, Send } from 'lucide-react';
+import { Mail, Code2, Link, Sparkles, Send } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Contact() {
@@ -44,7 +44,7 @@ export default function Contact() {
 
               <a href="#" className="flex items-center gap-6 group">
                 <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center group-hover:bg-purple-400/20 transition-colors">
-                  <Github className="w-7 h-7 text-purple-300" />
+                  <Code2 className="w-7 h-7 text-purple-300" />
                 </div>
                 <div>
                   <div className="text-white/70">GitHub</div>
@@ -116,4 +116,4 @@ export default function Contact() {
       </div>
     </section>
   );
-}
+}sss
