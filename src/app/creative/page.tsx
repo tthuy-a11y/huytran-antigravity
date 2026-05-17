@@ -35,13 +35,13 @@ interface HolographicModalProps {
 }
 
 const planets: Planet[] = [
-  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 40, orbit: 240, speed: 4, startAngle: 45, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
-  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 55, orbit: 380, speed: 6, startAngle: 120, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
-  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 70, orbit: 520, speed: 8, startAngle: 210, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
-  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 85, orbit: 660, speed: 10, startAngle: 15, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
-  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 100, orbit: 800, speed: 12, startAngle: 280, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
-  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 120, orbit: 960, speed: 14, startAngle: 160, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
-  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 140, orbit: 1120, speed: 16, startAngle: 330, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
+  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 40, orbit: 240, speed: 10, startAngle: 45, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "1.44 THz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
+  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 55, orbit: 380, speed: 15, startAngle: 120, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "889 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
+  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 70, orbit: 520, speed: 20, startAngle: 210, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "214 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
+  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 85, orbit: 660, speed: 25, startAngle: 15, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "3.10 THz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
+  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 100, orbit: 800, speed: 30, startAngle: 280, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "432 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
+  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 120, orbit: 960, speed: 35, startAngle: 160, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "5.00 THz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
+  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 140, orbit: 1120, speed: 40, startAngle: 330, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "9.99 THz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
 ];
 
 const LOCAL_NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`;
@@ -185,9 +185,9 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                   {/* FLOATING LABEL - CHỮ SIÊU TO (luôn hiện) */}
                   <div className={`absolute -top-48 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center transition-all duration-500 ${isDimmed ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                     <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color, boxShadow: `0 0 40px ${p.color}50` }}>
-                      <div className="text-5xl md:text-6xl font-black text-white tracking-widest leading-none drop-shadow-lg">{p.name}</div>
+                      <div className="text-5xl md:text-6xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 2px 0 ${p.darkColor}, 0 4px 0 rgba(0,0,0,0.5), 0 6px 15px rgba(0,0,0,0.8), 0 0 30px ${p.color}60` }}>{p.name}</div>
                       <div className="text-xl md:text-2xl font-mono text-white/90 mt-3 flex items-center justify-center gap-3">
-                        <span>{p.code}</span><span className="w-px h-6 bg-white/40" /><span style={{ color: p.color }} className="font-bold drop-shadow-md">Nhóm: {p.type}</span>
+                        <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.code}</span><span className="w-px h-6 bg-white/40" /><span style={{ color: p.color, textShadow: `0 0 15px ${p.color}` }} className="font-bold">Nhóm: {p.type}</span>
                       </div>
                     </div>
                     <div className="mt-4 text-lg md:text-xl font-mono bg-black/80 px-6 py-2 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
@@ -300,6 +300,7 @@ export default function CosmicOdysseyPage() {
   const [activePlanet, setActivePlanet] = useState<Planet | null>(null);
   const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
   const [isWarping, setIsWarping] = useState(true);
+  const [showNav, setShowNav] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Giảm Asteroid Array Size để giữ mượt FPS
@@ -310,7 +311,8 @@ export default function CosmicOdysseyPage() {
 
   useEffect(() => {
     const warpTimer = setTimeout(() => setIsWarping(false), 2600);
-    return () => clearTimeout(warpTimer);
+    const navTimer = setTimeout(() => setShowNav(true), 17000);
+    return () => { clearTimeout(warpTimer); clearTimeout(navTimer); };
   }, []);
 
   // Throttle Chuột siêu mượt bằng RequestAnimationFrame
@@ -425,16 +427,14 @@ export default function CosmicOdysseyPage() {
       {/* 5. HOLOGRAM SPLIT-SCREEN MODAL */}
       {activePlanet && <CentralHUD activePlanet={activePlanet} setActivePlanet={setActivePlanet} />}
 
-      {/* 6. WARP GATE (NAV) */}
-      <div className={`fixed bottom-8 right-8 z-40 transition-all duration-1000 delay-500 ${isWarping || activePlanet ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <Link href="/system" className="group flex items-center gap-5 bg-[#05050a]/90 backdrop-blur-3xl border border-white/20 p-2.5 pr-8 clip-path-hex-large shadow-[0_0_50px_rgba(0,0,0,1)] hover:border-[#00f2fe] hover:bg-cyan-950/40 transition-all duration-500">
-          <div className="w-14 h-14 bg-white text-black flex items-center justify-center relative z-10 clip-path-angled group-hover:bg-[#00f2fe] transition-colors shadow-[0_0_20px_rgba(0,242,254,0)] group-hover:shadow-[0_0_30px_rgba(0,242,254,0.7)]">
-            <ChevronRight className="w-7 h-7 group-hover:translate-x-1.5 transition-transform" />
+      {/* 6. WARP GATE (NAV) - XUẤT HIỆN SAU 17 GIÂY */}
+      <div className={`fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] transition-all duration-[2000ms] ${showNav && !isWarping && !activePlanet ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-24 opacity-0 scale-75 pointer-events-none'}`}>
+        <Link href="/system" className="group flex items-center gap-6 bg-[#05050a]/95 backdrop-blur-3xl border-2 border-[#00f2fe]/60 px-10 py-5 shadow-[0_0_80px_rgba(0,242,254,0.3),inset_0_0_30px_rgba(0,242,254,0.1)] hover:border-[#00f2fe] hover:bg-cyan-950/40 transition-all duration-500 hover:shadow-[0_0_120px_rgba(0,242,254,0.5)] rounded-2xl animate-[nav-glow_2s_ease-in-out_infinite]">
+          <div className="flex flex-col items-center relative z-10">
+            <span className="text-sm font-mono text-[#00f2fe] uppercase tracking-[0.3em] mb-2 animate-pulse font-bold">⚡ Khởi Động Hyper-Jump ⚡</span>
+            <span className="text-2xl md:text-3xl font-black text-white uppercase tracking-[0.2em] font-space" style={{ textShadow: '0 0 20px #00f2fe, 0 2px 0 rgba(0,0,0,0.5)' }}>Chuyển Qua Trạm Tốc Độ</span>
           </div>
-          <div className="flex flex-col relative z-10 pt-1">
-            <span className="text-[10px] font-mono text-[#00f2fe] uppercase tracking-[0.25em] mb-0.5 animate-pulse">Khởi động Hyper-Jump</span>
-            <span className="text-sm font-black text-white uppercase tracking-widest font-space">Trạm Tốc Độ Cao</span>
-          </div>
+          <ChevronRight className="w-10 h-10 text-[#00f2fe] group-hover:translate-x-3 transition-transform duration-500 animate-[pulse_1.5s_ease-in-out_infinite]" />
         </Link>
       </div>
 
@@ -463,6 +463,7 @@ export default function CosmicOdysseyPage() {
         @keyframes tether-flow { 0% { stroke-dashoffset: 25; } 100% { stroke-dashoffset: 0; } }
         @keyframes fillBar { to { width: var(--target-width); } }
         @keyframes core-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); box-shadow: 0 0 200px rgba(255,80,0,1), inset 0 0 80px rgba(255,100,0,0.9); } }
+        @keyframes nav-glow { 0%, 100% { box-shadow: 0 0 40px rgba(0,242,254,0.2), inset 0 0 20px rgba(0,242,254,0.05); border-color: rgba(0,242,254,0.4); } 50% { box-shadow: 0 0 100px rgba(0,242,254,0.5), inset 0 0 40px rgba(0,242,254,0.15); border-color: rgba(0,242,254,0.9); } }
         @keyframes hud-glitch { 0% { opacity: 0; transform: scale(1.05); filter: blur(10px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
         @keyframes scan-vertical-fast { 0% { top: 0; } 100% { top: 100%; } }
         @keyframes float { 0%, 100% { transform: translateY(0px) rotateX(10deg); } 50% { transform: translateY(-15px) rotateX(-5deg); } }
