@@ -71,7 +71,6 @@ export default function Projects() {
                 <div className="text-8xl font-black text-white/10 group-hover:text-white/20 transition-colors tracking-tighter">
                   {project.title.split(' ')[0]}
                 </div>
-                {/* Neon accent */}
                 <div className={`absolute inset-0 bg-gradient-to-br from-${project.color}-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
               </div>
 
