@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Github, Sparkles } from 'lucide-react';
+import { ExternalLink, Code2, Sparkles } from 'lucide-react';
 
 const projectsData = [
   {
@@ -87,7 +87,7 @@ export default function Projects() {
                     Xem dự án <ExternalLink className="w-4 h-4" />
                   </Link>
                   <Link href={project.github} className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors">
-                    <Github className="w-5 h-5" />
+                    <Code2 className="w-5 h-5" />
                   </Link>
                 </div>
               </div>
