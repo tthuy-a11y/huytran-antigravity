@@ -136,11 +136,10 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
   const Icon = p.icon;
 
   return (
-    <div className={`absolute transform-style-3d transition-all duration-1000 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : 'opacity-100 scale-100'} z-[50]`}>
-
-      {/* 1. VÒNG QUỶ ĐẠO RÕ RỆT - GLOWING */}
+    <div className="absolute transform-style-3d">
+      {/* 1. VÒNG QUỶ ĐẠO RÕ RỆT - GLOWING (Flat Leaf) */}
       <div 
-        className="absolute rounded-full border-2 pointer-events-none transition-all duration-500 transform-style-3d"
+        className={`absolute rounded-full border-2 pointer-events-none transition-all duration-1000 ${isDimmed ? 'opacity-10 blur-[4px]' : 'opacity-100'}`}
         style={{ 
           width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit,
           borderColor: isHovered ? p.color : 'rgba(255,255,255,0.08)',
@@ -148,32 +147,33 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
         }}
       />
 
-      {/* 2. BASE ROTATOR (Vị trí xuất phát ngẫu nhiên trên mặt phẳng) */}
+      {/* 2. BASE ROTATOR (Pure 3D) */}
       <div className="absolute transform-style-3d" style={{ transform: `rotateZ(${p.startAngle}deg)` }}>
           
-        {/* VỆT SAO CHỔI */}
-        <div className="absolute pointer-events-none orbit-spin transform-style-3d" 
+        {/* VỆT SAO CHỔI (Flat Leaf) */}
+        <div className={`absolute pointer-events-none orbit-spin transition-all duration-1000 ${isDimmed ? 'opacity-0' : 'opacity-100'}`} 
              style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, animationDuration: `${p.speed}s` }}>
           <div className="absolute top-1/2 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-[1px] opacity-70"
                style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color})` }} />
         </div>
 
-        {/* 3. HÀNH TINH */}
+        {/* 3. HÀNH TINH (Pure 3D Chain) */}
         <div className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${p.speed}s` }}>
           <div className="absolute transform-style-3d" style={{ transform: `translateX(${p.orbit}px)` }}>
             <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed}s` }}>
-              {/* COUNTER-ROTATE ĐỂ MẶT LUÔN HƯỚNG VỀ CAMERA */}
-              <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto z-10" 
+              {/* COUNTER-ROTATE ĐỂ MẶT LUÔN HƯỚNG VỀ CAMERA (Pure 3D) */}
+              <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto" 
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
-                <div className="absolute flex items-center justify-center cursor-crosshair group transition-transform duration-500 hover:scale-125 z-[60] hover:z-[100]"
+                {/* QUẢ CẦU HÀNH TINH VÀ CHỮ (Leaf container, can flatten safely here) */}
+                <div className={`absolute flex items-center justify-center cursor-crosshair group transition-all duration-1000 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : 'opacity-100 scale-100'}`}
                      style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
                      onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
                      onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
                      onMouseLeave={() => !isPaused && onLeave()}>
                   
                   <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-30 blur-[20px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
-                  {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] transform-style-3d pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
+                  {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
                   
                   <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/20"
                        style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
@@ -183,7 +183,7 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                   </div>
 
                   {/* FLOATING LABEL - CHỮ SIÊU TO */}
-                  <div className={`absolute -top-32 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-[200] transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                  <div className={`absolute -top-32 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
                     <div className="bg-black/90 backdrop-blur-2xl border border-white/40 px-6 py-3 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color }}>
                       <div className="text-3xl md:text-4xl font-black text-white tracking-widest leading-none drop-shadow-lg">{p.name}</div>
                       <div className="text-base md:text-lg font-mono text-white/90 mt-2 flex items-center justify-center gap-3">
@@ -384,7 +384,7 @@ export default function CosmicOdysseyPage() {
              style={{ transform: isPaused || isWarping ? '' : `rotateX(calc(75deg + var(--mouse-y))) rotateY(calc(0deg + var(--mouse-x)))` }}>
           
           {/* LÕI HỐ ĐEN */}
-          <div className={`absolute transform-style-3d pointer-events-auto z-50 transition-all duration-700 ${hoveredPlanet ? 'opacity-60 scale-95 grayscale-[30%]' : 'opacity-100 scale-100'}`}>
+          <div className={`absolute transform-style-3d pointer-events-auto  transition-all duration-700 ${hoveredPlanet ? 'opacity-60 scale-95 grayscale-[30%]' : 'opacity-100 scale-100'}`}>
             <div className="transform-style-3d transition-transform duration-100" style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
               <div className="relative flex items-center justify-center w-72 h-72 group cursor-crosshair">
                 <div className="absolute w-[1000px] h-[1000px] rounded-full border-t-[12px] border-orange-400/80 animate-[spin_8s_linear_infinite] transform-style-3d blur-[4px] shadow-[0_0_100px_#ff5500]" style={{ transform: 'rotateX(75deg) rotateY(-10deg)' }} />
