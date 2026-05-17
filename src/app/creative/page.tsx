@@ -15,7 +15,7 @@ type Planet = {
   id: string; name: string; code: string; desc: string;
   color: string; darkColor: string; size: number; orbit: number; speed: number;
   icon: React.ElementType; moons: number; ring: boolean; type: string; freq: string;
-  link: string; stats: PlanetStats; surface: string;
+  link: string; stats: PlanetStats; surface: string; tiltX: number; tiltY: number; tiltZ: number;
 };
 
 interface PlanetNodeProps {
@@ -35,13 +35,13 @@ interface HolographicModalProps {
 }
 
 const planets: Planet[] = [
-  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 68, orbit: 240, speed: 20, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
-  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 84, orbit: 380, speed: 30, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
-  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 52, orbit: 520, speed: 40, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
-  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 64, orbit: 660, speed: 50, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
-  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 56, orbit: 800, speed: 60, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
-  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 92, orbit: 960, speed: 75, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
-  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 48, orbit: 1120, speed: 90, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
+  { id: 'ai', name: "Trí Tuệ Nhân Tạo", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 68, orbit: 240, speed: 20, icon: Cpu, moons: 2, ring: false, type: "Mạng Nơ-ron", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, tiltX: 15, tiltY: 30, tiltZ: 0, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
+  { id: 'web', name: "Sáng Tạo Giao Diện", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 84, orbit: 380, speed: 30, icon: Globe, moons: 1, ring: true, type: "Giao Diện DOM", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, tiltX: -20, tiltY: 45, tiltZ: 10, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
+  { id: 'prompt', name: "Kỹ Sư Ngôn Ngữ", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 52, orbit: 520, speed: 40, icon: Wand2, moons: 0, ring: false, type: "Ngôn Ngữ Học", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, tiltX: 40, tiltY: -15, tiltZ: -20, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
+  { id: 'creative', name: "Hiệu Ứng Vật Lý", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 64, orbit: 660, speed: 50, icon: TerminalSquare, moons: 0, ring: true, type: "Động Lực Học", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, tiltX: -35, tiltY: -40, tiltZ: 30, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
+  { id: 'uiux', name: "Trải Nghiệm Người Dùng", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 56, orbit: 800, speed: 60, icon: Layers, moons: 3, ring: false, type: "Tâm Lý Hành Vi", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, tiltX: 60, tiltY: 10, tiltZ: -45, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
+  { id: 'food', name: "Hệ Sinh Thái Tổng Thể", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 92, orbit: 960, speed: 75, icon: UtensilsCrossed, moons: 2, ring: false, type: "Hệ Thống Lõi", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, tiltX: -10, tiltY: 70, tiltZ: 15, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
+  { id: 'backend', name: "Máy Chủ Dữ Liệu", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 48, orbit: 1120, speed: 90, icon: DatabaseZap, moons: 0, ring: false, type: "Lõi Dữ Liệu", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, tiltX: 25, tiltY: -60, tiltZ: -30, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
 ];
 
 const LOCAL_NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`;
@@ -133,63 +133,44 @@ CanvasStarfield.displayName = 'CanvasStarfield';
 const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHover, onLeave, onClick }: PlanetNodeProps) => {
   const delay = `-${(index / total) * p.speed * 0.8}s`;
   const isHovered = hoveredPlanet === p.id;
-  const isDimmed = hoveredPlanet && !isHovered;
-  const Icon = p.icon; // Fix React Warning cho Icon Component
+  const isDimmed = (hoveredPlanet && !isHovered) || isPaused;
+  const Icon = p.icon;
 
   return (
-    <div className={`absolute transform-style-3d transition-all duration-700 ${isDimmed ? 'opacity-30' : 'opacity-100'} z-[50]`}>
+    <div className={`absolute transform-style-3d transition-all duration-1000 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : 'opacity-100 scale-100'} z-[50]`}
+         style={{ transform: `rotateX(${p.tiltX}deg) rotateY(${p.tiltY}deg) rotateZ(${p.tiltZ}deg)` }}>
 
       {/* 1. VÒNG QUỶ ĐẠO RÕ RỆT - GLOWING */}
       <div 
         className="absolute rounded-full border-2 pointer-events-none transition-all duration-500 transform-style-3d"
         style={{ 
-          width: p.orbit * 2, 
-          height: p.orbit * 2, 
-          left: -p.orbit, 
-          top: -p.orbit,
-          borderColor: isHovered ? p.color : 'rgba(255,255,255,0.12)',
-          boxShadow: isHovered 
-            ? `0 0 50px ${p.color}70, inset 0 0 30px ${p.color}40` 
-            : '0 0 25px rgba(255,255,255,0.08)',
+          width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit,
+          borderColor: isHovered ? p.color : 'rgba(255,255,255,0.05)',
+          boxShadow: isHovered ? `0 0 50px ${p.color}70, inset 0 0 30px ${p.color}40` : '0 0 25px rgba(255,255,255,0.02)',
         }}
       />
 
-      {/* 2. VỆT SAO CHỔI + TỐC ĐỘ KHÁC NHAU */}
-      <div 
-        className="absolute pointer-events-none orbit-spin transform-style-3d" 
-        style={{ 
-          width: p.orbit * 2, 
-          height: p.orbit * 2, 
-          left: -p.orbit, 
-          top: -p.orbit, 
-          animationDuration: `${p.speed}s`, 
-          animationDelay: delay 
-        }}
-      >
-        <div 
-          className="absolute top-0 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-sm"
-          style={{ 
-            width: p.orbit, 
-            background: `linear-gradient(90deg, transparent, ${p.color}90, transparent)` 
-          }} 
-        />
+      {/* 2. VỆT SAO CHỔI */}
+      <div className="absolute pointer-events-none orbit-spin transform-style-3d" 
+           style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, animationDuration: `${p.speed}s`, animationDelay: delay }}>
+        <div className="absolute top-0 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-sm"
+             style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color}90, transparent)` }} />
       </div>
 
-      {/* 3. HÀNH TINH + KÍCH THƯỚC KHÁC NHAU */}
+      {/* 3. HÀNH TINH */}
       <div className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${p.speed}s`, animationDelay: delay }}>
         <div className="absolute transform-style-3d" style={{ transform: `translateX(${p.orbit}px)` }}>
           <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed}s`, animationDelay: delay }}>
+            {/* COUNTER-ROTATE TO FACE CAMERA */}
             <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto z-10" 
-                 style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
+                 style={{ transform: `rotateZ(${-p.tiltZ}deg) rotateY(calc(${-p.tiltY}deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y) - ${p.tiltX}deg))` }}>
 
-              <div 
-                className="absolute flex items-center justify-center cursor-crosshair group transition-transform duration-500 hover:scale-110 z-[60] hover:z-[100]"
-                style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
-                onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
-                onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
-                onMouseLeave={() => !isPaused && onLeave()}
-              >
-                {/* Khối Cầu + Local Noise + Procedural Gradient */}
+              <div className="absolute flex items-center justify-center cursor-crosshair group transition-transform duration-500 hover:scale-125 z-[60] hover:z-[100]"
+                   style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
+                   onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
+                   onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
+                   onMouseLeave={() => !isPaused && onLeave()}>
+                
                 <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-30 blur-[20px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
                 {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] transform-style-3d pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
                 
@@ -197,30 +178,19 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                      style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
                   <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: p.surface }} />
                   <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-30 bg-[linear-gradient(rgba(255,255,255,0.3)_1px,transparent_1px)] bg-[size:100%_4px] mix-blend-overlay" />
                   <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
                 </div>
 
-                {/* FLOATING LABEL - CHỮ TO, KHÔNG PHỤ THUỘC KÍCH THƯỚC HÀNH TINH */}
-                <div className="absolute -top-16 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-[200]">
-                  <div 
-                    className="bg-black/80 backdrop-blur-xl border border-white/30 px-5 py-2 rounded-2xl text-center shadow-2xl whitespace-nowrap"
-                    style={{ borderColor: p.color }}
-                  >
-                    <div className="text-lg font-black text-white tracking-widest leading-none">
-                      {p.name}
-                    </div>
+                {/* FLOATING LABEL */}
+                <div className={`absolute -top-16 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center z-[200] transition-all duration-500 ${isPaused ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
+                  <div className="bg-black/80 backdrop-blur-xl border border-white/30 px-5 py-2 rounded-2xl text-center shadow-2xl whitespace-nowrap" style={{ borderColor: p.color }}>
+                    <div className="text-lg font-black text-white tracking-widest leading-none">{p.name}</div>
                     <div className="text-xs font-mono text-white/70 mt-1 flex items-center justify-center gap-2">
-                      <span>{p.code}</span>
-                      <span className="w-px h-3 bg-white/30" />
-                      <span style={{ color: p.color }} className="font-bold">Nhóm: {p.type}</span>
+                      <span>{p.code}</span><span className="w-px h-3 bg-white/30" /><span style={{ color: p.color }} className="font-bold">Nhóm: {p.type}</span>
                     </div>
                   </div>
-
-                  {/* Tốc độ hiển thị rõ */}
                   <div className="mt-2 text-[10px] font-mono bg-black/70 px-3 py-px rounded-full text-cyan-300 flex items-center gap-1">
-                    <span className="animate-pulse">⚡</span>
-                    <span>Tốc độ: {p.speed} THz</span>
+                    <span className="animate-pulse">⚡</span><span>Tốc độ: {p.speed} THz</span>
                   </div>
                 </div>
 
@@ -236,100 +206,91 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
 PlanetNode.displayName = 'PlanetNode';
 
 // 3.4 Modal Split-Screen Hologram 
-const HolographicModal = React.memo(({ activePlanet, setActivePlanet }: HolographicModalProps) => {
+const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicModalProps) => {
   const router = useRouter();
   const Icon = activePlanet.icon;
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActivePlanet(null);
-    };
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setActivePlanet(null); };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
   }, [setActivePlanet]);
   
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 md:p-8 bg-black/80 backdrop-blur-[20px] pointer-events-auto transition-all duration-500" onClick={() => setActivePlanet(null)}>
-      <div className="relative w-full h-[95vh] md:h-[80vh] max-w-7xl bg-[#020205]/95 md:border border-white/10 flex flex-col md:flex-row shadow-[0_0_150px_rgba(0,0,0,1)] animate-hud-glitch z-10 clip-path-tech-large overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="absolute top-0 left-0 w-full h-[150px] bg-gradient-to-b from-transparent via-cyan-500/10 to-transparent animate-[scan-vertical_4s_linear_infinite] pointer-events-none z-50" />
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md pointer-events-auto transition-all duration-700 animate-hud-glitch" onClick={() => setActivePlanet(null)}>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
 
-        <button onClick={() => setActivePlanet(null)} className="absolute top-6 right-6 p-3 z-50 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all flex items-center gap-2 group clip-path-angled cursor-pointer">
-          <span className="text-[10px] font-mono uppercase text-red-400 group-hover:text-white hidden sm:block">Close_Terminal</span>
-          <X className="w-5 h-5 text-red-400 group-hover:text-white" />
-        </button>
+      {/* CENTRAL GIANT PLANET */}
+      <div className="relative w-72 h-72 md:w-[400px] md:h-[400px] flex items-center justify-center transform-style-3d animate-[float_6s_ease-in-out_infinite] z-20 pointer-events-none">
+        <div className="absolute w-[140%] h-[140%] rounded-full border-[2px] border-dashed border-white/20 animate-[spin_30s_linear_infinite]" style={{ transform: 'rotateX(75deg)', borderColor: `${activePlanet.color}50` }} />
+        <div className="absolute w-[180%] h-[180%] rounded-full border-t-[3px] border-b-[1px] border-white/30 animate-[spin_20s_linear_infinite_reverse]" style={{ transform: 'rotateX(60deg) rotateY(30deg)', borderColor: `${activePlanet.color}80` }} />
+        
+        <div className="w-full h-full rounded-full relative overflow-hidden shadow-[0_0_150px_rgba(0,0,0,1)] border-2 border-white/30 transition-transform duration-1000 scale-in-center"
+             style={{ background: `radial-gradient(circle at 30% 30%, ${activePlanet.color} 0%, ${activePlanet.darkColor} 70%)`, boxShadow: `0 0 150px ${activePlanet.color}80, inset -40px -40px 80px rgba(0,0,0,0.9)` }}>
+          <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: activePlanet.surface }} />
+          <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ backgroundImage: LOCAL_NOISE }} />
+          <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:40px_40px] mix-blend-overlay [mask-image:radial-gradient(circle,black_40%,transparent_100%)] animate-[spin_40s_linear_infinite]" />
+          <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 text-white drop-shadow-[0_0_30px_rgba(255,255,255,1)] z-10" strokeWidth={1.5} />
+        </div>
+      </div>
 
-        {/* NỬA TRÁI: HOLOGRAM */}
-        <div className="w-full md:w-[40%] relative flex flex-col items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/10 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_100%)] pt-16 md:pt-8">
-          <div className="absolute top-8 left-8 hidden md:block z-20">
-            <div className="text-[10px] text-cyan-400 font-mono tracking-[0.3em] uppercase mb-1 drop-shadow-[0_0_5px_cyan]"><DecryptText text="OVERRIDE_ACTIVE" delay={100} /></div>
-            <div className="flex gap-4 text-white/40 text-[9px] font-mono tracking-widest mt-2">
-              <span className="flex items-center gap-1 text-[#00ff87]"><Network className="w-3 h-3 animate-pulse"/> LIVE FEED</span>
-              <span>SIG: <DecryptText text={activePlanet.freq} delay={300} /></span>
+      {/* FLOATING HUD PANELS */}
+      <div className="absolute inset-0 max-w-7xl mx-auto w-full h-full pointer-events-none flex flex-col justify-between p-8 md:p-12 z-30">
+        
+        {/* TOP: Header */}
+        <div className="flex justify-between items-start w-full pointer-events-auto">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/20 p-6 clip-path-tech-large max-w-md shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-left">
+            <div className="inline-flex items-center gap-3 mb-2 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 clip-path-angled">
+              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-[10px] font-mono tracking-[0.2em] uppercase font-bold"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-white mb-2 uppercase tracking-tighter leading-none font-space" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
+              <DecryptText text={activePlanet.name} delay={400} />
+            </h2>
+            <div className="flex gap-4 text-white/50 text-[10px] font-mono tracking-widest">
+              <span>{activePlanet.code}</span>
+              <span className="text-cyan-400">SIG: <DecryptText text={activePlanet.freq} delay={600} /></span>
             </div>
           </div>
 
-          <div className="relative w-48 h-48 md:w-72 md:h-72 flex items-center justify-center transform-style-3d animate-[float_6s_ease-in-out_infinite]">
-            <div className="absolute w-[130%] h-[130%] rounded-full border-[2px] border-dashed border-white/20 animate-[spin_20s_linear_infinite]" style={{ transform: 'rotateX(75deg)', borderColor: `${activePlanet.color}50` }} />
-            <div className="absolute w-[150%] h-[150%] rounded-full border-t-[3px] border-b-[1px] border-white/30 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: 'rotateX(60deg) rotateY(30deg)', borderColor: `${activePlanet.color}80` }} />
-            
-            <div className="w-full h-full rounded-full relative overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] border border-white/20"
-                 style={{ background: `radial-gradient(circle at 30% 30%, ${activePlanet.color} 0%, ${activePlanet.darkColor} 70%)`, boxShadow: `0 0 100px ${activePlanet.color}50, inset -30px -30px 60px rgba(0,0,0,0.9)` }}>
-              <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: activePlanet.surface }} />
-              <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ backgroundImage: LOCAL_NOISE }} />
-              <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:30px_30px] mix-blend-overlay [mask-image:radial-gradient(circle,black_40%,transparent_100%)] animate-[spin_40s_linear_infinite]" />
-              <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 text-white drop-shadow-[0_0_20px_rgba(255,255,255,1)] z-10" strokeWidth={1.5} />
-            </div>
-          </div>
+          <button onClick={() => setActivePlanet(null)} className="p-4 z-50 bg-red-500/10 hover:bg-red-500/30 border border-red-500/50 transition-all flex items-center gap-2 group clip-path-angled cursor-pointer shadow-[0_0_20px_rgba(255,0,0,0.2)]">
+            <span className="text-[10px] font-mono uppercase text-red-400 group-hover:text-white hidden sm:block font-bold tracking-widest">THOÁT</span>
+            <X className="w-6 h-6 text-red-400 group-hover:text-white" />
+          </button>
         </div>
 
-        {/* NỬA PHẢI: TERMINAL */}
-        <div className="w-full md:w-[60%] p-6 md:p-14 flex flex-col bg-[#010103] overflow-y-auto">
-          <div className="inline-flex items-center gap-3 mb-6 bg-cyan-950/40 border border-cyan-500/30 px-4 py-2 clip-path-angled self-start">
-            <Lock className="w-4 h-4 text-cyan-400" />
-            <span className="text-cyan-400 text-[10px] font-mono tracking-[0.2em] uppercase font-bold drop-shadow-[0_0_5px_cyan]"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
-          </div>
+        {/* BOTTOM: Stats & Action */}
+        <div className="flex flex-col md:flex-row justify-between items-end w-full gap-8 pointer-events-auto">
           
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 uppercase tracking-tighter leading-none font-space" style={{ textShadow: `0 0 40px ${activePlanet.color}80` }}>
-            <DecryptText text={activePlanet.name} delay={400} />
-          </h2>
-          
-          <div className="relative pl-6 border-l-[3px] mb-8 bg-white/[0.02] py-4 pr-4 rounded-r-lg" style={{ borderColor: activePlanet.color }}>
-            <p className="text-white/80 text-sm md:text-base leading-relaxed font-light"><DecryptText text={activePlanet.desc} delay={700} /></p>
+          <div className="bg-black/40 backdrop-blur-xl border-l-[3px] p-6 max-w-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-bottom relative" style={{ borderColor: activePlanet.color }}>
             <div className="absolute -left-[3px] top-0 w-1.5 h-1/3 bg-white animate-scan-vertical-fast shadow-[0_0_10px_#fff]" />
+            <p className="text-white/90 text-sm md:text-base leading-relaxed font-light"><DecryptText text={activePlanet.desc} delay={700} /></p>
           </div>
 
-          {/* Mini-Charts Data Visualization */}
-          <div className="mb-8 p-5 bg-[#05050A] border border-white/10 clip-path-angled">
+          <div className="bg-[#05050A]/80 backdrop-blur-xl border border-white/20 p-6 clip-path-angled min-w-[300px] shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-right">
             <div className="text-[10px] text-white/50 font-mono uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><BarChart className="w-4 h-4 text-cyan-400" /> System Diagnostics</div>
-            <div className="space-y-4">
-              {[
-                { label: "Core Power", val: activePlanet.stats.power, color: "bg-[#ff5500]" },
-                { label: "Neural Sync", val: activePlanet.stats.sync, color: "bg-[#00f2fe]" },
-                { label: "Stability", val: activePlanet.stats.stability, color: "bg-[#00ff87]" }
-              ].map((stat, i) => (
+            <div className="space-y-4 mb-6">
+              {[ { label: "Core Power", val: activePlanet.stats.power, color: "bg-[#ff5500]" }, { label: "Neural Sync", val: activePlanet.stats.sync, color: "bg-[#00f2fe]" }, { label: "Stability", val: activePlanet.stats.stability, color: "bg-[#00ff87]" } ].map((stat, i) => (
                 <div key={i} className="flex items-center gap-4 group">
                   <div className="w-24 text-[10px] font-mono text-white/50 uppercase tracking-widest">{stat.label}</div>
-                  <div className="flex-1 h-1.5 bg-white/5 relative overflow-hidden">
-                    <div className={`absolute top-0 left-0 h-full ${stat.color} shadow-[0_0_10px_currentColor] transition-all duration-1000`} 
-                         style={{ '--target-width': `${stat.val}%`, animation: `fillBar 1s ${1 + i * 0.2}s forwards` } as React.CSSProperties} />
+                  <div className="flex-1 h-1.5 bg-white/10 relative overflow-hidden">
+                    <div className={`absolute top-0 left-0 h-full ${stat.color} shadow-[0_0_10px_currentColor] transition-all duration-1000`} style={{ '--target-width': `${stat.val}%`, animation: `fillBar 1s ${1 + i * 0.2}s forwards` } as React.CSSProperties} />
                   </div>
                   <div className="w-8 text-right text-[10px] font-mono text-white">{stat.val}%</div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Real Navigation Link */}
-          <div className="mt-auto">
-            <button onClick={() => router.push(activePlanet.link)} className="w-full bg-white/5 hover:bg-white/10 border border-white/20 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-              <Zap className="w-4 h-4" fill="currentColor" /> Enter Sector
+            
+            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+              <Zap className="w-5 h-5" fill="currentColor" /> Kích hoạt Phân Khu
             </button>
           </div>
+
         </div>
       </div>
     </div>
   );
-});
+})
+
 HolographicModal.displayName = 'HolographicModal';
 
 // ================= 4. MAIN WRAPPER =================
@@ -460,7 +421,7 @@ export default function CosmicOdysseyPage() {
       </div>
 
       {/* 5. HOLOGRAM SPLIT-SCREEN MODAL */}
-      {activePlanet && <HolographicModal activePlanet={activePlanet} setActivePlanet={setActivePlanet} />}
+      {activePlanet && <CentralHUD activePlanet={activePlanet} setActivePlanet={setActivePlanet} />}
 
       {/* 6. WARP GATE (NAV) */}
       <div className={`fixed bottom-8 right-8 z-40 transition-all duration-1000 delay-500 ${isWarping || activePlanet ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
@@ -501,6 +462,16 @@ export default function CosmicOdysseyPage() {
         @keyframes hud-glitch { 0% { opacity: 0; transform: scale(1.05); filter: blur(10px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
         @keyframes scan-vertical-fast { 0% { top: 0; } 100% { top: 100%; } }
         @keyframes float { 0%, 100% { transform: translateY(0px) rotateX(10deg); } 50% { transform: translateY(-15px) rotateX(-5deg); } }
+
+        
+        @keyframes scale-in-center { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fade-in-left { 0% { transform: translateX(-50px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+        @keyframes fade-in-right { 0% { transform: translateX(50px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+        @keyframes fade-in-bottom { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        .scale-in-center { animation: scale-in-center 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) both; }
+        .fade-in-left { animation: fade-in-left 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.2s both; }
+        .fade-in-right { animation: fade-in-right 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.4s both; }
+        .fade-in-bottom { animation: fade-in-bottom 0.8s cubic-bezier(0.250, 0.460, 0.450, 0.940) 0.6s both; }
 
         /* Reduced Motion */
         @media (prefers-reduced-motion: reduce) {
