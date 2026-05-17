@@ -167,31 +167,34 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
                 {/* QUẢ CẦU HÀNH TINH VÀ CHỮ (Leaf container, can flatten safely here) */}
-                <div className={`absolute flex items-center justify-center cursor-crosshair group transition-all duration-700 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : isHovered ? 'opacity-100 scale-150 z-[200]' : 'opacity-100 scale-100'}`}
-                     style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
+                <div className={`absolute cursor-crosshair group pointer-events-auto transition-all duration-700 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : isHovered ? 'opacity-100 scale-125 z-[200]' : 'opacity-100 scale-100'}`}
                      onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
                      onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
                      onMouseLeave={() => onLeave()}>
                   
-                  <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-100 blur-[30px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
-                  {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
-                  
-                  <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/20"
-                       style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
-                    <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: p.surface }} />
-                    <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
-                    <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
+                  {/* SPHERE */}
+                  <div className="absolute flex items-center justify-center transition-all duration-500 group-hover:scale-110" style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}>
+                    <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-100 blur-[30px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
+                    {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
+                    
+                    <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/20"
+                         style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
+                      <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: p.surface }} />
+                      <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
+                      <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
+                    </div>
                   </div>
 
-                  {/* FLOATING LABEL - CHỮ SIÊU TO (luôn hiện) */}
-                  <div className={`absolute -top-48 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center transition-all duration-500 ${isDimmed ? 'opacity-0 scale-50' : 'opacity-100 scale-100'}`}>
-                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color, boxShadow: `0 0 40px ${p.color}50` }}>
-                      <div className="text-5xl md:text-6xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 2px 0 ${p.darkColor}, 0 4px 0 rgba(0,0,0,0.5), 0 6px 15px rgba(0,0,0,0.8), 0 0 30px ${p.color}60` }}>{p.name}</div>
-                      <div className="text-xl md:text-2xl font-mono text-white/90 mt-3 flex items-center justify-center gap-3">
-                        <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.code}</span><span className="w-px h-6 bg-white/40" /><span style={{ color: p.color, textShadow: `0 0 15px ${p.color}` }} className="font-bold">Nhóm: {p.type}</span>
+                  {/* FLOATING LABEL - GẮN LIỀN VỚI CONTAINER ĐỂ BẮT HOVER/CLICK */}
+                  <div className={`absolute flex flex-col items-center transition-all duration-500 ${isDimmed ? 'opacity-0 scale-50' : 'opacity-100 scale-100'} group-hover:scale-110`}
+                       style={{ top: p.size/2 + 20, left: 0, transform: 'translateX(-50%)' }}>
+                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-5 py-3 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color, boxShadow: `0 0 40px ${p.color}50` }}>
+                      <div className="text-xl md:text-2xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 2px 0 ${p.darkColor}, 0 4px 0 rgba(0,0,0,0.5), 0 6px 15px rgba(0,0,0,0.8), 0 0 30px ${p.color}60` }}>{p.name}</div>
+                      <div className="text-xs md:text-sm font-mono text-white/90 mt-2 flex items-center justify-center gap-2">
+                        <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.code}</span><span className="w-px h-4 bg-white/40" /><span style={{ color: p.color, textShadow: `0 0 15px ${p.color}` }} className="font-bold">Nhóm: {p.type}</span>
                       </div>
                     </div>
-                    <div className="mt-4 text-lg md:text-xl font-mono bg-black/80 px-6 py-2 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
+                    <div className="mt-3 text-xs md:text-sm font-mono bg-black/80 px-4 py-1.5 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
                       <span className="animate-pulse">⚡</span><span>Tốc độ: {p.speed}s / vòng</span>
                     </div>
                   </div>
@@ -244,12 +247,12 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
         <div className="flex justify-between items-start w-full pointer-events-auto">
           <div className="bg-black/40 backdrop-blur-xl border border-white/20 p-6 clip-path-tech-large max-w-md shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-left">
             <div className="inline-flex items-center gap-3 mb-2 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 clip-path-angled">
-              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-sm md:text-base font-mono tracking-[0.2em] uppercase font-bold"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
+              <Lock className="w-3 h-3 text-cyan-400" /><span className="text-cyan-400 text-base md:text-xl font-mono tracking-[0.2em] uppercase font-black"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
             </div>
-            <h2 className="text-5xl md:text-7xl font-black text-white mb-4 uppercase tracking-tighter leading-none font-space drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
+            <h2 className="text-6xl md:text-8xl font-black text-white mb-6 uppercase tracking-tighter leading-none font-space drop-shadow-[0_0_40px_rgba(255,255,255,0.6)]" style={{ textShadow: `0 0 20px ${activePlanet.color}` }}>
               <DecryptText text={activePlanet.name} delay={400} />
             </h2>
-            <div className="flex gap-4 text-white/70 text-sm md:text-base font-mono tracking-widest">
+            <div className="flex gap-4 text-white/90 text-base md:text-xl font-mono tracking-widest font-bold">
               <span>{activePlanet.code}</span>
               <span className="text-cyan-400">SIG: <DecryptText text={activePlanet.freq} delay={600} /></span>
             </div>
@@ -266,7 +269,7 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
           
           <div className="bg-black/40 backdrop-blur-xl border-l-[3px] p-6 max-w-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-bottom relative" style={{ borderColor: activePlanet.color }}>
             <div className="absolute -left-[3px] top-0 w-1.5 h-1/3 bg-white animate-scan-vertical-fast shadow-[0_0_10px_#fff]" />
-            <p className="text-white text-lg md:text-2xl leading-relaxed font-normal drop-shadow-md"><DecryptText text={activePlanet.desc} delay={700} /></p>
+            <p className="text-white text-xl md:text-3xl leading-relaxed font-medium drop-shadow-lg"><DecryptText text={activePlanet.desc} delay={700} /></p>
           </div>
 
           <div className="bg-[#05050A]/80 backdrop-blur-xl border border-white/20 p-6 clip-path-angled min-w-[300px] shadow-[0_0_30px_rgba(0,0,0,0.5)] fade-in-right">
@@ -283,7 +286,7 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
               ))}
             </div>
             
-            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-lg clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+            <button onClick={(e) => { e.stopPropagation(); router.push(activePlanet.link); }} className="w-full bg-white/10 hover:bg-white/20 border border-white/30 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-2xl clip-path-tech-large font-black hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
               <Zap className="w-5 h-5" fill="currentColor" /> Kích hoạt Phân Khu
             </button>
           </div>
