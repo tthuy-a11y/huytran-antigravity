@@ -1,186 +1,481 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
-import {
-  ArrowLeft, X, Orbit, Zap, Target, Radar, Activity,
-  Cpu, Globe, Wand2, TerminalSquare, Layers, UtensilsCrossed, DatabaseZap, ChevronRight, Fingerprint, ShieldAlert, Crosshair, Lock
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { 
+  ArrowLeft, X, Target, Radar, Activity,  
+  Cpu, Globe, Wand2, TerminalSquare, Layers, UtensilsCrossed, 
+  DatabaseZap, ChevronRight, Fingerprint, Crosshair, Lock, Play, BarChart, Zap, Network
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-// Dữ liệu Vũ trụ Lượng tử
-const planets = [
-  { id: 'ai', name: "AI Agentic Core", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", size: 68, orbit: 240, speed: 20, icon: Cpu, moons: 2, ring: false, type: "NEURAL_NET", freq: "144.2 GHz" },
-  { id: 'web', name: "Web Generative", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", size: 84, orbit: 380, speed: 30, icon: Globe, moons: 1, ring: true, type: "DOM_ENGINE", freq: "88.9 GHz" },
-  { id: 'prompt', name: "Prompt Engineer", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", size: 52, orbit: 520, speed: 40, icon: Wand2, moons: 0, ring: false, type: "LINGUISTIC", freq: "21.4 GHz" },
-  { id: 'creative', name: "Physics Coding", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", size: 64, orbit: 660, speed: 50, icon: TerminalSquare, moons: 0, ring: true, type: "KINEMATICS", freq: "310.0 GHz" },
-  { id: 'uiux', name: "Neuro UI/UX", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác (Micro-interactions) gây nghiện.", color: "#f6d365", size: 56, orbit: 800, speed: 60, icon: Layers, moons: 3, ring: false, type: "BEHAVIORAL", freq: "43.2 GHz" },
-  { id: 'food', name: "Food Web Matrix", code: "CORE-S", desc: "Hệ thống cấp bậc S (02/2026 - Nay). Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", size: 92, orbit: 960, speed: 75, icon: UtensilsCrossed, moons: 2, ring: false, type: "ECOSYSTEM", freq: "500.5 GHz" },
-  { id: 'backend', name: "Ayden Backend", code: "REACT-B", desc: "Lõi lò phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải cực đại.", color: "#f43f5e", size: 48, orbit: 1120, speed: 90, icon: DatabaseZap, moons: 0, ring: false, type: "DATA_CORE", freq: "999.9 GHz" },
-];
-
-// Component Giải mã Dữ liệu
-const DecryptText = ({ text, delay = 0 }) => {
-  const [display, setDisplay] = useState("");
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';
- 
-  useEffect(() => {
-    let iterations = 0;
-    const timer = setTimeout(() => {
-      const interval = setInterval(() => {
-        setDisplay(text.split("").map((letter, index) => {
-          if (index < iterations) return text[index];
-          return chars[Math.floor(Math.random() * chars.length)];
-        }).join(""));
-        if (iterations >= text.length) clearInterval(interval);
-        iterations += 1 / 3;
-      }, 30);
-      return () => clearInterval(interval);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [text, delay]);
-  return <span>{display || Array(text.length).fill("_").join("")}</span>;
+// ================= 1. TYPES & DATA =================
+type PlanetStats = { power: number; sync: number; stability: number };
+type Planet = {
+  id: string; name: string; code: string; desc: string;
+  color: string; darkColor: string; size: number; orbit: number; speed: number;
+  icon: React.ElementType; moons: number; ring: boolean; type: string; freq: string;
+  link: string; stats: PlanetStats; surface: string;
 };
 
-export default function CosmicOdysseyPage() {
-  const [activePlanet, setActivePlanet] = useState(null);
-  const [hoveredPlanet, setHoveredPlanet] = useState(null);
-  const [isWarping, setIsWarping] = useState(true);
-  const [bootText, setBootText] = useState("");
-  const containerRef = useRef(null);
+interface PlanetNodeProps {
+  p: Planet;
+  index: number;
+  total: number;
+  isPaused: boolean;
+  hoveredPlanet: string | null;
+  onHover: (id: string) => void;
+  onLeave: () => void;
+  onClick: (p: Planet) => void;
+}
 
-  const starField = useMemo(() => {
-    const generate = (count, maxSize, color) => {
-      let shadows = [];
-      for (let i = 0; i < count; i++) shadows.push(`${(Math.random() - 0.5) * 200}vw ${(Math.random() - 0.5) * 200}vh 0 ${Math.random() * maxSize}px ${color}`);
-      return shadows.join(', ');
-    };
-    return {
-      dust: generate(400, 1, 'rgba(255,255,255,0.2)'),
-      stars: generate(200, 1.5, 'rgba(0, 242, 254, 0.6)'),
-      giants: generate(50, 2.5, 'rgba(255, 255, 255, 0.9)'),
-    };
-  }, []);
+interface HolographicModalProps {
+  activePlanet: Planet;
+  setActivePlanet: (p: Planet | null) => void;
+}
 
-  const asteroids = useMemo(() => Array.from({ length: 150 }).map(() => ({ r: Math.random() * 800 + 300, a: Math.random() * 360, s: Math.random() * 2 + 1, speed: Math.random() * 80 + 40 })), []);
+const planets: Planet[] = [
+  { id: 'ai', name: "AI Agentic Core", code: "NEXUS-01", desc: "Mạng lưới Neural tự trị. Tích hợp Antigravity & OpenClaw kiểm soát siêu logic hệ thống.", color: "#00f2fe", darkColor: "#005566", size: 68, orbit: 240, speed: 20, icon: Cpu, moons: 2, ring: false, type: "NEURAL_NET", freq: "144.2 GHz", link: "/projects/ai", stats: { power: 98, sync: 95, stability: 88 }, surface: "conic-gradient(from 45deg, rgba(0,242,254,0.2), rgba(0,85,255,0.4), rgba(0,242,254,0.2))" },
+  { id: 'web', name: "Web Generative", code: "UIX-99", desc: "Bẻ cong định luật UI/UX bằng kiến trúc DOM 3D không gian và hoạt ảnh phi tuyến tính.", color: "#b026ff", darkColor: "#4a0080", size: 84, orbit: 380, speed: 30, icon: Globe, moons: 1, ring: true, type: "DOM_ENGINE", freq: "88.9 GHz", link: "/projects/web", stats: { power: 92, sync: 85, stability: 95 }, surface: "linear-gradient(45deg, rgba(176,38,255,0.3) 25%, transparent 25%, transparent 50%, rgba(176,38,255,0.3) 50%, rgba(176,38,255,0.3) 75%, transparent 75%, transparent)" },
+  { id: 'prompt', name: "Prompt Engineer", code: "PRMPT-X", desc: "Kiến trúc sư ngôn ngữ máy. Thao túng mạng lưới tạo sinh AI để hình thành các khái niệm hình ảnh trừu tượng.", color: "#ff0844", darkColor: "#660011", size: 52, orbit: 520, speed: 40, icon: Wand2, moons: 0, ring: false, type: "LINGUISTIC", freq: "21.4 GHz", link: "/projects/prompt", stats: { power: 85, sync: 99, stability: 92 }, surface: "radial-gradient(circle at 70% 70%, rgba(255,8,68,0.4) 10%, transparent 50%)" },
+  { id: 'creative', name: "Physics Coding", code: "PHYS-42", desc: "Ban sự sống cho Pixel. Ứng dụng động lực học, hạt vi mô và ma trận toán học vào nghệ thuật Web.", color: "#00ff87", darkColor: "#004d29", size: 64, orbit: 660, speed: 50, icon: TerminalSquare, moons: 0, ring: true, type: "KINEMATICS", freq: "310.0 GHz", link: "/projects/creative", stats: { power: 90, sync: 88, stability: 85 }, surface: "repeating-linear-gradient(0deg, rgba(0,255,135,0.1), rgba(0,255,135,0.1) 5px, transparent 5px, transparent 10px)" },
+  { id: 'uiux', name: "Neuro UI/UX", code: "BEHAV-7", desc: "Thiết kế thao túng tâm lý. Kết hợp sinh trắc học tạo ra các vi tương tác gây nghiện.", color: "#f6d365", darkColor: "#806600", size: 56, orbit: 800, speed: 60, icon: Layers, moons: 3, ring: false, type: "BEHAVIORAL", freq: "43.2 GHz", link: "/projects/uiux", stats: { power: 82, sync: 94, stability: 96 }, surface: "conic-gradient(from 180deg, transparent, rgba(246,211,101,0.3), transparent)" },
+  { id: 'food', name: "Food Web Matrix", code: "CORE-S", desc: "Hệ thống cấp bậc S. Từ mạch máu Front-end trải nghiệm đến hạt nhân Back-end vận hành.", color: "#8b5cf6", darkColor: "#331166", size: 92, orbit: 960, speed: 75, icon: UtensilsCrossed, moons: 2, ring: false, type: "ECOSYSTEM", freq: "500.5 GHz", link: "/projects/food", stats: { power: 100, sync: 90, stability: 98 }, surface: "radial-gradient(ellipse at center, rgba(139,92,246,0.4) 0%, transparent 70%)" },
+  { id: 'backend', name: "Ayden Backend", code: "REACT-B", desc: "Lõi phản ứng dữ liệu. Điều phối hàng triệu Query, kiến trúc Microservices phân tán chịu tải.", color: "#f43f5e", darkColor: "#66001a", size: 48, orbit: 1120, speed: 90, icon: DatabaseZap, moons: 0, ring: false, type: "DATA_CORE", freq: "999.9 GHz", link: "/projects/backend", stats: { power: 95, sync: 80, stability: 100 }, surface: "repeating-conic-gradient(rgba(244,63,94,0.2) 0% 5%, transparent 5% 10%)" },
+];
+
+const LOCAL_NOISE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E")`;
+
+// ================= 2. SOUND ENGINE (Wow Factor) =================
+const playSound = (type: 'hover' | 'click') => {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    if (type === 'hover') {
+      osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+      gain.gain.setValueAtTime(0.02, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'click') {
+      osc.type = 'square'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+      gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      osc.start(now); osc.stop(now + 0.3);
+    }
+  } catch (e) { /* Ignore if Audio API is restricted */ }
+};
+
+// ================= 3. MICRO-COMPONENTS =================
+
+// 3.1 Text Giải Mã (Tối ưu rAF)
+const DecryptText = React.memo(({ text, delay = 0 }: { text: string; delay?: number }) => {
+  const [display, setDisplay] = useState(text.replace(/./g, '_'));
+  useEffect(() => {
+    let frame: number; let isCancelled = false; const start = performance.now();
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+    const tick = (now: number) => {
+      if (isCancelled) return;
+      if (now - start < delay) { frame = requestAnimationFrame(tick); return; }
+      const progress = Math.min((now - (start + delay)) / 800, 1);
+      const iterations = progress * text.length;
+      setDisplay(text.split("").map((_, i) => (i < iterations ? text[i] : chars[Math.floor(Math.random() * chars.length)])).join(""));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => { isCancelled = true; cancelAnimationFrame(frame); };
+  }, [text, delay]);
+  return <span>{display}</span>;
+});
+DecryptText.displayName = 'DecryptText';
+
+// 3.2 Canvas Starfield (Tạm biệt DOM Lag)
+const CanvasStarfield = React.memo(({ isWarping, isPaused }: { isWarping: boolean, isPaused: boolean }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = canvas.width = window.innerWidth; let h = canvas.height = window.innerHeight;
+    const starCount = reducedMotion ? 200 : (window.innerWidth < 768 ? 400 : 1200);
+    const stars = Array.from({ length: starCount }).map(() => ({ x: Math.random() * w - w / 2, y: Math.random() * h - h / 2, z: Math.random() * 1000, pz: Math.random() * 1000 }));
+    let animationFrameId: number; let currentSpeed = reducedMotion ? 0.3 : (isWarping ? 40 : 0.5);
+
+    const render = () => {
+      currentSpeed += ((isWarping ? 30 : (isPaused ? 0.1 : 0.5)) - currentSpeed) * 0.05;
+      ctx.fillStyle = (isWarping || isPaused) ? 'rgba(1, 1, 3, 0.2)' : 'rgba(1, 1, 3, 1)';
+      ctx.fillRect(0, 0, w, h);
+      const cx = w / 2; const cy = h / 2;
+      stars.forEach(star => {
+        star.pz = star.z; star.z -= currentSpeed;
+        if (star.z <= 0) { star.z = 1000; star.pz = 1000; star.x = Math.random() * w - w / 2; star.y = Math.random() * h - h / 2; }
+        const x = cx + (star.x / star.z) * 1000; const y = cy + (star.y / star.z) * 1000;
+        const px = cx + (star.x / star.pz) * 1000; const py = cy + (star.y / star.pz) * 1000;
+        const depth = 1 - star.z / 1000;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y);
+        ctx.lineWidth = depth * (currentSpeed > 5 ? 2.5 : 1);
+        ctx.strokeStyle = `rgba(0, 242, 254, ${depth * 0.8})`; ctx.stroke();
+      });
+      animationFrameId = requestAnimationFrame(render);
+    };
+    render();
+    const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+    window.addEventListener('resize', handleResize);
+    return () => { cancelAnimationFrame(animationFrameId); window.removeEventListener('resize', handleResize); };
+  }, [isWarping, isPaused]);
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />;
+});
+CanvasStarfield.displayName = 'CanvasStarfield';
+
+// 3.3 Node Hành Tinh (Tách nhỏ Component)
+const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHover, onLeave, onClick }: PlanetNodeProps) => {
+  const delay = `-${(index / total) * p.speed}s`;
+  const isHovered = hoveredPlanet === p.id;
+  const isDimmed = hoveredPlanet && !isHovered;
+  const Icon = p.icon; // Fix React Warning cho Icon Component
+
+  return (
+    <div className={`absolute transform-style-3d transition-all duration-700 ${isDimmed ? 'opacity-10 blur-[2px] scale-90' : 'opacity-100 scale-100'} z-[50]`}>
+      <div className="absolute rounded-full border border-white/5 pointer-events-none transition-all duration-500 transform-style-3d" 
+           style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, borderColor: isHovered ? `${p.color}80` : '' }} />
+
+      <div className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${p.speed}s`, animationDelay: delay }}>
+        
+        {/* SVG QUANTUM TETHERS (Luồng dữ liệu) */}
+        {isHovered && (
+          <svg className="absolute top-0 left-0 overflow-visible pointer-events-none z-0" style={{ width: p.orbit, height: 4, transform: 'translateY(-2px)' }}>
+            <line x1="0" y1="2" x2={p.orbit} y2="2" stroke={p.color} strokeWidth="4" className="opacity-30 blur-[4px]" />
+            <line x1="0" y1="2" x2={p.orbit} y2="2" stroke={`url(#tetherGrad-${p.id})`} strokeWidth="2" strokeDasharray="15, 10" className="animate-[tether-flow_0.5s_linear_infinite]" />
+            <defs>
+              <linearGradient id={`tetherGrad-${p.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#ff5500" stopOpacity="0.8" />
+                <stop offset="100%" stopColor={p.color} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        )}
+
+        <div className="absolute transform-style-3d" style={{ transform: `translateX(${p.orbit}px)` }}>
+          <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed}s`, animationDelay: delay }}>
+            <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto z-10" 
+                 style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
+              
+              <div className="absolute flex items-center justify-center cursor-crosshair group transition-transform duration-500 hover:scale-[1.4] z-[60] hover:z-[100]"
+                   style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}
+                   onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
+                   onMouseEnter={() => { if (!isPaused) { onHover(p.id); playSound('hover'); } }}
+                   onMouseLeave={() => !isPaused && onLeave()}>
+                
+                <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-30 blur-[20px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
+                {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] transform-style-3d pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
+                
+                {/* Khối Cầu + Local Noise + Procedural Gradient */}
+                <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-2xl border border-white/20"
+                     style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
+                  <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: p.surface }} />
+                  <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-30 bg-[linear-gradient(rgba(255,255,255,0.3)_1px,transparent_1px)] bg-[size:100%_4px] mix-blend-overlay" />
+                  <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
+                </div>
+
+                {/* HUD Tag */}
+                <div className="absolute left-[130%] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none flex items-center z-[200] group-hover:translate-x-2">
+                  <div className="w-8 h-[1px] bg-gradient-to-r from-white/80 to-transparent relative"><div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-white rounded-full animate-ping" /></div>
+                  <div className="bg-[#020205]/95 backdrop-blur-2xl border border-white/20 p-3 min-w-[200px] shadow-[0_20px_50px_rgba(0,0,0,1)] clip-path-angled">
+                    <div className="absolute left-0 top-0 w-[2px] h-full" style={{ backgroundColor: p.color }} />
+                    <div className="text-[9px] font-mono tracking-widest uppercase flex justify-between mb-1 text-white/50"><span>{p.type}</span><span className="text-cyan-400">{p.code}</span></div>
+                    <div className="text-sm font-black text-white tracking-widest uppercase font-space">{p.name}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+PlanetNode.displayName = 'PlanetNode';
+
+// 3.4 Modal Split-Screen Hologram 
+const HolographicModal = React.memo(({ activePlanet, setActivePlanet }: HolographicModalProps) => {
+  const router = useRouter();
+  const Icon = activePlanet.icon;
 
   useEffect(() => {
-    const text = "> INITIATING QUANTUM CORE...\n> BYPASSING GRAVITY FIELDS...\n> ESTABLISHING NEURAL LINK...\n> WELCOME TO THE NEXUS, CREATOR.";
-    let i = 0;
-    const typing = setInterval(() => {
-      setBootText(text.slice(0, i));
-      i++;
-      if (i > text.length) clearInterval(typing);
-    }, 20);
-    const warpTimer = setTimeout(() => setIsWarping(false), 2600);
-    return () => { clearInterval(typing); clearTimeout(warpTimer); };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActivePlanet(null);
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [setActivePlanet]);
+  
+  return (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-2 md:p-8 bg-black/80 backdrop-blur-[20px] pointer-events-auto transition-all duration-500" onClick={() => setActivePlanet(null)}>
+      <div className="relative w-full h-[95vh] md:h-[80vh] max-w-7xl bg-[#020205]/95 md:border border-white/10 flex flex-col md:flex-row shadow-[0_0_150px_rgba(0,0,0,1)] animate-hud-glitch z-10 clip-path-tech-large overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="absolute top-0 left-0 w-full h-[150px] bg-gradient-to-b from-transparent via-cyan-500/10 to-transparent animate-[scan-vertical_4s_linear_infinite] pointer-events-none z-50" />
+
+        <button onClick={() => setActivePlanet(null)} className="absolute top-6 right-6 p-3 z-50 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all flex items-center gap-2 group clip-path-angled cursor-pointer">
+          <span className="text-[10px] font-mono uppercase text-red-400 group-hover:text-white hidden sm:block">Close_Terminal</span>
+          <X className="w-5 h-5 text-red-400 group-hover:text-white" />
+        </button>
+
+        {/* NỬA TRÁI: HOLOGRAM */}
+        <div className="w-full md:w-[40%] relative flex flex-col items-center justify-center p-8 border-b md:border-b-0 md:border-r border-white/10 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_100%)] pt-16 md:pt-8">
+          <div className="absolute top-8 left-8 hidden md:block z-20">
+            <div className="text-[10px] text-cyan-400 font-mono tracking-[0.3em] uppercase mb-1 drop-shadow-[0_0_5px_cyan]"><DecryptText text="OVERRIDE_ACTIVE" delay={100} /></div>
+            <div className="flex gap-4 text-white/40 text-[9px] font-mono tracking-widest mt-2">
+              <span className="flex items-center gap-1 text-[#00ff87]"><Network className="w-3 h-3 animate-pulse"/> LIVE FEED</span>
+              <span>SIG: <DecryptText text={activePlanet.freq} delay={300} /></span>
+            </div>
+          </div>
+
+          <div className="relative w-48 h-48 md:w-72 md:h-72 flex items-center justify-center transform-style-3d animate-[float_6s_ease-in-out_infinite]">
+            <div className="absolute w-[130%] h-[130%] rounded-full border-[2px] border-dashed border-white/20 animate-[spin_20s_linear_infinite]" style={{ transform: 'rotateX(75deg)', borderColor: `${activePlanet.color}50` }} />
+            <div className="absolute w-[150%] h-[150%] rounded-full border-t-[3px] border-b-[1px] border-white/30 animate-[spin_15s_linear_infinite_reverse]" style={{ transform: 'rotateX(60deg) rotateY(30deg)', borderColor: `${activePlanet.color}80` }} />
+            
+            <div className="w-full h-full rounded-full relative overflow-hidden shadow-[0_0_100px_rgba(0,0,0,1)] border border-white/20"
+                 style={{ background: `radial-gradient(circle at 30% 30%, ${activePlanet.color} 0%, ${activePlanet.darkColor} 70%)`, boxShadow: `0 0 100px ${activePlanet.color}50, inset -30px -30px 60px rgba(0,0,0,0.9)` }}>
+              <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: activePlanet.surface }} />
+              <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ backgroundImage: LOCAL_NOISE }} />
+              <div className="absolute inset-0 opacity-30 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:30px_30px] mix-blend-overlay [mask-image:radial-gradient(circle,black_40%,transparent_100%)] animate-[spin_40s_linear_infinite]" />
+              <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1/3 h-1/3 text-white drop-shadow-[0_0_20px_rgba(255,255,255,1)] z-10" strokeWidth={1.5} />
+            </div>
+          </div>
+        </div>
+
+        {/* NỬA PHẢI: TERMINAL */}
+        <div className="w-full md:w-[60%] p-6 md:p-14 flex flex-col bg-[#010103] overflow-y-auto">
+          <div className="inline-flex items-center gap-3 mb-6 bg-cyan-950/40 border border-cyan-500/30 px-4 py-2 clip-path-angled self-start">
+            <Lock className="w-4 h-4 text-cyan-400" />
+            <span className="text-cyan-400 text-[10px] font-mono tracking-[0.2em] uppercase font-bold drop-shadow-[0_0_5px_cyan]"><DecryptText text="DATA EXTRACTED" delay={200} /></span>
+          </div>
+          
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 uppercase tracking-tighter leading-none font-space" style={{ textShadow: `0 0 40px ${activePlanet.color}80` }}>
+            <DecryptText text={activePlanet.name} delay={400} />
+          </h2>
+          
+          <div className="relative pl-6 border-l-[3px] mb-8 bg-white/[0.02] py-4 pr-4 rounded-r-lg" style={{ borderColor: activePlanet.color }}>
+            <p className="text-white/80 text-sm md:text-base leading-relaxed font-light"><DecryptText text={activePlanet.desc} delay={700} /></p>
+            <div className="absolute -left-[3px] top-0 w-1.5 h-1/3 bg-white animate-scan-vertical-fast shadow-[0_0_10px_#fff]" />
+          </div>
+
+          {/* Mini-Charts Data Visualization */}
+          <div className="mb-8 p-5 bg-[#05050A] border border-white/10 clip-path-angled">
+            <div className="text-[10px] text-white/50 font-mono uppercase tracking-[0.2em] mb-4 flex items-center gap-2"><BarChart className="w-4 h-4 text-cyan-400" /> System Diagnostics</div>
+            <div className="space-y-4">
+              {[
+                { label: "Core Power", val: activePlanet.stats.power, color: "bg-[#ff5500]" },
+                { label: "Neural Sync", val: activePlanet.stats.sync, color: "bg-[#00f2fe]" },
+                { label: "Stability", val: activePlanet.stats.stability, color: "bg-[#00ff87]" }
+              ].map((stat, i) => (
+                <div key={i} className="flex items-center gap-4 group">
+                  <div className="w-24 text-[10px] font-mono text-white/50 uppercase tracking-widest">{stat.label}</div>
+                  <div className="flex-1 h-1.5 bg-white/5 relative overflow-hidden">
+                    <div className={`absolute top-0 left-0 h-full ${stat.color} shadow-[0_0_10px_currentColor] transition-all duration-1000`} 
+                         style={{ '--target-width': `${stat.val}%`, animation: `fillBar 1s ${1 + i * 0.2}s forwards` } as React.CSSProperties} />
+                  </div>
+                  <div className="w-8 text-right text-[10px] font-mono text-white">{stat.val}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Real Navigation Link */}
+          <div className="mt-auto">
+            <button onClick={() => router.push(activePlanet.link)} className="w-full bg-white/5 hover:bg-white/10 border border-white/20 text-white py-4 flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm clip-path-tech-large hover:text-black hover:bg-[var(--neon-cyan)] transition-colors duration-300 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+              <Zap className="w-4 h-4" fill="currentColor" /> Enter Sector
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+HolographicModal.displayName = 'HolographicModal';
+
+// ================= 4. MAIN WRAPPER =================
+export default function CosmicOdysseyPage() {
+  const [activePlanet, setActivePlanet] = useState<Planet | null>(null);
+  const [hoveredPlanet, setHoveredPlanet] = useState<string | null>(null);
+  const [isWarping, setIsWarping] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Giảm Asteroid Array Size để giữ mượt FPS
+  const asteroids = useMemo(() => {
+    const count = typeof window !== 'undefined' && window.innerWidth < 768 ? 20 : 45;
+    return Array.from({ length: count }).map(() => ({ r: Math.random() * 800 + 350, a: Math.random() * 360, s: Math.random() * 2 + 1, speed: Math.random() * 80 + 40 }));
   }, []);
 
-  const handleMouseMove = (e) => {
+  useEffect(() => {
+    const warpTimer = setTimeout(() => setIsWarping(false), 2600);
+    return () => clearTimeout(warpTimer);
+  }, []);
+
+  // Throttle Chuột siêu mượt bằng RequestAnimationFrame
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current || isWarping || activePlanet) return;
-    const x = (e.clientX / window.innerWidth - 0.5) * 25;
-    const y = (e.clientY / window.innerHeight - 0.5) * 25;
-    containerRef.current.style.setProperty('--mouse-x', `${x}deg`);
-    containerRef.current.style.setProperty('--mouse-y', `${-y}deg`);
-  };
+    requestAnimationFrame(() => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 20;
+      const y = (e.clientY / window.innerHeight - 0.5) * 20;
+      containerRef.current?.style.setProperty('--mouse-x', `${x}deg`);
+      containerRef.current?.style.setProperty('--mouse-y', `${-y}deg`);
+    });
+  }, [isWarping, activePlanet]);
+
+  const handlePlanetClick = useCallback((p: Planet) => { setActivePlanet(p); setHoveredPlanet(null); }, []);
+  const handlePlanetHover = useCallback((id: string) => setHoveredPlanet(id), []);
+  const handlePlanetLeave = useCallback(() => setHoveredPlanet(null), []);
 
   const isPaused = activePlanet !== null;
 
   return (
-    <main
+    <div role="main" 
       ref={containerRef}
-      className={`min-h-screen bg-[#010005] relative overflow-hidden font-sans text-white perspective-container selection:bg-cyan-500/30 ${isWarping ? 'cursor-wait' : 'cursor-crosshair'}`}
+      className={`min-h-screen bg-[#000002] relative overflow-hidden font-sans text-white perspective-container selection:bg-cyan-500/30 ${isWarping ? 'cursor-wait' : 'cursor-crosshair'}`}
       onMouseMove={handleMouseMove}
-      style={{ '--mouse-x': '0deg', '--mouse-y': '0deg' }}
+      style={{ '--mouse-x': '0deg', '--mouse-y': '0deg', '--neon-cyan': '#00f2fe' } as React.CSSProperties}
       onClick={() => setActivePlanet(null)}
     >
-      {/* BOOT SEQUENCE */}
-      <div className={`fixed inset-0 z-[200] pointer-events-none transition-opacity duration-1000 flex items-center justify-center ${isWarping ? 'opacity-100' : 'opacity-0'}`}>
+      {/* GLOBAL POST-PROCESSING OVERLAYS */}
+      <div className="pointer-events-none fixed inset-0 z-[999] opacity-20 mix-blend-overlay bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,3px_100%]" />
+      <div className="pointer-events-none fixed inset-0 z-[998] shadow-[inset_0_0_150px_rgba(0,0,0,0.9)]" />
+
+      {/* 1. INTRO BOOT SEQUENCE */}
+      <div className={`fixed inset-0 z-[1000] pointer-events-none transition-opacity duration-1000 flex items-center justify-center ${isWarping ? 'opacity-100' : 'opacity-0'}`}>
         <div className="absolute inset-0 bg-black" />
         <div className="absolute inset-0 warp-engine" />
-        <div className="text-cyan-400 font-mono text-xs md:text-sm whitespace-pre-wrap leading-relaxed drop-shadow-[0_0_10px_rgba(0,242,254,0.8)] z-10 w-[400px]">
-          {bootText}<span className="animate-pulse">_</span>
+        <div className="text-[#00f2fe] font-mono text-xs md:text-sm whitespace-pre-wrap leading-relaxed drop-shadow-[0_0_15px_#00f2fe] z-10 w-[400px]">
+          <div className="flex gap-2 text-white mb-2"><Zap className="w-5 h-5"/> SYSTEM OVERRIDE</div>
+          <DecryptText text="> INITIATING QUANTUM CORE V4...&#10;> BYPASSING GRAVITY FIELDS...&#10;> ESTABLISHING NEURAL LINK...&#10;> WELCOME TO THE NEXUS, CREATOR." delay={0} />
+          <span className="animate-pulse">_</span>
         </div>
       </div>
 
-      {/* THE ABYSS */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-[radial-gradient(circle,rgba(0,242,254,0.15)_0%,transparent_60%)] blur-[100px] mix-blend-screen" />
-        <div className="absolute bottom-[-30%] right-[-20%] w-[90%] h-[90%] bg-[radial-gradient(circle,rgba(255,100,0,0.1)_0%,transparent_60%)] blur-[120px] mix-blend-screen" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_100%_100%_at_50%_50%,#000_10%,transparent_100%)] parallax-grid" />
-        <div className="absolute top-1/2 left-1/2 parallax-stars">
-          <div className="w-[1px] h-[1px] rounded-full animate-[spin_300s_linear_infinite]" style={{ boxShadow: starField.dust }} />
-          <div className="w-[1px] h-[1px] rounded-full animate-[spin_200s_linear_infinite_reverse]" style={{ boxShadow: starField.stars }} />
-          <div className="w-[1px] h-[1px] rounded-full animate-twinkle" style={{ boxShadow: starField.giants }} />
-        </div>
+      {/* 2. CANVAS BACKGROUND */}
+      <CanvasStarfield isWarping={isWarping} isPaused={isPaused} />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-60">
+        <div className="absolute top-[-30%] left-[-20%] w-[100%] h-[100%] bg-[radial-gradient(circle,rgba(0,242,254,0.08)_0%,transparent_60%)] blur-[120px] mix-blend-screen" />
+        <div className="absolute bottom-[-30%] right-[-20%] w-[100%] h-[100%] bg-[radial-gradient(circle,rgba(255,85,0,0.05)_0%,transparent_60%)] blur-[150px] mix-blend-screen" />
       </div>
 
-      {/* HEADER */}
-      <header className={`absolute top-0 w-full z-50 p-6 md:p-8 flex justify-between items-start pointer-events-none transition-all duration-[1500ms] ease-out delay-300 ${isWarping ? '-translate-y-20 opacity-0' : 'translate-y-0 opacity-100'}`}>
+      {/* 3. HEADER HUD */}
+      <header className={`absolute top-0 w-full z-50 p-6 md:p-8 flex justify-between items-start pointer-events-none transition-all duration-[1500ms] ${isWarping ? '-translate-y-20 opacity-0' : 'translate-y-0 opacity-100'}`}>
         <Link href="/" className="pointer-events-auto flex items-center gap-4 group">
-          <div className="relative p-3 bg-black/50 backdrop-blur-xl border border-white/20 hover:border-cyan-400 transition-all clip-path-angled shadow-[0_0_15px_rgba(0,242,254,0.1)]">
-            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-cyan-400 relative z-10 transition-colors" />
+          <div className="relative p-3 bg-black/50 backdrop-blur-xl border border-white/20 hover:border-[#00f2fe] transition-all clip-path-angled shadow-[0_0_15px_rgba(0,242,254,0.1)]">
+            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-[#00f2fe] relative z-10 transition-colors" />
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-[9px] text-cyan-500 font-mono uppercase tracking-[0.4em] animate-pulse">Uplink Active</span>
-            <span className="font-black tracking-[0.2em] text-sm uppercase">Cổng Dịch Chuyển</span>
+            <span className="text-[9px] text-[#00f2fe] font-mono uppercase tracking-[0.4em] animate-pulse">Neural Link</span>
+            <span className="font-black font-space tracking-[0.2em] text-sm uppercase">Trạm Khởi Hành</span>
           </div>
         </Link>
-        <div className="flex flex-col items-end gap-1">
-          <div className="flex items-center gap-3 backdrop-blur-2xl bg-black/60 px-8 py-3 border-l-2 border-b-2 border-cyan-500/50 clip-path-hex pointer-events-auto shadow-[0_0_30px_rgba(0,242,254,0.15)]">
-            <Radar className="w-5 h-5 text-cyan-400 animate-[spin_3s_linear_infinite]" />
-            <h1 className="text-xl md:text-2xl font-black tracking-[0.3em] bg-clip-text text-transparent bg-gradient-to-r from-white via-cyan-200 to-cyan-500 uppercase">
-              Hệ Siêu Dữ Liệu
-            </h1>
-          </div>
-          <div className="text-[9px] font-mono text-cyan-500/50 tracking-widest pr-4 flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> HCMC // 2026.ERA
-          </div>
+        <div className="flex items-center gap-3 backdrop-blur-2xl bg-black/60 px-8 py-3 border-l-2 border-b-2 border-[#00f2fe] clip-path-hex pointer-events-auto shadow-[0_0_30px_rgba(0,242,254,0.15)] group hover:bg-[#00f2fe]/10 transition-colors">
+          <Radar className="w-5 h-5 text-[#00f2fe] group-hover:text-white transition-colors animate-[spin_3s_linear_infinite]" />
+          <h1 className="text-xl md:text-2xl font-black font-space tracking-[0.3em] text-white uppercase group-hover:text-cyan-300">Hệ Siêu Kỹ Năng</h1>
         </div>
       </header>
 
-      {/* SOLAR SYSTEM ENGINE + HOLOGRAM MODAL + WARP GATE + CSS */}
-      {/* (Toàn bộ phần còn lại của code bạn cung cấp trước đó đã được tích hợp đầy đủ và sạch cú pháp) */}
+      {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+        <div className={`camera-rig transform-style-3d ease-warp w-full h-full flex items-center justify-center will-change-transform transition-all duration-[1500ms]
+             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.35] md:scale-[0.45] translate-x-[15%] translate-y-[15%] opacity-20 blur-md pointer-events-none system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
+             style={{ transform: isPaused || isWarping ? '' : `rotateX(calc(75deg + var(--mouse-y))) rotateY(calc(0deg + var(--mouse-x)))` }}>
+          
+          {/* LÕI HỐ ĐEN */}
+          <div className={`absolute transform-style-3d pointer-events-auto z-50 transition-all duration-700 ${hoveredPlanet ? 'opacity-60 scale-95 grayscale-[30%]' : 'opacity-100 scale-100'}`}>
+            <div className="transform-style-3d transition-transform duration-100" style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
+              <div className="relative flex items-center justify-center w-72 h-72 group cursor-crosshair">
+                <div className="absolute w-[1000px] h-[1000px] rounded-full border-t-[12px] border-orange-400/80 animate-[spin_8s_linear_infinite] transform-style-3d blur-[4px] shadow-[0_0_100px_#ff5500]" style={{ transform: 'rotateX(75deg) rotateY(-10deg)' }} />
+                <div className="absolute w-[850px] h-[850px] rounded-full bg-[conic-gradient(from_0deg,transparent_0%,rgba(255,100,0,0.4)_25%,rgba(255,200,100,0.8)_50%,rgba(255,100,0,0.4)_75%,transparent_100%)] animate-[spin_5s_linear_infinite_reverse] transform-style-3d blur-[12px]" style={{ transform: 'rotateX(75deg)' }} />
+                
+                <div className="absolute inset-4 rounded-full bg-black shadow-[0_0_150px_rgba(255,85,0,0.9),inset_0_0_60px_rgba(255,150,0,0.7)] border-[3px] border-orange-500/50 flex flex-col items-center justify-center overflow-hidden z-10 group-hover:scale-[1.03] transition-transform animate-[core-pulse_4s_ease-in-out_infinite]">
+                  <div className="absolute inset-0 opacity-40 mix-blend-color-dodge animate-[spin_30s_linear_infinite]" style={{ backgroundImage: LOCAL_NOISE }} />
+                  <div className="relative z-20 flex flex-col items-center drop-shadow-[0_0_20px_#ffaa00]">
+                    <Fingerprint className="w-14 h-14 text-orange-200 mb-2 opacity-95 animate-pulse" strokeWidth={1} />
+                    <div className="text-5xl font-black text-white tracking-[0.2em] leading-none mb-1 font-space">HUY.DEV</div>
+                    <div className="mt-2 text-[11px] font-mono bg-[#1a0500]/90 border border-orange-500/60 px-4 py-1.5 rounded clip-path-angled tracking-widest text-orange-400 uppercase flex items-center gap-2 shadow-[0_0_15px_#ff5500]">
+                      <Activity className="w-3.5 h-3.5 animate-pulse" /> Core_S: 2003
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      {/* NÚT CHUYỂN TRANG */}
+          <div className={`absolute transform-style-3d pointer-events-none transition-opacity duration-700 ${hoveredPlanet ? 'opacity-20' : 'opacity-80'}`}>
+            {asteroids.map((ast, i) => (
+              <div key={`ast-${i}`} className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${ast.speed}s`, animationDelay: `-${Math.random()*100}s` }}>
+                <div className="absolute rounded-full bg-white/60 shadow-[0_0_8px_rgba(255,255,255,0.8)]" style={{ width: ast.s, height: ast.s, transform: `rotateZ(${ast.a}deg) translateX(${ast.r}px) rotateX(90deg)` }} />
+              </div>
+            ))}
+          </div>
+
+          {planets.map((p, index) => (
+            <PlanetNode 
+              key={p.id} p={p} index={index} total={planets.length} 
+              isPaused={isPaused} hoveredPlanet={hoveredPlanet} 
+              onHover={handlePlanetHover} onLeave={handlePlanetLeave} onClick={handlePlanetClick} 
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* 5. HOLOGRAM SPLIT-SCREEN MODAL */}
+      {activePlanet && <HolographicModal activePlanet={activePlanet} setActivePlanet={setActivePlanet} />}
+
+      {/* 6. WARP GATE (NAV) */}
       <div className={`fixed bottom-8 right-8 z-40 transition-all duration-1000 delay-500 ${isWarping || activePlanet ? 'translate-y-32 opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <Link href="/system" className="group flex items-center gap-4 bg-[#05050a]/90 backdrop-blur-2xl border border-white/20 p-2 pr-8 clip-path-hex-large shadow-[0_0_50px_rgba(0,0,0,1)] hover:border-cyan-400/80 hover:bg-cyan-900/20 transition-all duration-500 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-12 h-12 bg-white text-black flex items-center justify-center relative z-10 clip-path-angled group-hover:bg-cyan-400 transition-colors shadow-[0_0_20px_rgba(0,242,254,0)] group-hover:shadow-[0_0_30px_rgba(0,242,254,0.6)]">
-            <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+        <Link href="/system" className="group flex items-center gap-5 bg-[#05050a]/90 backdrop-blur-3xl border border-white/20 p-2.5 pr-8 clip-path-hex-large shadow-[0_0_50px_rgba(0,0,0,1)] hover:border-[#00f2fe] hover:bg-cyan-950/40 transition-all duration-500">
+          <div className="w-14 h-14 bg-white text-black flex items-center justify-center relative z-10 clip-path-angled group-hover:bg-[#00f2fe] transition-colors shadow-[0_0_20px_rgba(0,242,254,0)] group-hover:shadow-[0_0_30px_rgba(0,242,254,0.7)]">
+            <ChevronRight className="w-7 h-7 group-hover:translate-x-1.5 transition-transform" />
           </div>
           <div className="flex flex-col relative z-10 pt-1">
-            <span className="text-[9px] font-mono text-cyan-400 uppercase tracking-[0.25em] mb-0.5">Khởi động Hyper-Jump</span>
-            <span className="text-sm font-bold text-white uppercase tracking-widest">Trạm Tốc Độ Cao</span>
+            <span className="text-[10px] font-mono text-[#00f2fe] uppercase tracking-[0.25em] mb-0.5 animate-pulse">Khởi động Hyper-Jump</span>
+            <span className="text-sm font-black text-white uppercase tracking-widest font-space">Trạm Tốc Độ Cao</span>
           </div>
         </Link>
       </div>
 
-      {/* CSS ENGINE */}
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700;900&display=swap');
+        .font-space { font-family: 'Space Grotesk', sans-serif; }
         .transform-style-3d { transform-style: preserve-3d; }
-        .perspective-container { perspective: 2500px; overflow: hidden; }
+        .perspective-container { perspective: 2000px; overflow: hidden; }
+        
         .clip-path-angled { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
         .clip-path-hex { clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px)); }
         .clip-path-hex-large { clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); }
         .clip-path-tech-large { clip-path: polygon(40px 0, 100% 0, 100% calc(100% - 40px), calc(100% - 40px) 100%, 0 100%, 0 40px); }
+
         @keyframes orbit-spin { from { transform: rotateZ(0deg); } to { transform: rotateZ(360deg); } }
         @keyframes orbit-anti-spin { from { transform: rotateZ(0deg); } to { transform: rotateZ(-360deg); } }
         .system-paused * { animation-play-state: paused !important; }
-        .warp-engine {
-          background: transparent;
-          background-image: radial-gradient(1px 30px at 20px 50px, #fff, transparent), radial-gradient(2px 50px at 60px 150px, #00f2fe, transparent), radial-gradient(1.5px 40px at 100px 250px, #fff, transparent);
-          background-size: 200px 300px;
-          animation: warpSpeed 0.4s linear infinite;
-          opacity: 0.8;
-        }
-        @keyframes warpSpeed { 0% { transform: scale(1); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(4); opacity: 0; } }
-        .parallax-grid { transform: translate(calc(var(--mouse-x) * -2), calc(var(--mouse-y) * 2)) scale(1.1); }
-        .parallax-stars { transform: translate(calc(var(--mouse-x) * -4), calc(var(--mouse-y) * 4)); }
-        @keyframes float { 0%, 100% { transform: translateY(0px) rotateX(10deg); } 50% { transform: translateY(-20px) rotateX(-5deg); } }
+
+        .warp-engine { background-image: radial-gradient(2px 50px at 60px 150px, #00f2fe, transparent), radial-gradient(2px 40px at 100px 250px, #fff, transparent); background-size: 200px 300px; animation: warpSpeed 0.3s linear infinite; transform-origin: center; }
+        @keyframes warpSpeed { 0% { transform: scale(1); opacity: 0; filter: hue-rotate(0deg); } 50% { opacity: 1; filter: hue-rotate(90deg); } 100% { transform: scale(5); opacity: 0; filter: hue-rotate(180deg); } }
+        .ease-warp { transition-timing-function: cubic-bezier(0.85, 0, 0.15, 1); }
+
         @keyframes scan-vertical { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-        @keyframes hud-glitch { 0% { opacity: 0; transform: scale(1.1) skewX(5deg); filter: blur(20px) contrast(2); } 50% { opacity: 0.8; transform: scale(0.98) skewX(-2deg); filter: blur(5px) contrast(1.5); } 100% { opacity: 1; transform: scale(1) skewX(0); filter: blur(0) contrast(1); } }
-        .animate-hud-glitch { animation: hud-glitch 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes tether-flow { 0% { stroke-dashoffset: 25; } 100% { stroke-dashoffset: 0; } }
+        @keyframes fillBar { to { width: var(--target-width); } }
+        @keyframes core-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); box-shadow: 0 0 200px rgba(255,80,0,1), inset 0 0 80px rgba(255,100,0,0.9); } }
+        @keyframes hud-glitch { 0% { opacity: 0; transform: scale(1.05); filter: blur(10px); } 100% { opacity: 1; transform: scale(1); filter: blur(0); } }
+        @keyframes scan-vertical-fast { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes float { 0%, 100% { transform: translateY(0px) rotateX(10deg); } 50% { transform: translateY(-15px) rotateX(-5deg); } }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+          .warp-engine { display: none; }
+        }
       `}</style>
-    </main>
+    </div>
   );
 }

@@ -1,241 +1,558 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { Sparkles, ArrowLeft, Zap, Database, GitBranch, Cpu, ChevronDown } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback, memo, useMemo } from 'react';
+import { ArrowLeft, Zap, Database, GitBranch, Cpu, Target, Activity, Waves, Lock, X, Fingerprint, Orbit, Play, TerminalSquare, Rocket, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SystemPage() {
-  const [showSuggestion, setShowSuggestion] = useState(false);
-  const [expanded, setExpanded] = useState<number | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+// ============================================================================
+// 1. TYPESCRIPT INTERFACES
+// ============================================================================
+type ShipStats = [number, number, number, number];
+interface FleetShip {
+  id: number; icon: React.ElementType; code: string; title: string; hex: string; stats: ShipStats; items: string[]; link: string;
+}
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSuggestion(true), 30000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Canvas starfield + shooting meteors
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const stars: { x: number; y: number; size: number; speed: number }[] = [];
-    const meteors: { x: number; y: number; length: number; speed: number }[] = [];
-
-    // Tạo sao lấp lánh
-    for (let i = 0; i < 800; i++) {
-      stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 2.5 + 0.5,
-        speed: Math.random() * 0.8 + 0.2,
-      });
+// ============================================================================
+// 2. SYNTHETIC AUDIO ENGINE (WEB AUDIO API)
+// ============================================================================
+class AudioSystem {
+  ctx: AudioContext | null = null;
+  init() {
+    if (typeof window !== 'undefined' && !this.ctx) {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
     }
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Vẽ sao lấp lánh
-      ctx.fillStyle = 'rgba(224, 242, 255, 0.95)';
-      stars.forEach((star) => {
-        const alpha = Math.sin(Date.now() * star.speed / 300) * 0.5 + 0.5;
-        ctx.globalAlpha = alpha;
-        ctx.fillRect(star.x, star.y, star.size, star.size);
-      });
-      ctx.globalAlpha = 1;
-
-      // Thiên thạch bay
-      if (Math.random() < 0.03) {
-        meteors.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height * 0.3,
-          length: Math.random() * 80 + 40,
-          speed: Math.random() * 12 + 8,
-        });
+    if (this.ctx?.state === 'suspended') this.ctx.resume();
+  }
+  play(type: 'type' | 'boot' | 'hover' | 'click' | 'warp' | 'abort' | 'deploy' | 'beep') {
+    if (!this.ctx) this.init(); if (!this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+      osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime;
+      switch (type) {
+        case 'type': // Keystroke click
+          osc.type = 'square'; osc.frequency.setValueAtTime(800 + Math.random()*200, now);
+          gain.gain.setValueAtTime(0.01, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+          osc.start(now); osc.stop(now + 0.05); break;
+        case 'boot': // System power up hum
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, now); osc.frequency.exponentialRampToValueAtTime(150, now + 2);
+          gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.05, now + 1); gain.gain.linearRampToValueAtTime(0, now + 3);
+          osc.start(now); osc.stop(now + 3); break;
+        case 'hover':
+          osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+          gain.gain.setValueAtTime(0.01, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+          osc.start(now); osc.stop(now + 0.1); break;
+        case 'warp':
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, now); osc.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+          gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.1, now + 0.5); gain.gain.linearRampToValueAtTime(0, now + 1.2);
+          osc.start(now); osc.stop(now + 1.2); break;
+        case 'abort':
+          osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+          gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.start(now); osc.stop(now + 0.4); break;
+        case 'deploy': // Cinematic Siren
+          osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.3); osc.frequency.linearRampToValueAtTime(400, now + 0.6); osc.frequency.linearRampToValueAtTime(1200, now + 1.2);
+          gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 1.2);
+          osc.start(now); osc.stop(now + 1.2); break;
+        case 'beep':
+          osc.type = 'sine'; osc.frequency.setValueAtTime(1500, now); gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+          osc.start(now); osc.stop(now + 0.1); break;
       }
+    } catch (e) {}
+  }
+}
+const sfx = typeof window !== 'undefined' ? new AudioSystem() : null;
 
-      ctx.strokeStyle = '#67e8f9';
-      ctx.lineWidth = 2;
-      meteors.forEach((meteor, i) => {
-        ctx.beginPath();
-        ctx.moveTo(meteor.x, meteor.y);
-        ctx.lineTo(meteor.x - meteor.length, meteor.y + meteor.length * 0.6);
-        ctx.stroke();
+// ============================================================================
+// 3. SUB-COMPONENTS (MEMOIZED AAA)
+// ============================================================================
 
-        meteor.x += meteor.speed;
-        meteor.y += meteor.speed * 0.6;
+// --- TERMINAL OS BOOT SEQUENCE ---
+const BootTerminal = memo(({ onComplete }: { onComplete: () => void }) => {
+  const [lines, setLines] = useState<string[]>([]);
+  const bootText = useMemo(() => [
+    "EXODUS KERNEL v9.0.4 INITIALIZING...",
+    "LOADING QUANTUM MODULES.................. [OK]",
+    "ESTABLISHING SECURE UPLINK............... [OK]",
+    "BYPASSING NEURAL FIREWALL................ [OK]",
+    "DECRYPTING CLASSIFIED ASSETS............. [OK]",
+    "SYNCING ORBITAL SATELLITES............... [OK]",
+    "ACCESS GRANTED. WELCOME COMMANDER."
+  ], []);
 
-        if (meteor.x > canvas.width + 100) meteors.splice(i, 1);
-      });
-
-      requestAnimationFrame(animate);
+  useEffect(() => {
+    sfx?.init(); sfx?.play('boot');
+    let currentLine = 0; let currentChar = 0;
+    
+    const typeWriter = () => {
+      if (currentLine >= bootText.length) {
+        setTimeout(onComplete, 1000); return;
+      }
+      const fullString = bootText[currentLine];
+      if (currentChar < fullString.length) {
+        setLines(prev => {
+          const newLines = [...prev];
+          if (newLines[currentLine] === undefined) newLines[currentLine] = '';
+          newLines[currentLine] = fullString.substring(0, currentChar + 1);
+          return newLines;
+        });
+        if (Math.random() > 0.5) sfx?.play('type');
+        currentChar++;
+        setTimeout(typeWriter, Math.random() * 20 + 10); // typing speed
+      } else {
+        currentLine++; currentChar = 0;
+        setTimeout(typeWriter, currentLine === bootText.length - 1 ? 500 : 150); // Line delay
+      }
     };
-
-    animate();
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  const sections = [
-    {
-      id: 0,
-      icon: Zap,
-      title: "Tăng tốc độ làm việc văn phòng",
-      items: [
-        "Soạn thảo báo cáo, email, đề xuất, biên bản họp một cách nhanh chóng và chuyên nghiệp",
-        "Phân tích dữ liệu lớn, tạo bảng biểu và insight ngay lập tức",
-        "Lên kế hoạch dự án, timeline và phân công công việc tự động",
-        "Tạo slide trình bày chuyên nghiệp từ ý tưởng thô"
-      ]
-    },
-    {
-      id: 1,
-      icon: Database,
-      title: "Quản lý tệp & thông tin",
-      items: [
-        "Tự động sắp xếp, phân loại và lưu trữ file theo quy tắc thông minh",
-        "Trích xuất thông tin từ hợp đồng, hóa đơn, CV và tài liệu scan",
-        "Xây dựng Knowledge Base cá nhân/công ty để hỏi đáp nhanh mọi thông tin cũ",
-        "Tìm kiếm thông tin xuyên suốt file, email, Notion, Drive chỉ bằng câu hỏi tiếng Việt"
-      ]
-    },
-    {
-      id: 2,
-      icon: GitBranch,
-      title: "Xây dựng hệ thống & tự động hóa",
-      items: [
-        "Xây dựng tool nội bộ (dashboard quản lý nhân sự, kho hàng, khách hàng) một cách nhanh chóng",
-        "Tạo form đăng ký, hệ thống phê duyệt tự động và bot trả lời khách hàng",
-        "Tích hợp API để tự động hóa toàn bộ quy trình làm việc",
-        "Xây dựng mini web/app nội bộ (quản lý dự án, chấm công, báo cáo realtime)"
-      ]
-    },
-    {
-      id: 3,
-      icon: Cpu,
-      title: "Lập trình & phát triển",
-      items: [
-        "Code website, tool và script end-to-end một cách tự động",
-        "Tối ưu và sửa lỗi code với tốc độ cao",
-        "Tạo prototype sản phẩm mới nhanh chóng và hiệu quả"
-      ]
-    }
-  ];
+    setTimeout(typeWriter, 500);
+  }, [bootText, onComplete]);
 
   return (
-    <main className="min-h-screen bg-[#02040b] relative overflow-hidden">
-      {/* Canvas vũ trụ */}
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0" />
-
-      {/* Gradient overlay cho chiều sâu */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-violet-500/10 z-10" />
-
-      <div className="relative z-20 max-w-screen-2xl mx-auto px-6 py-12">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-12">
-          <Link href="/" className="flex items-center gap-3 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Quay về trang chọn</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-8 h-8 text-cyan-300 animate-pulse" />
-            <h1 className="text-4xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-300 to-violet-300 drop-shadow-2xl">
-              LOGIC &amp; TỐC ĐỘ
-            </h1>
-          </div>
-        </div>
-
-        {/* Tiêu đề mới */}
-        <h2 className="text-3xl font-semibold text-center text-white/90 mb-16 tracking-wide">
-          Khai thác tối đa tiềm năng của hệ thống và nâng cao hiệu suất của các công cụ
-        </h2>
-
-        {/* Neural Nodes - Floating 3D Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto perspective-[1200px]">
-          {sections.map((section) => {
-            const Icon = section.icon;
-            return (
-              <div
-                key={section.id}
-                className="group relative bg-white/5 backdrop-blur-3xl border border-white/10 hover:border-cyan-400 rounded-3xl overflow-hidden transition-all duration-700 hover:shadow-2xl hover:shadow-cyan-500/40 hover:-translate-y-2 hover:rotate-[1deg] preserve-3d"
-                style={{ transformStyle: 'preserve-3d' }}
-              >
-                {/* Main Core */}
-                <button
-                  onClick={() => setExpanded(expanded === section.id ? null : section.id)}
-                  className="w-full px-8 py-6 flex items-center justify-between text-left hover:bg-white/5 transition-all duration-300"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-400 flex items-center justify-center shadow-[0_0_25px_-5px] shadow-cyan-400 group-hover:shadow-cyan-300 transition-shadow">
-                      <Icon className="w-7 h-7 text-white" />
-                    </div>
-                    <span className="text-xl font-semibold text-white">{section.title}</span>
-                  </div>
-                  <ChevronDown className={`w-6 h-6 text-cyan-300 transition-transform duration-500 ${expanded === section.id ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Expanded - Tua/Tia bay ra + sub-items */}
-                {expanded === section.id && (
-                  <div className="px-8 pb-8 pt-2 border-t border-white/10 relative">
-                    {/* Glow burst layer */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/10 to-violet-400/10 animate-pulse pointer-events-none" />
-
-                    <ul className="space-y-5 pl-6 relative">
-                      {section.items.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex gap-4 text-white/85 text-[15px] leading-relaxed relative animate-in fade-in slide-in-from-left-8 duration-500"
-                          style={{ animationDelay: `${i * 70}ms` }}
-                        >
-                          {/* Tua / Tia energy ray */}
-                          <div className="absolute -left-6 top-3 w-px h-8 bg-gradient-to-b from-transparent via-cyan-300 to-transparent animate-[pulse_1.2s_infinite]" />
-                          <div className="w-3 h-3 mt-1.5 rounded-full bg-cyan-400 shadow-[0_0_12px_4px] shadow-cyan-400 flex-shrink-0 animate-ping" />
-                          <span className="flex-1">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Tóm tắt mới */}
-        <div className="mt-20 max-w-2xl mx-auto text-center">
-          <div className="bg-white/10 border border-cyan-400/30 rounded-3xl px-10 py-8 backdrop-blur-3xl">
-            <p className="text-2xl font-medium text-white">
-              Cải thiện chất lượng làm việc và giúp tăng trưởng vượt trội
-            </p>
-          </div>
-        </div>
-
-        {/* Suggestion Banner */}
-        {showSuggestion && (
-          <div className="fixed bottom-8 right-8 bg-white/10 backdrop-blur-2xl border border-white/30 rounded-3xl px-8 py-4 flex items-center gap-4 shadow-2xl z-50">
-            <span className="text-white/80">Hãy xem lựa chọn còn lại</span>
-            <Link
-              href="/creative"
-              className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-6 py-3 rounded-3xl font-medium hover:brightness-110 transition-all"
-            >
-              Chuyển sang Sáng tạo đột phá →
-            </Link>
-          </div>
-        )}
+    <div className="fixed inset-0 z-[99999] bg-[#02040a] p-10 font-mono text-cyan-500 text-sm md:text-lg flex flex-col justify-end pb-20">
+      <div className="crt-overlay" />
+      <div className="max-w-4xl mx-auto w-full">
+        <Fingerprint className="w-16 h-16 mb-8 opacity-50 animate-pulse text-cyan-700" />
+        {lines.map((line, i) => (
+          <div key={i} className="mb-2 uppercase tracking-widest">{line}{i === lines.length - 1 ? <span className="animate-ping">_</span> : ''}</div>
+        ))}
       </div>
+    </div>
+  );
+});
+BootTerminal.displayName = 'BootTerminal';
+
+// --- FPS MONITOR ---
+const FPSMonitor = memo(() => {
+  const [fps, setFps] = useState(60);
+  useEffect(() => {
+    let frames = 0; let prev = performance.now(); let req: number;
+    const loop = (now: number) => { frames++; if (now - prev >= 1000) { setFps(frames); frames = 0; prev = now; } req = requestAnimationFrame(loop); };
+    req = requestAnimationFrame(loop); return () => cancelAnimationFrame(req);
+  }, []);
+  return (
+    <div className="fixed top-5 right-5 z-[9900] pointer-events-none flex flex-col items-end text-[9px] font-mono mix-blend-screen text-cyan-500">
+      <span>SYS.PERF</span><span className="text-white font-bold">{fps} FPS</span>
+    </div>
+  );
+});
+FPSMonitor.displayName = 'FPSMonitor';
+
+// --- PARALLAX 3D HOLOGRAM (MOUSE TRACKING) ---
+const InteractiveHologram = memo(({ icon: Icon, color }: { icon: any, color: string }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let req: number;
+    const move = (e: MouseEvent) => {
+      req = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        const x = (e.clientX / window.innerWidth - 0.5) * 40; // Max 20deg tilt
+        const y = (e.clientY / window.innerHeight - 0.5) * -40;
+        containerRef.current.style.transform = `rotateX(${y}deg) rotateY(${x}deg)`;
+      });
+    };
+    window.addEventListener('mousemove', move, { passive: true });
+    return () => { window.removeEventListener('mousemove', move); cancelAnimationFrame(req); };
+  }, []);
+
+  return (
+    <div className="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center perspective-[1000px] mb-8">
+      <div ref={containerRef} className="relative w-full h-full transform-style-3d transition-transform duration-100 ease-out flex items-center justify-center">
+        {/* Lớp RGB Split Chromatic Aberration */}
+        <Icon className="absolute w-32 h-32 md:w-48 md:h-48 opacity-60 z-10 mix-blend-screen transform translate-z-[10px]" style={{ color: 'red', filter: 'blur(3px)', transform: 'translateZ(10px) translate(-5px, 2px)' }} strokeWidth={1} />
+        <Icon className="absolute w-32 h-32 md:w-48 md:h-48 opacity-60 z-20 mix-blend-screen transform translate-z-[20px]" style={{ color: 'cyan', filter: 'blur(3px)', transform: 'translateZ(20px) translate(5px, -2px)' }} strokeWidth={1} />
+        
+        {/* Lõi Core Chính */}
+        <Icon className="absolute w-32 h-32 md:w-48 md:h-48 text-white z-30 drop-shadow-[0_0_30px_white] transform translate-z-[40px] animate-[pulse_2s_infinite]" strokeWidth={1} />
+      </div>
+      
+      {/* Vòng sáng đáy */}
+      <div className="absolute -bottom-10 w-48 h-10 rounded-full blur-[20px] opacity-40 animate-pulse" style={{ backgroundColor: color }} />
+    </div>
+  );
+});
+InteractiveHologram.displayName = 'InteractiveHologram';
+
+// --- DATA STREAM MATRIX ---
+const MatrixRain = memo(({ color, active }: { color: string, active: boolean }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (!active) return;
+    const canvas = canvasRef.current; if (!canvas) return; const ctx = canvas.getContext('2d'); if (!ctx) return;
+    const resize = () => { canvas.width = canvas.parentElement!.clientWidth; canvas.height = canvas.parentElement!.clientHeight; }; resize(); window.addEventListener('resize', resize);
+    const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%&*<>[]{}/\\|'.split('');
+    const fontSize = 14; const columns = canvas.width / fontSize;
+    const drops: number[] = Array.from({ length: columns }).map(() => Math.random() * -100);
+    
+    let reqId: number;
+    const draw = () => {
+      ctx.fillStyle = 'rgba(1, 3, 10, 0.15)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = color; ctx.font = `${fontSize}px monospace`;
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars[Math.floor(Math.random() * chars.length)];
+        ctx.globalAlpha = Math.random() * 0.5 + 0.2;
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.95) drops[i] = 0;
+        drops[i]++;
+      }
+      ctx.globalAlpha = 1; reqId = requestAnimationFrame(draw);
+    };
+    reqId = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(reqId); window.removeEventListener('resize', resize); };
+  }, [color, active]);
+  return <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-20 mix-blend-screen pointer-events-none w-full h-full mask-image-y" />;
+});
+MatrixRain.displayName = 'MatrixRain';
+
+// --- SCRAMBLE TEXT ---
+const ScrambleText = memo(({ text, active, delay = 0 }: { text: string, active: boolean, delay?: number }) => {
+  const [display, setDisplay] = useState('');
+  useEffect(() => {
+    if (!active) { setDisplay(''); return; }
+    let iter = 0; let intervalId: NodeJS.Timeout; const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+    const tId = setTimeout(() => {
+      intervalId = setInterval(() => {
+        setDisplay(text.split('').map((c, i) => (i < iter || c === ' ' ? c : chars[Math.floor(Math.random() * chars.length)])).join(''));
+        if (iter >= text.length) { clearInterval(intervalId); setDisplay(text); } iter += 1 / 3;
+      }, 30);
+    }, delay);
+    return () => { clearTimeout(tId); clearInterval(intervalId); };
+  }, [text, active, delay]);
+  return <span>{display}</span>;
+});
+ScrambleText.displayName = 'ScrambleText';
+
+// ============================================================================
+// 4. MAIN EXODUS ENGINE (V6)
+// ============================================================================
+export default function ExodusGodTier() {
+  const [osBooted, setOsBooted] = useState(false);
+  const [activeShip, setActiveShip] = useState<number | null>(null);
+  const [warpSpeed, setWarpSpeed] = useState(false);
+  const [deployState, setDeployState] = useState<'idle' | 'charging' | 'deployed'>('idle');
+  const [showGate, setShowGate] = useState(false);
+  
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // STATELESS ENGINE REF
+  const engineRef = useRef({
+    width: 0, height: 0, cx: 0, cy: 0, rawX: -100, rawY: -100, mx: 0, my: 0,
+    speed: 0.5, targetSpeed: 0.5, time: 0,
+    accretionParticles: [] as any[], shockwaves: [] as any[]
+  });
+
+  const fleet: FleetShip[] = useMemo(() => [
+    { id: 0, icon: Zap, code: "X1-STRIKER", title: "Tăng Tốc Làm Việc", hex: "#06b6d4", stats: [98, 85, 92, 70], items: ["Soạn thảo văn bản, email, báo cáo siêu tốc", "Phân tích Big Data, trích xuất Insight tức thời", "Lên Timeline dự án và phân công nhân sự", "Khởi tạo Slide trình bày từ ý tưởng thô"], link: "/speed" },
+    { id: 1, icon: Database, code: "N-VAULT", title: "Quản Lý Dữ Liệu", hex: "#10b981", stats: [75, 99, 95, 60], items: ["Tự động phân loại, sắp xếp và lưu trữ File", "OCR Trích xuất thông tin Hóa đơn, Hợp đồng", "Xây dựng Knowledge Base doanh nghiệp", "Tìm kiếm đa nền tảng bằng ngôn ngữ tự nhiên"], link: "/data" },
+    { id: 2, icon: GitBranch, code: "AUTO-CRUISER", title: "Hệ Thống Tự Động", hex: "#d946ef", stats: [88, 92, 85, 80], items: ["Dựng Dashboard nội bộ, CRM, Quản lý kho", "Luồng phê duyệt tự động và Form thông minh", "Tích hợp API kết nối hàng vạn quy trình", "Phát triển Mini-App theo dõi báo cáo Real-time"], link: "/automation" },
+    { id: 3, icon: Cpu, code: "CORE-AEGIS", title: "Lõi Lập Trình", hex: "#f43f5e", stats: [95, 90, 99, 95], items: ["Sinh mã nguồn End-to-End cho Web/App", "Rà quét, Refactor và sửa Bug Real-time", "Tạo nhanh MVP/Prototype có thể tương tác", "Tối ưu hóa kiến trúc hạ tầng phần mềm"], link: "/dev" }
+  ], []);
+
+  // --- Actions ---
+  const engageShip = useCallback((id: number) => {
+    if (activeShip === id) return;
+    sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400;
+    setTimeout(() => { setActiveShip(id); setWarpSpeed(false); engineRef.current.targetSpeed = 0.5; }, 1200);
+  }, [activeShip]);
+
+  const abortMission = useCallback(() => {
+    if (activeShip === null || deployState !== 'idle') return;
+    sfx?.play('abort'); setWarpSpeed(true); engineRef.current.targetSpeed = 400;
+    setTimeout(() => { setActiveShip(null); setWarpSpeed(false); engineRef.current.targetSpeed = 0.5; }, 800);
+  }, [activeShip, deployState]);
+
+  const handleDeploy = useCallback(() => {
+    setDeployState('charging'); sfx?.play('deploy');
+    engineRef.current.targetSpeed = 1000;
+    
+    // Spawn Shockwave to Canvas Engine
+    engineRef.current.shockwaves.push({ r: 10, color: fleet[activeShip!].hex, alpha: 1 });
+
+    setTimeout(() => {
+      setDeployState('deployed'); sfx?.play('beep');
+      engineRef.current.shockwaves.push({ r: 50, color: '#fff', alpha: 1 }); // Final Burst
+      
+      setTimeout(() => { setDeployState('idle'); abortMission(); }, 1500);
+    }, 1500);
+  }, [activeShip, fleet, abortMission]);
+
+  useEffect(() => {
+    const keyHandler = (e: KeyboardEvent) => { if (e.key === 'Escape' && activeShip !== null) abortMission(); };
+    window.addEventListener('keydown', keyHandler); return () => window.removeEventListener('keydown', keyHandler);
+  }, [activeShip, abortMission]);
+
+  // --- GOD-TIER CANVAS ENGINE (BLACKHOLE ACCRETION & WORMHOLE) ---
+  useEffect(() => {
+    if (!osBooted) return;
+    const canvas = canvasRef.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d', { alpha: false }); if (!ctx) return;
+    const updateSize = () => { engineRef.current.width = canvas.width = window.innerWidth; engineRef.current.height = canvas.height = window.innerHeight; engineRef.current.cx = window.innerWidth / 2; engineRef.current.cy = window.innerHeight / 2; }; updateSize();
+    const handleMouseMove = (e: MouseEvent) => { engineRef.current.rawX = e.clientX; engineRef.current.rawY = e.clientY; };
+    window.addEventListener('resize', updateSize); window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+    const STARS = window.innerWidth > 1024 ? 1200 : 500;
+    const stars = Array.from({ length: STARS }).map(() => ({ x: (Math.random() - 0.5) * 5000, y: (Math.random() - 0.5) * 5000, z: Math.random() * 3000 + 100, pz: 0 }));
+
+    let reqId: number;
+    const animate = () => {
+      const st = engineRef.current; st.time += 0.005; st.speed += (st.targetSpeed - st.speed) * 0.1;
+      const { width: w, height: h, cx, cy, speed, accretionParticles, shockwaves } = st;
+      
+      st.mx += ((st.rawX > 0 ? (st.rawX - cx) * 0.15 : 0) - st.mx) * 0.1;
+      st.my += ((st.rawY > 0 ? (st.rawY - cy) * 0.15 : 0) - st.my) * 0.1;
+
+      ctx.fillStyle = `rgba(1, 2, 7, ${speed > 10 ? 0.2 : 0.6})`; ctx.fillRect(0, 0, w, h);
+      
+      const realCx = cx - st.mx; const realCy = cy - st.my;
+
+      // 1. BLACK HOLE & ACCRETION DISK (Idle state)
+      if (speed < 20) {
+        ctx.save(); ctx.translate(realCx, realCy); ctx.rotate(st.time); ctx.scale(1, 0.3); // 3D Tilt effect
+        
+        // Disk Glow
+        const diskGrad = ctx.createRadialGradient(0, 0, 60, 0, 0, 400);
+        diskGrad.addColorStop(0, 'rgba(0,0,0,0)'); diskGrad.addColorStop(0.15, 'rgba(6, 182, 212, 0.8)'); diskGrad.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)'); diskGrad.addColorStop(1, 'transparent');
+        ctx.beginPath(); ctx.arc(0, 0, 400, 0, Math.PI * 2); ctx.fillStyle = diskGrad; ctx.fill();
+        
+        // Accretion Particles sucking into Event Horizon
+        if (accretionParticles.length < 150) {
+          accretionParticles.push({ angle: Math.random() * Math.PI * 2, dist: Math.random() * 600 + 200, spd: Math.random() * 0.02 + 0.01, size: Math.random() * 2 + 0.5 });
+        }
+        ctx.fillStyle = '#fff';
+        accretionParticles.forEach(p => {
+          p.angle += p.spd; p.dist -= 2; // Suck in
+          if (p.dist < 60) p.dist = 800; // Respawn far away
+          ctx.beginPath(); ctx.arc(Math.cos(p.angle) * p.dist, Math.sin(p.angle) * p.dist, p.size, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.restore();
+
+        // Event Horizon (Absolute Black)
+        ctx.beginPath(); ctx.arc(realCx, realCy, 60, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill();
+        ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 30; ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.stroke(); ctx.shadowBlur = 0;
+      }
+
+      // 2. WORMHOLE TUNNEL (Warp state)
+      if (speed > 50) {
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 15; i++) {
+          const z = (st.time * 2000 + i * 150) % 2000;
+          if (z < 10) continue;
+          const r = (3000 * 300) / z;
+          ctx.beginPath(); ctx.arc(realCx, realCy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(6, 182, 212, ${1 - z/2000})`; ctx.stroke();
+        }
+      }
+
+      // 3. STARS & LENSING
+      ctx.globalCompositeOperation = 'screen';
+      stars.forEach(star => {
+        star.pz = star.z; star.z -= speed;
+        if (star.z < 10) { star.x = (Math.random() - 0.5) * 5000; star.y = (Math.random() - 0.5) * 5000; star.z = 3000; star.pz = 3000; }
+        
+        let sx = star.x; let sy = star.y; const distSq = sx*sx + sy*sy;
+        // Gravitational Lensing around Blackhole
+        if (distSq < 500000 && star.z > 500 && speed < 10) {
+          const force = 40000 / distSq; const invDist = 1 / Math.sqrt(distSq); sx += (sx * invDist) * force; sy += (sy * invDist) * force;
+        }
+        const projX = (sx * 500) / star.z + realCx; const projY = (sy * 500) / star.z + realCy;
+        
+        if (speed > 5) {
+          const oldX = (sx * 500) / star.pz + realCx; const oldY = (sy * 500) / star.pz + realCy;
+          ctx.lineWidth = Math.max(1, (3000 - star.z) / 400);
+          ctx.beginPath(); ctx.moveTo(oldX - 2, oldY); ctx.lineTo(projX - 2, projY); ctx.strokeStyle = 'rgba(255, 0, 50, 0.8)'; ctx.stroke(); // RGB Split Shift
+          ctx.beginPath(); ctx.moveTo(oldX + 2, oldY); ctx.lineTo(projX + 2, projY); ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)'; ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(oldX, oldY); ctx.lineTo(projX, projY); ctx.strokeStyle = '#fff'; ctx.stroke();
+        } else {
+          ctx.beginPath(); ctx.arc(projX, projY, Math.max(0.3, (3000 - star.z) / 400), 0, Math.PI * 2); ctx.fillStyle = `rgba(255,255,255,${1 - star.z/3000})`; ctx.fill();
+        }
+      });
+
+      // 4. SHOCKWAVES (Deploy Explosion)
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        ctx.beginPath(); ctx.arc(realCx, realCy, sw.r, 0, Math.PI * 2);
+        ctx.lineWidth = 10 * sw.alpha; ctx.strokeStyle = sw.color; ctx.globalAlpha = sw.alpha; ctx.stroke();
+        sw.r += 30; sw.alpha -= 0.02;
+        if (sw.alpha <= 0) shockwaves.splice(i, 1);
+      }
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      reqId = requestAnimationFrame(animate);
+    };
+    animate();
+    
+    // Auto show gate logic
+    const t = setTimeout(() => setShowGate(true), 6000);
+    return () => { window.removeEventListener('resize', updateSize); window.removeEventListener('mousemove', handleMouseMove); cancelAnimationFrame(reqId); clearTimeout(t); };
+  }, [osBooted]);
+
+  const activeData = activeShip !== null ? fleet.find(f => f.id === activeShip) : null;
+
+  if (!osBooted) return <BootTerminal onComplete={() => setOsBooted(true)} />;
+
+  return (
+    <main className={`min-h-screen bg-[#010103] relative overflow-hidden font-sans text-slate-200 cursor-crosshair select-none transition-all duration-[1200ms] ${warpSpeed ? 'scale-[1.1] blur-[1px] brightness-125' : 'scale-100'} ${deployState !== 'idle' ? 'hue-rotate-[15deg] saturate-150' : ''}`}>
+      
+      {/* GOD-TIER CSS (CRT & GLITCH & 3D) */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+        .cyber-clip { clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
+        .cyber-clip-sm { clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+        .mask-image-y { mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+        
+        /* CRT Post-Processing Overlay */
+        .crt-overlay { pointer-events: none; position: fixed; inset: 0; z-index: 9999; background: radial-gradient(circle, transparent 50%, rgba(0,0,0,0.6) 100%), linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 100% 100%, 100% 3px; mix-blend-mode: overlay; }
+        
+        .scanline { background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.2), transparent); animation: scan-vert 4s ease-in-out infinite alternate; will-change: top; }
+        @keyframes scan-vert { 0% { top: -10%; } 100% { top: 110%; } }
+        
+        .warp-shake { animation: shake-violent 0.1s infinite; will-change: transform; }
+        @keyframes shake-violent { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(-3px, 3px); } 50% { transform: translate(3px, -2px); } 75% { transform: translate(-2px, -3px); } }
+        
+        /* Glitch Transitions */
+        .glitch-trans { animation: glitch-trans-anim 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+        @keyframes glitch-trans-anim { 0% { clip-path: inset(10% 0 80% 0); transform: translate(-5px, 2px); } 20% { clip-path: inset(80% 0 10% 0); transform: translate(5px, -2px); } 40% { clip-path: inset(40% 0 40% 0); transform: translate(5px, 2px); } 60% { clip-path: inset(20% 0 60% 0); transform: translate(-5px, -2px); } 80% { clip-path: inset(60% 0 20% 0); transform: translate(5px, 2px); } 100% { clip-path: inset(0 0 0 0); transform: translate(0); } }
+
+        .orbital-sphere { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.08); top: 50%; left: 50%; transform-style: preserve-3d; will-change: transform; pointer-events:none; }
+        .ring-x { width: 140%; height: 140%; animation: spin-x 10s linear infinite; border-top: 2px solid var(--theme); }
+        .ring-y { width: 160%; height: 160%; animation: spin-y 15s linear infinite reverse; border-right: 2px dashed var(--theme); }
+        @keyframes spin-x { 100% { transform: translate(-50%, -50%) rotateX(60deg) rotateY(360deg) rotateZ(360deg); } }
+        @keyframes spin-y { 100% { transform: translate(-50%, -50%) rotateX(360deg) rotateY(60deg) rotateZ(360deg); } }
+        
+        .transform-style-3d { transform-style: preserve-3d; }
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+      `}} />
+
+      <div className="crt-overlay" />
+      <FPSMonitor />
+
+      {/* CORE CANVAS */}
+      <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''}`}>
+        <canvas ref={canvasRef} className="absolute inset-0 block" />
+      </div>
+
+      {/* ============================================================================ */}
+      {/* LAYER 1: IDLE HUB */}
+      {/* ============================================================================ */}
+      <div className={`relative z-20 w-full min-h-screen flex flex-col transition-all duration-700 ease-in-out ${activeShip !== null || warpSpeed ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100 glitch-trans'}`}>
+        
+        <header className="p-6 md:p-12 flex justify-between items-start">
+          <Link href="/" className="group flex items-center gap-4 cyber-clip bg-[#02050f]/60 backdrop-blur-md border border-white/10 px-6 py-2 hover:border-cyan-500 hover:bg-cyan-950/40 transition-colors" onMouseEnter={() => sfx?.play('hover')} onClick={() => sfx?.play('click')}>
+            <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Exit Hub</span>
+          </Link>
+          <div className="text-right">
+            <h1 className="text-2xl md:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]">Logic & Tốc Độ</h1>
+          </div>
+        </header>
+
+        <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full">
+          <div className="text-center mb-10 md:mb-16 px-4">
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Khai Thác Tối Đa</h2>
+            <div className="mt-4 font-mono text-cyan-400/60 text-xs tracking-widest uppercase"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Select Payload Core</div>
+          </div>
+
+          <div className="flex overflow-x-auto snap-x snap-mandatory px-8 md:px-4 w-full custom-scrollbar pb-8 pt-4 gap-8 md:justify-center z-40">
+            {fleet.map((ship, idx) => (
+              <div key={ship.id} className="snap-center shrink-0">
+                <div onClick={() => engageShip(ship.id)} onPointerEnter={() => sfx?.play('hover')} className={`group relative w-44 h-56 flex flex-col items-center justify-center transition-transform duration-500 will-change-transform hover:z-50 hover:scale-105 cursor-crosshair animate-in fade-in slide-in-from-bottom-12`} style={{ '--theme': ship.hex, animationDelay: `${idx * 0.15}s` } as React.CSSProperties}>
+                  <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0 text-center pointer-events-none hidden md:block">
+                    <span className="font-mono text-[9px] tracking-[0.3em] uppercase block mb-1 text-white/80">[{ship.code}]</span>
+                    <span className="text-sm font-black text-white tracking-widest whitespace-nowrap drop-shadow-[0_0_10px_rgba(0,0,0,1)]">{ship.title}</span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent p-[1px] cyber-clip shadow-[0_20px_40px_rgba(0,0,0,0.6)] group-hover:shadow-[0_0_50px_var(--theme)] transition-all duration-300">
+                    <div className="w-full h-full bg-[#02040a]/90 backdrop-blur-md cyber-clip flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:8px_8px] z-0" />
+                      <div className={`absolute w-20 h-20 rounded-full blur-[25px] opacity-20 group-hover:opacity-80 transition-all z-1`} style={{ background: ship.hex }} />
+                      <ship.icon className="w-12 h-12 text-white relative z-10 drop-shadow-[0_0_15px_var(--theme)] group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ============================================================================ */}
+      {/* LAYER 2: COMMAND HUD (ACTIVE STATE) */}
+      {/* ============================================================================ */}
+      {activeData && !warpSpeed && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-10 glitch-trans">
+          <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" />
+          
+          <button onClick={abortMission} onMouseEnter={() => sfx?.play('hover')} className={`absolute top-6 left-6 md:top-10 md:left-10 cyber-clip-sm bg-red-950/40 border border-red-500/50 px-5 py-2.5 flex items-center gap-2 text-red-400 hover:bg-red-500 hover:text-white transition-colors z-[100] group backdrop-blur-md ${deployState !== 'idle' ? 'hidden' : ''}`}>
+            <X className="w-4 h-4 group-hover:rotate-90 transition-transform" /> <span className="font-mono text-[10px] tracking-[0.2em] font-bold">ABORT</span>
+          </button>
+
+          <div className={`w-full max-w-[1600px] h-full flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10 perspective-[1500px] transition-all duration-700 ${deployState === 'deployed' ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}`}>
+            
+            {/* TRÁI: METRICS */}
+            <div className={`hidden lg:flex flex-col w-[300px] h-[75vh] justify-between transition-transform duration-500 ${deployState !== 'idle' ? '-translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
+              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-md border border-white/10 p-6 shadow-[0_0_30px_rgba(0,0,0,0.5)] transform-style-3d rotate-y-[10deg]">
+                <div className="flex items-center gap-3 mb-6 border-b border-white/10 pb-3"><ShieldAlert className="w-5 h-5 animate-pulse" style={{ color: activeData.hex }} /><span className="font-mono text-xs tracking-widest text-white/70">SYS.METRICS</span></div>
+                <div className="space-y-5">
+                  {['SPEED', 'CORE', 'NEURAL', 'HEAT'].map((lbl, i) => (
+                    <div key={lbl}>
+                      <div className="flex justify-between font-mono text-[9px] text-white/50 tracking-widest mb-1.5"><span>{lbl}</span> <span style={{ color: activeData.hex }}><ScrambleText text={`${activeData.stats[i]}%`} active={deployState==='idle'} delay={300} /></span></div>
+                      <div className="h-1 w-full bg-white/5 cyber-clip-sm overflow-hidden"><div className="h-full transition-all duration-[1000ms] ease-out shadow-[0_0_10px_currentColor]" style={{ width: `${activeData.stats[i]}%`, backgroundColor: activeData.hex, transitionDelay: `${i*0.1}s` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* GIỮA: MOUSE-TRACKED PARALLAX HOLOGRAM */}
+            <div className="flex-1 flex flex-col items-center justify-center relative pointer-events-none">
+              <div className="orbital-sphere ring-x hidden md:block opacity-30" style={{ '--theme': deployState !== 'idle' ? '#ff0000' : activeData.hex } as React.CSSProperties} />
+              <div className="orbital-sphere ring-y hidden md:block opacity-30" style={{ '--theme': deployState !== 'idle' ? '#ff0000' : activeData.hex } as React.CSSProperties} />
+              
+              <InteractiveHologram icon={activeData.icon} color={deployState !== 'idle' ? '#ff0000' : activeData.hex} />
+              
+              <div className="px-10 py-3 bg-black/80 border-y-2 cyber-clip-sm flex flex-col items-center text-center transition-colors duration-300 backdrop-blur-md" style={{ borderColor: deployState !== 'idle' ? '#ff0000' : activeData.hex }}>
+                <span className="text-[10px] font-mono tracking-widest uppercase text-white/50 mb-1 flex items-center gap-2">
+                  {deployState === 'idle' ? <><Target className="w-2.5 h-2.5 text-red-500 animate-spin" /> ENGAGED</> : <><AlertTriangle className="w-2.5 h-2.5 text-red-500 animate-ping" /> UPLINKING...</>}
+                </span>
+                <span className="text-3xl font-black uppercase tracking-widest text-white" style={{ textShadow: `0 0 15px ${deployState !== 'idle' ? 'red' : activeData.hex}` }}>
+                  <ScrambleText text={activeData.title} active={true} delay={100} />
+                </span>
+              </div>
+            </div>
+
+            {/* PHẢI: DATA STREAM & ACTION */}
+            <div className={`w-full lg:w-[420px] h-[75vh] relative transform-style-3d rotate-y-[-10deg] transition-transform duration-500 ${deployState !== 'idle' ? 'translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>
+              <div className="cyber-clip bg-[#01030a]/80 backdrop-blur-2xl border border-white/10 p-8 shadow-[0_0_50px_rgba(0,0,0,0.6)] h-full relative z-10 flex flex-col overflow-hidden">
+                <MatrixRain color={activeData.hex} active={deployState === 'idle'} />
+                <div className="absolute inset-0 w-full h-[10%] scanline pointer-events-none opacity-30 z-10" />
+
+                <div className="mb-6 border-b border-white/10 pb-4 relative z-20">
+                  <div className="flex items-center gap-2 mb-2 font-mono text-[10px] tracking-widest uppercase" style={{ color: activeData.hex }}><Lock className="w-4 h-4 animate-pulse" /> PAYLOAD_DATA</div>
+                  <h3 className="text-2xl font-bold text-white uppercase tracking-widest">{activeData.code}</h3>
+                </div>
+
+                <ul className="space-y-6 flex-1 relative z-20 overflow-y-auto pr-2 custom-scrollbar">
+                  {activeData.items.map((item, i) => (
+                    <li key={i} className="flex gap-4 items-start group">
+                      <div className="mt-1.5 w-2 h-2 shrink-0 bg-white/20 cyber-clip-sm group-hover:scale-150 transition-transform" style={{ backgroundColor: activeData.hex, boxShadow: `0 0 10px ${activeData.hex}` }} />
+                      <span className="text-sm text-cyan-50/80 leading-relaxed font-sans group-hover:text-white transition-colors"><ScrambleText text={item} active={true} delay={400 + i * 150} /></span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-6 pt-6 border-t border-white/10 relative z-20">
+                  <button 
+                    onClick={handleDeploy} onMouseEnter={() => sfx?.play('hover')}
+                    className="w-full cyber-clip-sm py-4 font-mono text-sm tracking-[0.3em] font-bold uppercase text-black transition-all flex items-center justify-center gap-2 hover:scale-[1.02]" 
+                    style={{ backgroundColor: activeData.hex, boxShadow: `0 0 20px ${activeData.hex}80` }}
+                  >
+                    <TerminalSquare className="w-4 h-4" /> DEPLOY PROTOCOL
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
