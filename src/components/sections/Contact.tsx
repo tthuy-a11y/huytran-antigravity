@@ -1,7 +1,7 @@
 'use client';
 
 import { Mail, Github, Linkedin, Sparkles, Send } from 'lucide-react';
-import { useState } sfrom 'react';
+import { useState } from 'react';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -14,7 +14,7 @@ export default function Contact() {
 
   return (
     <section id="contact" className="py-24 relative overflow-hidden bg-black border-t border-white/10">
-      <div classNames="absolute inset-0 bg-[linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:80px_80px] opacity-20 pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#222_1px,transparent_1px),linear-gradient(to_bottom,#222_1px,transparent_1px)] bg-[size:80px_80px] opacity-20 pointer-events-none" />
 
       <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 relative z-10">
         <div className="grid lg:grid-cols-2 gap-16">
@@ -23,7 +23,7 @@ export default function Contact() {
             <div className="inline-flex items-center gap-3 mb-6">
               <Sparkles className="w-8 h-8 text-cyan-300" />
               <h2 className="text-5xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-purple-300">
-                Liên hế
+                Liên hệ
               </h2>
             </div>
 
