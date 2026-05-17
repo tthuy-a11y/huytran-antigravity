@@ -56,7 +56,10 @@ export default function Projects() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {projectsData.map((project) => (
-            <div key={project.id} className="group bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden hover:border-cyan-400/40 hover:-translate-y-6 hover:shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500">
+            <div
+              key={project.id}
+              className="group bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl overflow-hidden hover:border-cyan-400/40 hover:-translate-y-6 hover:shadow-2xl hover:shadow-cyan-500/30 transition-all duration-500"
+            >
               <div className={`h-56 bg-gradient-to-br from-${project.color}-900/30 to-black flex items-center justify-center border-b border-white/10 relative overflow-hidden`}>
                 <div className="text-8xl font-black text-white/10 group-hover:text-white/20 transition-colors tracking-tighter">
                   {project.title.split(' ')[0]}
