@@ -433,22 +433,18 @@ export default function CosmicOdysseyPage() {
         <div className="absolute bottom-[-30%] right-[-20%] w-[100%] h-[100%] bg-[radial-gradient(circle,rgba(255,85,0,0.05)_0%,transparent_60%)] blur-[150px] mix-blend-screen" />
       </div>
 
-      {/* 3. HEADER HUD */}
-      <header className={`absolute top-0 w-full z-50 p-6 md:p-8 flex justify-between items-start pointer-events-none transition-all duration-[1500ms] ${isWarping ? '-translate-y-20 opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <Link href="/" className="pointer-events-auto flex items-center gap-4 group">
-          <div className="relative p-3 bg-black/50 backdrop-blur-xl border border-white/20 hover:border-[#00f2fe] transition-all clip-path-angled shadow-[0_0_15px_rgba(0,242,254,0.1)]">
-            <ArrowLeft className="w-5 h-5 text-white/70 group-hover:text-[#00f2fe] relative z-10 transition-colors" />
-          </div>
-          <div className="hidden sm:flex flex-col">
-            <span className="text-[9px] text-[#00f2fe] font-mono uppercase tracking-[0.4em] animate-pulse">Neural Link</span>
-            <span className="font-black font-space tracking-[0.2em] text-sm uppercase">Trạm Khởi Hành</span>
-          </div>
-        </Link>
-        <div className="flex items-center gap-3 backdrop-blur-2xl bg-black/60 px-8 py-3 border-l-2 border-b-2 border-[#00f2fe] clip-path-hex pointer-events-auto shadow-[0_0_30px_rgba(0,242,254,0.15)] group hover:bg-[#00f2fe]/10 transition-colors">
-          <Radar className="w-5 h-5 text-[#00f2fe] group-hover:text-white transition-colors animate-[spin_3s_linear_infinite]" />
-          <h1 className="text-xl md:text-2xl font-black font-space tracking-[0.3em] text-white uppercase group-hover:text-cyan-300">Hệ Siêu Kỹ Năng</h1>
+      {/* 3. INSTRUCTION TEXT */}
+      <div className={`absolute top-8 md:top-12 w-full z-50 flex justify-center pointer-events-none transition-all duration-[1500ms] ${isWarping ? '-translate-y-20 opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <div className="bg-black/40 backdrop-blur-xl border border-[#00f2fe]/20 px-8 py-3 rounded-full shadow-[0_0_30px_rgba(0,242,254,0.1)] flex items-center gap-4">
+          <span className="text-xs md:text-sm font-mono text-white/80 tracking-[0.2em] uppercase">
+            Chạm để ngưng đọng
+          </span>
+          <span className="text-cyan-400 font-bold animate-pulse text-lg leading-none">&lt;&gt;</span>
+          <span className="text-xs md:text-sm font-mono text-white/80 tracking-[0.2em] uppercase">
+            Click để khám phá hành tinh
+          </span>
         </div>
-      </header>
+      </div>
 
       {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D — FRAMER MOTION SPRING */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
