@@ -177,7 +177,7 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
         style={{ 
           width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit,
           borderColor: isHovered ? p.color : 'rgba(255,255,255,0.08)',
-          boxShadow: isHovered ? `0 0 50px ${p.color}70, inset 0 0 30px ${p.color}40` : '0 0 25px rgba(255,255,255,0.02)',
+          boxShadow: isHovered ? `0 0 60px ${p.color}80, inset 0 0 40px ${p.color}40` : '0 0 25px rgba(255,255,255,0.02)',
         }}
       />
 
@@ -187,47 +187,57 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
         {/* VỆT SAO CHỔI */}
         <div className={`absolute pointer-events-none orbit-spin transition-all duration-700 ease-out ${isDimmed ? 'opacity-0' : 'opacity-100'}`} 
              style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, animationDuration: `${p.speed}s` }}>
-          <div className="absolute top-1/2 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-[1px] opacity-70"
-               style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color})` }} />
+          <div className="absolute top-1/2 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-[2px] opacity-70"
+               style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color}90)` }} />
         </div>
 
         {/* 3. HÀNH TINH 3D - TỰ XOAY + ORBIT */}
         <div className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${p.speed}s` }}>
           <div className="absolute transform-style-3d" style={{ transform: `translateX(${p.orbit}px)` }}>
-            <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed * 0.6}s` }}>
-              {/* COUNTER-ROTATE ĐỂ MẶT LUÔN HƯỚNG VỀ CAMERA (Pure 3D) */}
+            <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed * 0.55}s` }}>
+              {/* COUNTER-ROTATE ĐỂ MẶT LUÔN HƯỚNG VỀ CAMERA */}
               <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto z-10" 
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
-                {/* === KHỐI CẦU 3D CÓ CHIỀU SÂU === */}
-                <div className={`absolute cursor-crosshair group pointer-events-auto transition-all duration-700 ease-out ${isDimmed ? 'opacity-20 scale-90 blur-[3px]' : isHovered ? 'opacity-100 scale-125 z-[200]' : 'opacity-100 scale-100 blur-0'}`}
-                     style={{ width: p.size * 1.6, height: p.size * 1.6, left: -p.size * 0.8, top: -p.size * 0.8 }}
-                     onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
-                     onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
-                     onMouseLeave={() => onLeave()}>
-                  
-                  {/* Specular highlight (điểm sáng 3D) */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/70 via-transparent to-transparent opacity-30 pointer-events-none" />
+                {/* === KHỐI CẦU 3D CÓ CHIỀU SÂU THẬT === */}
+                <div 
+                  className={`absolute cursor-crosshair group transition-all duration-700 ease-out ${isDimmed ? 'opacity-20 scale-90 blur-[4px]' : isHovered ? 'opacity-100 scale-125 z-[250]' : 'opacity-100 scale-100'}`}
+                  style={{ width: p.size * 1.8, height: p.size * 1.8, left: -p.size * 0.9, top: -p.size * 0.9 }}
+                  onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
+                  onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
+                  onMouseLeave={() => onLeave()}
+                >
+                  {/* Rim light (ánh sáng viền) */}
+                  <div className="absolute inset-0 rounded-full border-4 border-white/30 opacity-40 pointer-events-none" 
+                       style={{ boxShadow: `0 0 60px ${p.color}80` }} />
+
+                  {/* Specular highlight (điểm sáng) */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/60 via-transparent to-transparent opacity-30 pointer-events-none" 
+                       style={{ transform: 'rotateX(65deg)' }} />
 
                   {/* Khối cầu chính - volumetric shading */}
-                  <div className="w-full h-full rounded-full relative overflow-hidden border border-white/20 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_80px_rgba(255,255,255,0.4)]"
-                       style={{ 
-                         background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 55%, #111 100%)`,
-                         boxShadow: `0 0 60px ${p.color}60, inset -25px -25px 45px rgba(0,0,0,0.85), inset 20px 20px 35px rgba(255,255,255,0.65)`
-                       }}>
-                    <div className="absolute inset-0 opacity-40 mix-blend-overlay" style={{ background: p.surface }} />
-                    <div className="absolute inset-0 opacity-30 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
-                    <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] h-[52%] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.4} />
+                  <div 
+                    className="w-full h-full rounded-full relative overflow-hidden border border-white/25 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_100px_rgba(255,255,255,0.5)]"
+                    style={{ 
+                      background: `radial-gradient(circle at 32% 28%, #ffffff 8%, ${p.color} 22%, ${p.darkColor} 58%, #0a0a1f 100%)`,
+                      boxShadow: `0 0 70px ${p.color}70, inset -30px -30px 50px rgba(0,0,0,0.9), inset 25px 25px 40px rgba(255,255,255,0.75)`
+                    }}
+                  >
+                    <div className="absolute inset-0 mix-blend-overlay opacity-50" style={{ background: p.surface }} />
+                    <div className="absolute inset-0 opacity-35 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
+                    <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55%] h-[55%] text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.9)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.3} />
                   </div>
 
-                  {/* Particle burst khi hover */}
+                  {/* Particle burst */}
                   {isHovered && <PlanetParticleBurst color={p.color} active={true} />}
 
-                  {/* FLOATING LABEL - TO HƠN */}
+                  {/* === LABEL BILLBOARD === */}
                   <div className={`absolute flex flex-col items-center transition-all duration-700 ease-out ${isDimmed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'} group-hover:scale-110`}
-                       style={{ top: p.size * 0.9 + 30, left: '50%', transform: 'translateX(-50%)' }}>
-                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-3xl text-center shadow-[0_25px_60px_rgba(0,0,0,0.9)] whitespace-nowrap min-w-[260px]" style={{ borderColor: p.color, boxShadow: `0 0 50px ${p.color}60` }}>
-                      <div className="text-3xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 3px 0 ${p.darkColor}, 0 6px 0 rgba(0,0,0,0.6), 0 0 35px ${p.color}80` }}>{p.name}</div>
+                       style={{ top: p.size * 0.95 + 40, left: '50%', transform: 'translateX(-50%)' }}>
+                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-3xl text-center shadow-[0_30px_70px_rgba(0,0,0,0.9)] whitespace-nowrap min-w-[280px]" 
+                         style={{ borderColor: p.color, boxShadow: `0 0 60px ${p.color}70` }}>
+                      <div className="text-3xl font-black text-white tracking-widest leading-none" 
+                           style={{ textShadow: `0 4px 0 ${p.darkColor}, 0 8px 0 rgba(0,0,0,0.7), 0 0 40px ${p.color}90` }}>{p.name}</div>
                       <div className="text-sm font-mono text-white/90 mt-3 flex items-center justify-center gap-3">
                         <span>{p.code}</span><span className="w-px h-4 bg-white/40" /><span style={{ color: p.color }} className="font-bold">Nhóm: {p.type}</span>
                       </div>
