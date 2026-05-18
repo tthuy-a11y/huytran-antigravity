@@ -224,7 +224,7 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
   }, [setActivePlanet]);
 
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-lg pointer-events-auto animate-hud-glitch cursor-pointer" onClick={() => { setActivePlanet(null); setHoveredPlanet(null); }}>
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/70 backdrop-blur-lg pointer-events-auto animate-hud-glitch cursor-pointer" onClick={() => { setActivePlanet(null); }}>
       
       {/* CENTERED CARD */}
       <div className="relative max-w-3xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-8 md:p-12 pointer-events-auto cursor-default"

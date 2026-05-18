@@ -26,17 +26,17 @@ class AudioSystem {
     }
     if (this.ctx?.state === 'suspended') this.ctx.resume();
   }
-  play(type: 'type' | 'boot' | 'hover' | 'click' | 'warp' | 'abort' | 'deploy' | 'beep') {
+  play(type: 'type' | 'boot' | 'hover' | 'click' | 'warp' | 'abort' | 'deploy' | 'beep' | 'impact') {
     if (!this.ctx) this.init(); if (!this.ctx) return;
     try {
       const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
       osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime;
       switch (type) {
-        case 'type': // Keystroke click
+        case 'type':
           osc.type = 'square'; osc.frequency.setValueAtTime(800 + Math.random()*200, now);
           gain.gain.setValueAtTime(0.01, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
           osc.start(now); osc.stop(now + 0.05); break;
-        case 'boot': // System power up hum
+        case 'boot':
           osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, now); osc.frequency.exponentialRampToValueAtTime(150, now + 2);
           gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.05, now + 1); gain.gain.linearRampToValueAtTime(0, now + 3);
           osc.start(now); osc.stop(now + 3); break;
@@ -52,10 +52,14 @@ class AudioSystem {
           osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
           gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
           osc.start(now); osc.stop(now + 0.4); break;
-        case 'deploy': // Cinematic Siren
+        case 'deploy':
           osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.3); osc.frequency.linearRampToValueAtTime(400, now + 0.6); osc.frequency.linearRampToValueAtTime(1200, now + 1.2);
           gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 1.2);
           osc.start(now); osc.stop(now + 1.2); break;
+        case 'impact': // Asteroid collision boom
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+          gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now); osc.stop(now + 0.3); break;
         case 'beep':
           osc.type = 'sine'; osc.frequency.setValueAtTime(1500, now); gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
           osc.start(now); osc.stop(now + 0.1); break;
@@ -233,7 +237,9 @@ export default function ExodusGodTier() {
   const [deployState, setDeployState] = useState<'idle' | 'charging' | 'deployed'>('idle');
   const [showGate, setShowGate] = useState(false);
   const [rushingShipId, setRushingShipId] = useState<number | null>(null);
-  const [impactParticles, setImpactParticles] = useState<Array<{id:number;x:number;y:number;s:number;d:number}>>([]);
+  const [impactParticles, setImpactParticles] = useState<Array<{id:number;x:number;y:number;s:number;d:number;c:string}>>([]);
+  const [impactFlash, setImpactFlash] = useState(false);
+  const [asteroids, setAsteroids] = useState<Array<{id:number;x:number;y:number;r:number;s:number;d:number}>>([]);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -256,14 +262,29 @@ export default function ExodusGodTier() {
   // --- Actions ---
   const engageShip = useCallback((id: number) => {
     if (activeShip === id || rushingShipId !== null) return;
+    const shipColor = fleet.find(f => f.id === id)?.hex || '#fff';
     sfx?.play('click'); setRushingShipId(id);
-    // 500ms: impact particles
-    setTimeout(() => { setImpactParticles(Array.from({length:25},(_,i)=>({id:i,x:(Math.random()-.5)*350,y:(Math.random()-.5)*350,s:Math.random()*6+2,d:Math.random()*.15}))); }, 500);
-    // 900ms: warp phase
-    setTimeout(() => { sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400; setImpactParticles([]); }, 900);
-    // 1500ms: show HUD
-    setTimeout(() => { setActiveShip(id); setWarpSpeed(false); setRushingShipId(null); engineRef.current.targetSpeed = 0.5; }, 1500);
-  }, [activeShip, rushingShipId]);
+    // 200ms: Asteroids rush in from edges
+    setTimeout(() => {
+      setAsteroids(Array.from({length:6},(_,i)=>({ id:i, x:(Math.random()-.5)*600, y:-300-Math.random()*200, r:Math.random()*720, s:8+Math.random()*16, d:Math.random()*.2 })));
+    }, 200);
+    // 500ms: IMPACT! Flash + explosion particles + sound
+    setTimeout(() => {
+      sfx?.play('impact'); setImpactFlash(true);
+      setImpactParticles(Array.from({length:40},(_,i)=>({ id:i, x:(Math.random()-.5)*500, y:(Math.random()-.5)*500, s:Math.random()*8+2, d:Math.random()*.2, c: Math.random()>.5 ? shipColor : '#fff' })));
+      setTimeout(() => setImpactFlash(false), 150);
+    }, 500);
+    // 1200ms: Warp drive engage
+    setTimeout(() => {
+      sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400;
+      setImpactParticles([]); setAsteroids([]);
+    }, 1200);
+    // 1800ms: Arrive at HUD
+    setTimeout(() => {
+      setActiveShip(id); setWarpSpeed(false); setRushingShipId(null);
+      engineRef.current.targetSpeed = 0.5;
+    }, 1800);
+  }, [activeShip, rushingShipId, fleet]);
 
   const abortMission = useCallback(() => {
     if (activeShip === null || deployState !== 'idle') return;
@@ -431,26 +452,43 @@ export default function ExodusGodTier() {
         .transform-style-3d { transform-style: preserve-3d; }
         .custom-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* SHIP RUSH ANIMATION - 0.9s fast & cinematic */
-        @keyframes shipRush {
+        /* === CINEMATIC SHIP SEQUENCE — 1.8s === */
+        @keyframes shipFullSequence {
           0%   { transform: translateY(0) scale(1) rotate(0deg); opacity:1; }
-          10%  { transform: translateY(15px) scale(.93) rotate(-2deg); opacity:1; }
-          30%  { transform: translateY(-130px) scale(1.2) rotate(8deg); opacity:1; }
-          40%  { transform: translateY(-110px) scale(1.1) rotate(-16deg); opacity:1; }
-          50%  { transform: translateY(-150px) scale(1.25) rotate(14deg); opacity:1; }
-          55%  { transform: translateY(-140px) translateX(-12px) scale(1.2) rotate(3deg); }
-          58%  { transform: translateY(-145px) translateX(14px) scale(1.22) rotate(-3deg); }
-          62%  { transform: translateY(-140px) translateX(0) scale(1.2) rotate(0deg); }
-          80%  { transform: translateY(-110px) scale(1) rotate(720deg); opacity:.7; }
-          100% { transform: translateY(-500px) scale(.15) rotate(1080deg); opacity:0; }
+          8%   { transform: translateY(20px) scale(.9) rotate(-3deg); opacity:1; } /* crouch */
+          18%  { transform: translateY(-100px) scale(1.15) rotate(12deg); opacity:1; } /* rush up */
+          25%  { transform: translateY(-60px) translateX(-30px) scale(1.05) rotate(-25deg); } /* dodge left */
+          32%  { transform: translateY(-80px) translateX(35px) scale(1.08) rotate(18deg); } /* dodge right */
+          42%  { transform: translateY(-130px) scale(1.2) rotate(360deg); opacity:1; } /* barrel roll 1 */
+          55%  { transform: translateY(-100px) scale(1.1) rotate(720deg); opacity:1; } /* barrel roll 2 */
+          68%  { transform: translateY(-160px) scale(.9) rotate(1080deg); opacity:.8; } /* barrel roll 3 */
+          80%  { transform: translateY(-250px) scale(.5) rotate(1260deg); opacity:.4; } /* fly away */
+          100% { transform: translateY(-500px) scale(.1) rotate(1440deg); opacity:0; } /* vanish */
         }
-        .ship-rush-active { animation: shipRush .9s cubic-bezier(.22,.9,.3,1) forwards; }
+        .ship-rush-active { animation: shipFullSequence 1.8s cubic-bezier(.23,1,.32,1) forwards; }
 
+        /* PARTICLE DEBRIS — flies outward */
         @keyframes particleBurst {
           0%   { transform: translate(0,0) scale(1); opacity:1; }
           100% { transform: translate(var(--px),var(--py)) scale(0); opacity:0; }
         }
-        .particle-burst { animation: particleBurst .5s ease-out forwards; }
+        .particle-burst { animation: particleBurst .6s ease-out forwards; }
+
+        /* ASTEROID RUSH — flies across screen */
+        @keyframes asteroidRush {
+          0%   { transform: translate(var(--ax), var(--ay)) rotate(0deg) scale(1); opacity:0; }
+          10%  { opacity:1; }
+          90%  { opacity:1; }
+          100% { transform: translate(calc(var(--ax) * -1), calc(var(--ay) * -1.5)) rotate(var(--ar)) scale(.3); opacity:0; }
+        }
+        .asteroid-rush { animation: asteroidRush .8s linear forwards; }
+
+        /* IMPACT FLASH — full screen white flash */
+        @keyframes impactFlashAnim {
+          0%   { opacity:.8; }
+          100% { opacity:0; }
+        }
+        .impact-flash { animation: impactFlashAnim .15s ease-out forwards; }
       `}} />
 
       <div className="crt-overlay" />
@@ -460,6 +498,9 @@ export default function ExodusGodTier() {
       <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''}`}>
         <canvas ref={canvasRef} className="absolute inset-0 block" />
       </div>
+
+      {/* IMPACT FLASH OVERLAY */}
+      {impactFlash && <div className="fixed inset-0 z-[9998] bg-white impact-flash pointer-events-none" />}
 
       {/* ============================================================================ */}
       {/* LAYER 1: IDLE HUB */}
@@ -495,9 +536,13 @@ export default function ExodusGodTier() {
                   >
                     {/* SPACESHIP BODY */}
                     <div className={`relative w-[160px] h-[200px] md:w-[200px] md:h-[250px] ${isRushing ? 'ship-rush-active' : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
-                      {/* Impact Particles */}
+                      {/* Impact Particles — 40 debris pieces with mixed colors */}
                       {isRushing && impactParticles.map(p => (
-                        <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius:'50%', background:ship.hex, boxShadow:`0 0 8px ${ship.hex}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />
+                        <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius: p.id % 3 === 0 ? '2px' : '50%', background:p.c, boxShadow:`0 0 10px ${p.c}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />
+                      ))}
+                      {/* Asteroids — rocky debris flying across */}
+                      {isRushing && asteroids.map(a => (
+                        <div key={a.id} className="asteroid-rush" style={{ position:'absolute', top:'30%', left:'50%', width:a.s, height:a.s, background:'linear-gradient(135deg,#888 0%,#333 100%)', borderRadius:'30% 70% 50% 40%', boxShadow:'inset -2px -2px 4px rgba(0,0,0,.6), 0 0 12px rgba(255,150,50,.3)', '--ax':`${a.x}px`, '--ay':`${a.y}px`, '--ar':`${a.r}deg`, animationDelay:`${a.d}s`, zIndex:30 } as React.CSSProperties} />
                       ))}
                       {/* Ship Hull */}
                       <div className="w-full h-full relative overflow-hidden" style={{ clipPath: getClipPath(ship.shape) }}>
