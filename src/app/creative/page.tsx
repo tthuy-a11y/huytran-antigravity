@@ -342,11 +342,11 @@ const CentralHUD = React.memo(({ activePlanet, setActivePlanet }: HolographicMod
 
         {/* ACTION BUTTON */}
         <button 
-          onClick={(e) => { e.stopPropagation(); router.push(p.link); }} 
+          onClick={(e) => { e.stopPropagation(); setActivePlanet(null); }} 
           className="w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xl md:text-2xl text-black transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-3 cursor-pointer"
           style={{ backgroundColor: p.color, boxShadow: `0 0 40px ${p.color}60` }}
         >
-          <Zap className="w-6 h-6" fill="currentColor" /> Khám Phá Phân Khu
+          <Zap className="w-6 h-6" fill="currentColor" /> Quay Lại Hệ Hành Tinh
         </button>
       </div>
     </div>
