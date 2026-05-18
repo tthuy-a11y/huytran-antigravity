@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { 
   ArrowLeft, X, Target, Radar, Activity,  
   Cpu, Globe, Wand2, TerminalSquare, Layers, UtensilsCrossed, 
@@ -129,18 +130,50 @@ const CanvasStarfield = React.memo(({ isWarping, isPaused }: { isWarping: boolea
 });
 CanvasStarfield.displayName = 'CanvasStarfield';
 
+// 3.2b Particle Burst khi Hover Planet (Canvas nhẹ)
+const PlanetParticleBurst = ({ color, active }: { color: string; active: boolean }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (!active || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    canvas.width = 200; canvas.height = 200;
+    let particles = Array.from({ length: 50 }, () => ({
+      x: 100, y: 100,
+      vx: (Math.random() - 0.5) * 10,
+      vy: (Math.random() - 0.5) * 10,
+      life: 40 + Math.random() * 20,
+    }));
+    let frame = requestAnimationFrame(function animate() {
+      ctx.clearRect(0, 0, 200, 200);
+      particles = particles.filter(p => {
+        p.x += p.vx; p.y += p.vy; p.life--; p.vx *= 0.95; p.vy *= 0.95;
+        ctx.globalAlpha = p.life / 60;
+        ctx.fillStyle = color;
+        ctx.fillRect(p.x, p.y, 3, 3);
+        return p.life > 0;
+      });
+      if (particles.length > 0) frame = requestAnimationFrame(animate);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active, color]);
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-[300] w-full h-full" />;
+};
+
 // 3.3 Node Hành Tinh (Tách nhỏ Component)
 const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHover, onLeave, onClick }: PlanetNodeProps) => {
   const isHovered = hoveredPlanet === p.id;
   const isOtherHovered = hoveredPlanet !== null && !isHovered;
   const isDimmed = isOtherHovered || isPaused;
   const Icon = p.icon;
+  const nodeStyle = { willChange: isHovered ? 'transform' as const : 'auto' as const };
 
   return (
-    <div className="absolute transform-style-3d">
-      {/* 1. VÒNG QUỶ ĐẠO RÕ RỆT - GLOWING (Flat Leaf) */}
+    <div className="absolute transform-style-3d" style={nodeStyle}>
+      {/* 1. VÒNG QUỶ ĐẠO RÕ RỆT */}
       <div 
-        className={`absolute rounded-full border-2 pointer-events-none transition-all duration-1000 ${isDimmed ? 'opacity-10 blur-[4px]' : 'opacity-100'}`}
+        className={`absolute rounded-full border-2 pointer-events-none transition-all duration-700 ease-out ${isDimmed ? 'opacity-20 scale-95 blur-[3px]' : 'opacity-100 scale-100 blur-0'}`}
         style={{ 
           width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit,
           borderColor: isHovered ? p.color : 'rgba(255,255,255,0.08)',
@@ -151,8 +184,8 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
       {/* 2. BASE ROTATOR (Pure 3D) */}
       <div className="absolute transform-style-3d" style={{ transform: `rotateZ(${p.startAngle}deg)` }}>
           
-        {/* VỆT SAO CHỔI (Flat Leaf) */}
-        <div className={`absolute pointer-events-none orbit-spin transition-all duration-1000 ${isDimmed ? 'opacity-0' : 'opacity-100'}`} 
+        {/* VỆT SAO CHỔI */}
+        <div className={`absolute pointer-events-none orbit-spin transition-all duration-700 ease-out ${isDimmed ? 'opacity-0' : 'opacity-100'}`} 
              style={{ width: p.orbit * 2, height: p.orbit * 2, left: -p.orbit, top: -p.orbit, animationDuration: `${p.speed}s` }}>
           <div className="absolute top-1/2 left-1/2 h-[3px] -translate-y-1/2 origin-left blur-[1px] opacity-70"
                style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color})` }} />
@@ -167,7 +200,7 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
                 {/* QUẢ CẦU HÀNH TINH VÀ CHỮ (Leaf container, can flatten safely here) */}
-                <div className={`absolute cursor-crosshair group pointer-events-auto transition-all duration-700 ${isDimmed ? 'opacity-10 scale-95 blur-[4px]' : isHovered ? 'opacity-100 scale-125 z-[200]' : 'opacity-100 scale-100'}`}
+                <div className={`absolute cursor-crosshair group pointer-events-auto transition-all duration-700 ease-out ${isDimmed ? 'opacity-20 scale-90 blur-[3px]' : isHovered ? 'opacity-100 scale-125 z-[200]' : 'opacity-100 scale-100 blur-0'}`}
                      onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
                      onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
                      onMouseLeave={() => onLeave()}>
@@ -183,6 +216,7 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                       <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
                       <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
                     </div>
+                    {isHovered && <PlanetParticleBurst color={p.color} active={isHovered} />}
                   </div>
 
                   {/* FLOATING LABEL - GẮN LIỀN VỚI CONTAINER ĐỂ BẮT HOVER/CLICK */}
@@ -310,9 +344,16 @@ export default function CosmicOdysseyPage() {
   const [showNav, setShowNav] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Giảm Asteroid Array Size để giữ mượt FPS
+  // Framer Motion Spring Physics cho Camera
+  const mouseXMotion = useMotionValue(0);
+  const mouseYMotion = useMotionValue(0);
+  const mouseXSpring = useSpring(mouseXMotion, { stiffness: 120, damping: 30, mass: 0.8 });
+  const mouseYSpring = useSpring(mouseYMotion, { stiffness: 120, damping: 30, mass: 0.8 });
+
+  // Giảm Asteroid cho mobile
   const asteroids = useMemo(() => {
-    const count = typeof window !== 'undefined' && window.innerWidth < 768 ? 20 : 45;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const count = isMobile ? 18 : 42;
     return Array.from({ length: count }).map(() => ({ r: Math.random() * 800 + 350, a: Math.random() * 360, s: Math.random() * 2 + 1, speed: Math.random() * 80 + 40 }));
   }, []);
 
@@ -322,16 +363,19 @@ export default function CosmicOdysseyPage() {
     return () => { clearTimeout(warpTimer); clearTimeout(navTimer); };
   }, []);
 
-  // Throttle Chuột siêu mượt bằng RequestAnimationFrame
+  // Mouse handler - đẩy giá trị vào MotionValue, spring tự lerp
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current || isWarping || activePlanet) return;
-    requestAnimationFrame(() => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 20;
-      const y = (e.clientY / window.innerHeight - 0.5) * 20;
-      containerRef.current?.style.setProperty('--mouse-x', `${x}deg`);
-      containerRef.current?.style.setProperty('--mouse-y', `${-y}deg`);
-    });
-  }, [isWarping, activePlanet]);
+    if (isWarping || activePlanet) return;
+    const x = (e.clientX / window.innerWidth - 0.5) * 30;
+    const y = (e.clientY / window.innerHeight - 0.5) * 30;
+    mouseXMotion.set(x);
+    mouseYMotion.set(-y);
+    // Keep CSS vars for planet counter-rotate
+    if (containerRef.current) {
+      containerRef.current.style.setProperty('--mouse-x', `${x}deg`);
+      containerRef.current.style.setProperty('--mouse-y', `${-y}deg`);
+    }
+  }, [isWarping, activePlanet, mouseXMotion, mouseYMotion]);
 
   const handlePlanetClick = useCallback((p: Planet) => { setActivePlanet(p); setHoveredPlanet(null); }, []);
   const handlePlanetHover = useCallback((id: string) => setHoveredPlanet(id), []);
@@ -387,14 +431,34 @@ export default function CosmicOdysseyPage() {
         </div>
       </header>
 
-      {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D */}
+      {/* 4. VẬT LÝ HỆ MẶT TRỜI 3D — FRAMER MOTION SPRING */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <div className={`camera-rig transform-style-3d ease-warp w-full h-full flex items-center justify-center will-change-transform transition-all duration-[1500ms]
-             ${isWarping ? 'scale-[6] opacity-0 blur-[20px] system-paused' : isPaused ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused opacity-30 blur-sm pointer-events-none' : hoveredPlanet ? 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90 system-paused' : 'scale-[0.25] sm:scale-[0.35] md:scale-[0.45] lg:scale-[0.6] xl:scale-[0.75] 2xl:scale-90'}`}
-             style={{ transform: isPaused || isWarping ? '' : `rotateX(calc(75deg + var(--mouse-y))) rotateY(calc(0deg + var(--mouse-x)))` }}>
+        <motion.div 
+          className={`camera-rig transform-style-3d w-full h-full flex items-center justify-center will-change-transform
+               ${isWarping ? 'system-paused' : isPaused ? 'system-paused pointer-events-none' : hoveredPlanet ? 'system-paused' : ''}`}
+          animate={{
+            scale: isWarping ? 6 : (isPaused ? 0.5 : 0.6),
+            opacity: isWarping ? 0 : (isPaused ? 0.25 : 1),
+            filter: isWarping ? 'blur(20px)' : (isPaused ? 'blur(4px)' : 'blur(0px)'),
+            rotateX: isPaused || isWarping ? 75 : 75,
+            rotateY: isPaused || isWarping ? 0 : 0,
+          }}
+          style={{
+            rotateX: isPaused || isWarping ? undefined : mouseYSpring as any,
+            rotateY: isPaused || isWarping ? undefined : mouseXSpring as any,
+          }}
+          transition={{
+            type: 'spring',
+            stiffness: 80,
+            damping: 25,
+            mass: 1,
+            opacity: { duration: 0.8, ease: 'easeOut' },
+            filter: { duration: 0.8, ease: 'easeOut' },
+            scale: { type: 'spring', stiffness: 60, damping: 20 },
+          }}>
           
           {/* LÕI HỐ ĐEN */}
-          <div className={`absolute transform-style-3d pointer-events-auto transition-all duration-1000 ${hoveredPlanet ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
+          <div className={`absolute transform-style-3d pointer-events-auto transition-all duration-1000 ease-out ${hoveredPlanet ? 'opacity-40 scale-[0.92]' : 'opacity-100 scale-100'}`}>
             <div className="transform-style-3d transition-transform duration-100" style={{ transform: `rotateX(calc(-75deg - var(--mouse-y))) rotateY(calc(0deg - var(--mouse-x)))` }}>
               <div className="relative flex items-center justify-center w-72 h-72 group cursor-crosshair">
                 <div className="absolute w-[1000px] h-[1000px] rounded-full border-t-[12px] border-orange-400/80 animate-[spin_8s_linear_infinite] transform-style-3d blur-[4px] shadow-[0_0_100px_#ff5500]" style={{ transform: 'rotateX(75deg) rotateY(-10deg)' }} />
@@ -429,7 +493,7 @@ export default function CosmicOdysseyPage() {
               onHover={handlePlanetHover} onLeave={handlePlanetLeave} onClick={handlePlanetClick} 
             />
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* 5. HOLOGRAM SPLIT-SCREEN MODAL */}
