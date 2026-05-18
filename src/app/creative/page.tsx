@@ -191,44 +191,48 @@ const PlanetNode = React.memo(({ p, index, total, isPaused, hoveredPlanet, onHov
                style={{ width: p.orbit, background: `linear-gradient(90deg, transparent, ${p.color})` }} />
         </div>
 
-        {/* 3. HÀNH TINH (Pure 3D Chain) */}
+        {/* 3. HÀNH TINH 3D - TỰ XOAY + ORBIT */}
         <div className="absolute transform-style-3d orbit-spin" style={{ animationDuration: `${p.speed}s` }}>
           <div className="absolute transform-style-3d" style={{ transform: `translateX(${p.orbit}px)` }}>
-            <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed}s` }}>
+            <div className="absolute transform-style-3d orbit-anti-spin" style={{ animationDuration: `${p.speed * 0.6}s` }}>
               {/* COUNTER-ROTATE ĐỂ MẶT LUÔN HƯỚNG VỀ CAMERA (Pure 3D) */}
-              <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto" 
+              <div className="absolute transform-style-3d transition-transform duration-100 ease-out pointer-events-auto z-10" 
                    style={{ transform: `rotateZ(${-p.startAngle}deg) rotateY(calc(0deg - var(--mouse-x))) rotateX(calc(-75deg - var(--mouse-y)))` }}>
 
-                {/* QUẢ CẦU HÀNH TINH VÀ CHỮ (Leaf container, can flatten safely here) */}
+                {/* === KHỐI CẦU 3D CÓ CHIỀU SÂU === */}
                 <div className={`absolute cursor-crosshair group pointer-events-auto transition-all duration-700 ease-out ${isDimmed ? 'opacity-20 scale-90 blur-[3px]' : isHovered ? 'opacity-100 scale-125 z-[200]' : 'opacity-100 scale-100 blur-0'}`}
+                     style={{ width: p.size * 1.6, height: p.size * 1.6, left: -p.size * 0.8, top: -p.size * 0.8 }}
                      onClick={(e) => { e.stopPropagation(); playSound('click'); onClick(p); }}
                      onMouseEnter={() => { onHover(p.id); playSound('hover'); }}
                      onMouseLeave={() => onLeave()}>
                   
-                  {/* SPHERE */}
-                  <div className="absolute flex items-center justify-center transition-all duration-500 group-hover:scale-110" style={{ width: p.size, height: p.size, left: -p.size/2, top: -p.size/2 }}>
-                    <div className="absolute -inset-[60%] rounded-full opacity-0 group-hover:opacity-100 blur-[30px] transition-all duration-500 pointer-events-none" style={{ backgroundColor: p.color }} />
-                    {p.ring && <div className="absolute w-[250%] h-[250%] rounded-full border-[6px] border-double border-white/20 group-hover:border-white/80 transition-colors duration-500 animate-[spin_10s_linear_infinite] pointer-events-none shadow-[0_0_20px_rgba(255,255,255,0.1)]" style={{ transform: 'rotateX(70deg) rotateY(15deg)', borderTopColor: p.color, borderBottomColor: p.color }} />}
-                    
-                    <div className="w-full h-full rounded-full relative overflow-hidden transition-all duration-500 shadow-[0_0_50px_rgba(0,0,0,1)] border border-white/20"
-                         style={{ background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 60%, #000 100%)`, boxShadow: `0 0 40px ${p.color}60, inset -15px -15px 30px rgba(0,0,0,0.9), inset 5px 5px 20px rgba(255,255,255,0.5)` }}>
-                      <div className="absolute inset-0 mix-blend-overlay opacity-60" style={{ background: p.surface }} />
-                      <div className="absolute inset-0 opacity-40 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
-                      <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[45%] h-[45%] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.5} />
-                    </div>
-                    {isHovered && <PlanetParticleBurst color={p.color} active={isHovered} />}
+                  {/* Specular highlight (điểm sáng 3D) */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/70 via-transparent to-transparent opacity-30 pointer-events-none" />
+
+                  {/* Khối cầu chính - volumetric shading */}
+                  <div className="w-full h-full rounded-full relative overflow-hidden border border-white/20 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_80px_rgba(255,255,255,0.4)]"
+                       style={{ 
+                         background: `radial-gradient(circle at 30% 30%, ${p.color} 0%, ${p.darkColor} 55%, #111 100%)`,
+                         boxShadow: `0 0 60px ${p.color}60, inset -25px -25px 45px rgba(0,0,0,0.85), inset 20px 20px 35px rgba(255,255,255,0.65)`
+                       }}>
+                    <div className="absolute inset-0 opacity-40 mix-blend-overlay" style={{ background: p.surface }} />
+                    <div className="absolute inset-0 opacity-30 mix-blend-color-burn pointer-events-none" style={{ backgroundImage: LOCAL_NOISE }} />
+                    <Icon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[52%] h-[52%] text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)] z-10 pointer-events-none transition-transform group-hover:scale-110" strokeWidth={1.4} />
                   </div>
 
-                  {/* FLOATING LABEL - GẮN LIỀN VỚI CONTAINER ĐỂ BẮT HOVER/CLICK */}
-                  <div className={`absolute flex flex-col items-center transition-all duration-500 ${isDimmed ? 'opacity-0 scale-50' : 'opacity-100 scale-100'} group-hover:scale-110`}
-                       style={{ top: p.size/2 + 20, left: 0, transform: 'translateX(-50%)' }}>
-                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-5 py-3 rounded-2xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.8)] whitespace-nowrap" style={{ borderColor: p.color, boxShadow: `0 0 40px ${p.color}50` }}>
-                      <div className="text-xl md:text-2xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 2px 0 ${p.darkColor}, 0 4px 0 rgba(0,0,0,0.5), 0 6px 15px rgba(0,0,0,0.8), 0 0 30px ${p.color}60` }}>{p.name}</div>
-                      <div className="text-xs md:text-sm font-mono text-white/90 mt-2 flex items-center justify-center gap-2">
-                        <span className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.code}</span><span className="w-px h-4 bg-white/40" /><span style={{ color: p.color, textShadow: `0 0 15px ${p.color}` }} className="font-bold">Nhóm: {p.type}</span>
+                  {/* Particle burst khi hover */}
+                  {isHovered && <PlanetParticleBurst color={p.color} active={true} />}
+
+                  {/* FLOATING LABEL - TO HƠN */}
+                  <div className={`absolute flex flex-col items-center transition-all duration-700 ease-out ${isDimmed ? 'opacity-0 scale-75' : 'opacity-100 scale-100'} group-hover:scale-110`}
+                       style={{ top: p.size * 0.9 + 30, left: '50%', transform: 'translateX(-50%)' }}>
+                    <div className="bg-black/90 backdrop-blur-2xl border-2 border-white/40 px-8 py-4 rounded-3xl text-center shadow-[0_25px_60px_rgba(0,0,0,0.9)] whitespace-nowrap min-w-[260px]" style={{ borderColor: p.color, boxShadow: `0 0 50px ${p.color}60` }}>
+                      <div className="text-3xl font-black text-white tracking-widest leading-none" style={{ textShadow: `0 3px 0 ${p.darkColor}, 0 6px 0 rgba(0,0,0,0.6), 0 0 35px ${p.color}80` }}>{p.name}</div>
+                      <div className="text-sm font-mono text-white/90 mt-3 flex items-center justify-center gap-3">
+                        <span>{p.code}</span><span className="w-px h-4 bg-white/40" /><span style={{ color: p.color }} className="font-bold">Nhóm: {p.type}</span>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs md:text-sm font-mono bg-black/80 px-4 py-1.5 rounded-full text-cyan-300 flex items-center gap-2 border border-white/10 shadow-lg">
+                    <div className="mt-4 text-sm font-mono bg-black/80 px-5 py-2 rounded-3xl text-cyan-300 flex items-center gap-2 border border-white/10">
                       <span className="animate-pulse">⚡</span><span>Tốc độ: {p.speed}s / vòng</span>
                     </div>
                   </div>
