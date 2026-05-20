@@ -31,6 +31,19 @@ import { usePathname } from 'next/navigation';
 // CONSTANTS
 // =============================================================================
 const COMMANDER_KEY = 'commander_progress_v3';
+const MOBILE_TRIGGER_MS = 180_000; // 3 phút cho mobile
+const MOBILE_SESSION_KEY = 'commander_mobile_session_v3';
+
+/**
+ * Phát hiện thiết bị cảm ứng (mobile/tablet) bằng CSS media query.
+ * - `pointer: coarse` = ngón tay / stylus → mobile/tablet
+ * - `pointer: fine`   = chuột / trackpad → desktop
+ * - Fallback false cho SSR (typeof window === 'undefined')
+ */
+function isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(pointer: coarse)').matches;
+}
 
 type TransmissionPhase =
   | 'idle'
@@ -552,34 +565,55 @@ export default function CommanderTransmission() {
 
   const checkTrigger = useCallback((currentPhase: TransmissionPhase) => {
     if (typeof window === 'undefined') return false;
-    const played = localStorage.getItem(`${COMMANDER_KEY}_played`) === 'true';
-    const completed = localStorage.getItem(`${COMMANDER_KEY}_completed`) === 'true';
-    if (played || completed) {
-      if (completed && currentPhase === 'idle') {
-        setTransmissionCompleted(true);
-        setPhase('collapsed');
+    try {
+      const played = localStorage.getItem(`${COMMANDER_KEY}_played`) === 'true';
+      const completed = localStorage.getItem(`${COMMANDER_KEY}_completed`) === 'true';
+      if (played || completed) {
+        if (completed && currentPhase === 'idle') {
+          setTransmissionCompleted(true);
+          setPhase('collapsed');
+        }
+        return false;
+      }
+
+      // ── MOBILE: trigger sau 3 phút, dùng key riêng không bị reset khi về / ──
+      if (isMobileDevice()) {
+        let mobileStart = localStorage.getItem(MOBILE_SESSION_KEY);
+        if (!mobileStart) {
+          mobileStart = Date.now().toString();
+          localStorage.setItem(MOBILE_SESSION_KEY, mobileStart);
+        }
+        if (Date.now() - parseInt(mobileStart) >= MOBILE_TRIGGER_MS) {
+          localStorage.setItem(`${COMMANDER_KEY}_played`, 'true');
+          return true;
+        }
+        return false;
+      }
+
+      // ── DESKTOP: giữ nguyên 100% logic gốc (4 phút hoặc 2 trang + 60s) ──
+      let sessionStart = localStorage.getItem(`${COMMANDER_KEY}_session`);
+      if (!sessionStart) {
+        sessionStart = Date.now().toString();
+        localStorage.setItem(`${COMMANDER_KEY}_session`, sessionStart);
+      }
+      const conditionA = Date.now() - parseInt(sessionStart) >= 240000;
+      const visitedCreative = localStorage.getItem(`${COMMANDER_KEY}_creative`) === 'true';
+      const visitedSystem = localStorage.getItem(`${COMMANDER_KEY}_system`) === 'true';
+      let bothTime = localStorage.getItem(`${COMMANDER_KEY}_both`);
+      if (visitedCreative && visitedSystem && !bothTime) {
+        bothTime = Date.now().toString();
+        localStorage.setItem(`${COMMANDER_KEY}_both`, bothTime);
+      }
+      const conditionB = bothTime && Date.now() - parseInt(bothTime) >= 60000;
+      if (conditionA || conditionB) {
+        localStorage.setItem(`${COMMANDER_KEY}_played`, 'true');
+        return true;
       }
       return false;
+    } catch {
+      // Private browsing / localStorage disabled — fail gracefully
+      return false;
     }
-    let sessionStart = localStorage.getItem(`${COMMANDER_KEY}_session`);
-    if (!sessionStart) {
-      sessionStart = Date.now().toString();
-      localStorage.setItem(`${COMMANDER_KEY}_session`, sessionStart);
-    }
-    const conditionA = Date.now() - parseInt(sessionStart) >= 240000;
-    const visitedCreative = localStorage.getItem(`${COMMANDER_KEY}_creative`) === 'true';
-    const visitedSystem = localStorage.getItem(`${COMMANDER_KEY}_system`) === 'true';
-    let bothTime = localStorage.getItem(`${COMMANDER_KEY}_both`);
-    if (visitedCreative && visitedSystem && !bothTime) {
-      bothTime = Date.now().toString();
-      localStorage.setItem(`${COMMANDER_KEY}_both`, bothTime);
-    }
-    const conditionB = bothTime && Date.now() - parseInt(bothTime) >= 60000;
-    if (conditionA || conditionB) {
-      localStorage.setItem(`${COMMANDER_KEY}_played`, 'true');
-      return true;
-    }
-    return false;
   }, []);
 
   // Typewriter only — video handles audio
@@ -723,13 +757,18 @@ export default function CommanderTransmission() {
     return () => clearInterval(checkInterval);
   }, [checkTrigger, phase]);
 
-  // Route tracking
+  // Route tracking — mobile giữ timer, desktop reset toàn bộ
   useEffect(() => {
     if (pathname === '/') {
-      [
-        `${COMMANDER_KEY}_played`, `${COMMANDER_KEY}_completed`, `${COMMANDER_KEY}_session`,
-        `${COMMANDER_KEY}_creative`, `${COMMANDER_KEY}_system`, `${COMMANDER_KEY}_both`,
-      ].forEach(k => localStorage.removeItem(k));
+      if (!isMobileDevice()) {
+        // Desktop: reset toàn bộ tiến trình (giữ nguyên hành vi gốc)
+        [
+          `${COMMANDER_KEY}_played`, `${COMMANDER_KEY}_completed`, `${COMMANDER_KEY}_session`,
+          `${COMMANDER_KEY}_creative`, `${COMMANDER_KEY}_system`, `${COMMANDER_KEY}_both`,
+          MOBILE_SESSION_KEY,
+        ].forEach(k => localStorage.removeItem(k));
+      }
+      // Cả mobile + desktop: reset UI state
       audioRef.current?.stopSpeaking();
       const t = setTimeout(() => {
         setTransmissionCompleted(false);

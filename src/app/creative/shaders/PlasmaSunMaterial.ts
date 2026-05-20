@@ -117,6 +117,7 @@ const sunFragment = /* glsl */ `
   uniform vec3  uColorFlare;      // hot ejection highlight
   uniform float uNoiseScale;
   uniform float uFlowSpeed;
+  uniform float uMobileDampen; // 0.0 = desktop (full effect), 1.0 = mobile (reduced pulse)
 
   varying vec3 vPos;
   varying vec3 vNormal;
@@ -157,11 +158,15 @@ const sunFragment = /* glsl */ `
     col += uColorFlare * fres * 0.6 * reveal;
 
     // Pulsing brightness pumps the bloom pass
-    float pulse = 0.92 + 0.08 * sin(uTime * 0.7);
+    // On mobile: reduce pulse amplitude (0.08→0.02) and slow frequency (0.7→0.3)
+    float pulseAmp = mix(0.08, 0.02, uMobileDampen);
+    float pulseFreq = mix(0.7, 0.3, uMobileDampen);
+    float pulse = (1.0 - pulseAmp) + pulseAmp * sin(uTime * pulseFreq);
     col *= pulse;
 
-    // Boost overall so Bloom can grab it
-    col *= 1.4;
+    // Boost overall so Bloom can grab it — reduce on mobile
+    float boostFactor = mix(1.4, 1.12, uMobileDampen);
+    col *= boostFactor;
 
     gl_FragColor = vec4(col, 1.0);
 
@@ -181,6 +186,7 @@ export const PlasmaSunMaterialImpl = shaderMaterial(
     uColorFlare: new THREE.Color('#ffe7a0'),
     uNoiseScale: 2.4,
     uFlowSpeed:  0.18,
+    uMobileDampen: 0.0,
   },
   sunVertex,
   sunFragment
@@ -280,6 +286,7 @@ export interface PlasmaSunUniforms {
   uColorFlare: THREE.Color;
   uNoiseScale: number;
   uFlowSpeed: number;
+  uMobileDampen: number;
 }
 
 export interface CoronaUniforms {

@@ -85,6 +85,15 @@ export const Sun = forwardRef<SunHandle, SunProps>(function Sun(
   const corona3Ref  = useRef<any>(null);
   const lightRef    = useRef<THREE.PointLight>(null);
 
+  // Mobile detection: deviceTier 'low' maps to mobile in the tier detector
+  const deviceTier  = useCinematicStore((s) => s.deviceTier);
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  }, []);
+
   // Imperative handle so director can override reveal from useFrame if needed
   useImperativeHandle(ref, () => ({
     group: groupRef.current,
@@ -100,6 +109,7 @@ export const Sun = forwardRef<SunHandle, SunProps>(function Sun(
     if (surfaceRef.current) {
       surfaceRef.current.uTime += delta;
       surfaceRef.current.uIntensity = intensity;
+      surfaceRef.current.uMobileDampen = isMobile ? 1.0 : 0.0;
       surfaceRef.current.uReveal = THREE.MathUtils.lerp(
         surfaceRef.current.uReveal ?? 0,
         reveal,
@@ -108,17 +118,22 @@ export const Sun = forwardRef<SunHandle, SunProps>(function Sun(
     }
 
     // Three corona layers — slightly out-of-phase for shimmer
+    // On mobile: reduce corona opacity to prevent over-bright additive glow
+    const coronaScale = isMobile ? 0.55 : 1.0;
     if (corona1Ref.current) {
       corona1Ref.current.uTime += delta;
       corona1Ref.current.uReveal = reveal;
+      corona1Ref.current.uOpacity = 1.0 * coronaScale;
     }
     if (corona2Ref.current) {
       corona2Ref.current.uTime += delta * 0.7;
       corona2Ref.current.uReveal = reveal;
+      corona2Ref.current.uOpacity = 0.55 * coronaScale;
     }
     if (corona3Ref.current) {
       corona3Ref.current.uTime += delta * 0.45;
       corona3Ref.current.uReveal = reveal;
+      corona3Ref.current.uOpacity = 0.22 * coronaScale;
     }
 
     // Subtle axial rotation — adds parallax to the boiling surface
@@ -128,9 +143,13 @@ export const Sun = forwardRef<SunHandle, SunProps>(function Sun(
     }
 
     // Light pulse, scales with reveal
+    // On mobile: drastically reduce pulse amplitude to avoid flashing
     if (lightRef.current) {
-      const pulse = 0.92 + 0.08 * Math.sin(t * 0.7);
-      lightRef.current.intensity = 6.0 * reveal * pulse;
+      const pulseAmp = isMobile ? 0.015 : 0.08;
+      const pulseFreq = isMobile ? 0.3 : 0.7;
+      const pulse = (1 - pulseAmp) + pulseAmp * Math.sin(t * pulseFreq);
+      const baseIntensity = isMobile ? 4.5 : 6.0;
+      lightRef.current.intensity = baseIntensity * reveal * pulse;
     }
   });
 

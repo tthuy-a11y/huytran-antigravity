@@ -9,9 +9,9 @@ export async function GET() {
     const stream = await renderToStream(React.createElement(CVDocument));
 
     // Convert stream to Buffer
-    const chunks = [];
+    const chunks: Uint8Array[] = [];
     for await (const chunk of stream) {
-      chunks.push(chunk);
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
     const pdfBuffer = Buffer.concat(chunks);
 

@@ -147,6 +147,13 @@ export function DynamicPostFx() {
   const { gl, camera } = useThree();
   const quality = useCinematicStore((s) => s.quality);
 
+  // Detect mobile once for bloom dampening
+  const isMobileRef = useRef(
+    typeof window !== 'undefined'
+      ? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      : false
+  );
+
   const bloomKernelSize = useMemo(() => {
     if (quality.bloomResolution >= 512) return KernelSize.HUGE;
     if (quality.bloomResolution >= 256) return KernelSize.LARGE;
@@ -198,7 +205,12 @@ export function DynamicPostFx() {
     const t = useCinematicStore.getState().time;
 
     // ---------- BLOOM ----------
-    const intensity = bloomIntensityAt(t);
+    let intensity = bloomIntensityAt(t);
+    // On mobile: reduce bloom intensity in the interactive system phase
+    // to prevent the sun's additive glow from causing visible flashing
+    if (isMobileRef.current && t >= 22.0) {
+      intensity *= 0.6;
+    }
     bloomEffect.intensity = intensity;
 
     const flash = flashAt(t);
