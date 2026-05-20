@@ -46,23 +46,24 @@ interface FleetSystem3DProps {
 }
 
 function CameraRig({ activeShipId, warpSpeed }: { activeShipId: number | null; warpSpeed: boolean }) {
-  useFrame((state, delta) => {
+  useFrame((state, dt) => {
     const cam = state.camera as THREE.PerspectiveCamera;
     const pointerX = state.pointer.x * 6;
     const pointerY = state.pointer.y * 6 + 2;
+    const delta = Math.min(dt, 0.05); // Cap to avoid jarring jumps
 
     if (warpSpeed) {
       cam.position.lerp(
         new THREE.Vector3((Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5 + 4, 25),
-        delta * 5
+        delta * 6
       );
-      cam.fov = THREE.MathUtils.lerp(cam.fov, 100, delta * 4);
+      cam.fov = THREE.MathUtils.lerp(cam.fov, 100, delta * 5);
     } else if (activeShipId !== null) {
-      cam.position.lerp(new THREE.Vector3(0, 2, 22), delta * 3);
-      cam.fov = THREE.MathUtils.lerp(cam.fov, 60, delta * 3);
+      cam.position.lerp(new THREE.Vector3(0, 2, 22), delta * 4);
+      cam.fov = THREE.MathUtils.lerp(cam.fov, 60, delta * 4);
     } else {
-      cam.position.lerp(new THREE.Vector3(pointerX, pointerY, 30), delta * 2);
-      cam.fov = THREE.MathUtils.lerp(cam.fov, 50, delta * 2);
+      cam.position.lerp(new THREE.Vector3(pointerX, pointerY, 30), delta * 3);
+      cam.fov = THREE.MathUtils.lerp(cam.fov, 50, delta * 3);
     }
     cam.updateProjectionMatrix();
     cam.lookAt(0, 0, 0);

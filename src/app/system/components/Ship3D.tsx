@@ -40,37 +40,38 @@ export default function Ship3D({
   // Deterministic offset per ship id
   const floatOffset = useMemo(() => ((id * 2654435761) >>> 0) / 4294967296 * 100, [id]);
 
-  useFrame((state, delta) => {
+  useFrame((state, dt) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
+    const delta = Math.min(dt, 0.05); // Cap delta to prevent huge jumps if tab is inactive
 
     if (isRushing) {
-      groupRef.current.position.z -= 80 * delta;
-      groupRef.current.rotation.z += 8 * delta;
+      groupRef.current.position.z -= 100 * delta;
+      groupRef.current.rotation.z += 10 * delta;
       if (engineRef.current) engineRef.current.intensity = 8;
     } else if (isActive) {
       const targetZ = isWarping ? 15 : 10;
-      groupRef.current.position.lerp(new THREE.Vector3(0, -1, targetZ), delta * 4);
-      groupRef.current.rotation.x = MathUtils.lerp(groupRef.current.rotation.x, 0.2, delta * 3);
-      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, t * 0.5, delta * 2);
-      groupRef.current.rotation.z = MathUtils.lerp(groupRef.current.rotation.z, 0, delta * 3);
+      groupRef.current.position.lerp(new THREE.Vector3(0, -1, targetZ), delta * 5);
+      groupRef.current.rotation.x = MathUtils.lerp(groupRef.current.rotation.x, 0.2, delta * 4);
+      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, t * 0.5, delta * 3);
+      groupRef.current.rotation.z = MathUtils.lerp(groupRef.current.rotation.z, 0, delta * 4);
       if (engineRef.current) engineRef.current.intensity = 4;
     } else {
       const targetZ = isWarping ? position[2] - 50 : position[2];
       groupRef.current.position.lerp(
-        new THREE.Vector3(position[0], position[1] + Math.sin(t * 1.5 + floatOffset) * 0.5, targetZ),
-        delta * 2
+        new THREE.Vector3(position[0], position[1] + Math.sin(t * 1.5 + floatOffset) * 0.6, targetZ),
+        delta * 3
       );
       groupRef.current.rotation.x = MathUtils.lerp(
         groupRef.current.rotation.x,
-        Math.sin(t * 0.8 + floatOffset) * 0.05,
-        delta * 2
+        Math.sin(t * 0.8 + floatOffset) * 0.08,
+        delta * 3
       );
-      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, 0, delta * 2);
+      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, 0, delta * 3);
       groupRef.current.rotation.z = MathUtils.lerp(
         groupRef.current.rotation.z,
-        Math.sin(t + floatOffset) * 0.1,
-        delta * 2
+        Math.sin(t + floatOffset) * 0.12,
+        delta * 3
       );
       if (engineRef.current) {
         engineRef.current.intensity = isWarping ? 10 : 1.5 + Math.sin(t * 5 + floatOffset) * 0.5;

@@ -121,12 +121,12 @@ const BootTerminal = memo(({ onComplete }: { onComplete: () => void }) => {
   }, [bootText, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-[#02040a] p-10 font-mono text-cyan-500 text-sm md:text-lg flex flex-col justify-end pb-20">
+    <div className="fixed inset-0 z-[99999] bg-[#02040a] p-4 md:p-10 font-mono text-cyan-500 text-xs sm:text-sm md:text-lg flex flex-col justify-end pb-20">
       <div className="crt-overlay" />
-      <div className="max-w-4xl mx-auto w-full">
-        <Fingerprint className="w-16 h-16 mb-8 opacity-50 animate-pulse text-cyan-700" />
+      <div className="max-w-4xl mx-auto w-full max-h-[40vh] overflow-y-auto custom-scrollbar">
+        <Fingerprint className="w-12 h-12 md:w-16 md:h-16 mb-4 md:mb-8 opacity-50 animate-pulse text-cyan-700" />
         {lines.map((line, i) => (
-          <div key={i} className="mb-2 uppercase tracking-widest">{line}{i === lines.length - 1 ? <span className="animate-ping">_</span> : ''}</div>
+          <div key={i} className="mb-2 uppercase tracking-widest leading-relaxed">{line}{i === lines.length - 1 ? <span className="animate-ping">_</span> : ''}</div>
         ))}
       </div>
     </div>
@@ -364,8 +364,17 @@ export default function ExodusGodTier() {
     const canvas = canvasRef.current; if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: false }); if (!ctx) return;
     const updateSize = () => { engineRef.current.width = canvas.width = window.innerWidth; engineRef.current.height = canvas.height = window.innerHeight; engineRef.current.cx = window.innerWidth / 2; engineRef.current.cy = window.innerHeight / 2; }; updateSize();
-    const handleMouseMove = (e: MouseEvent) => { engineRef.current.rawX = e.clientX; engineRef.current.rawY = e.clientY; };
-    window.addEventListener('resize', updateSize); window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      if ('touches' in e && e.touches.length > 0) {
+        engineRef.current.rawX = e.touches[0].clientX; engineRef.current.rawY = e.touches[0].clientY;
+      } else if ('clientX' in e) {
+        engineRef.current.rawX = (e as MouseEvent).clientX; engineRef.current.rawY = (e as MouseEvent).clientY;
+      }
+    };
+    window.addEventListener('resize', updateSize); 
+    window.addEventListener('mousemove', handleMouseMove as any, { passive: true });
+    window.addEventListener('touchmove', handleMouseMove as any, { passive: true });
+    window.addEventListener('touchstart', handleMouseMove as any, { passive: true });
 
     const STARS = window.innerWidth > 1024 ? 1200 : 500;
     const stars = Array.from({ length: STARS }).map(() => ({ x: (Math.random() - 0.5) * 5000, y: (Math.random() - 0.5) * 5000, z: Math.random() * 3000 + 100, pz: 0 }));
@@ -459,7 +468,13 @@ export default function ExodusGodTier() {
     
     // Auto show gate logic
     const t = setTimeout(() => setShowGate(true), 90000);
-    return () => { window.removeEventListener('resize', updateSize); window.removeEventListener('mousemove', handleMouseMove); cancelAnimationFrame(reqId); clearTimeout(t); };
+    return () => { 
+      window.removeEventListener('resize', updateSize); 
+      window.removeEventListener('mousemove', handleMouseMove as any); 
+      window.removeEventListener('touchmove', handleMouseMove as any);
+      window.removeEventListener('touchstart', handleMouseMove as any);
+      cancelAnimationFrame(reqId); clearTimeout(t); 
+    };
   }, [osBooted]);
 
   const activeData = activeShip !== null ? fleet.find(f => f.id === activeShip) : null;
@@ -467,7 +482,7 @@ export default function ExodusGodTier() {
   if (!osBooted) return <BootTerminal onComplete={() => setOsBooted(true)} />;
 
   return (
-    <main className={`min-h-screen bg-[#010103] relative overflow-hidden font-sans text-slate-200 cursor-crosshair select-none transition-all duration-[1200ms] ${warpSpeed ? 'scale-[1.1] blur-[1px] brightness-125' : 'scale-100'} ${deployState !== 'idle' ? 'hue-rotate-[15deg] saturate-150' : ''}`}>
+    <main className={`h-screen w-screen bg-[#010103] relative overflow-hidden font-sans text-slate-200 cursor-crosshair select-none transition-all duration-[1200ms] ${warpSpeed ? 'scale-[1.1] blur-[1px] brightness-125' : 'scale-100'} ${deployState !== 'idle' ? 'hue-rotate-[15deg] saturate-150' : ''}`}>
       
       {/* GOD-TIER CSS (CRT & GLITCH & 3D) */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -498,13 +513,25 @@ export default function ExodusGodTier() {
         .transform-style-3d { transform-style: preserve-3d; }
         .custom-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* SCREEN SHAKE CLASSES */
-        @keyframes shakeLight { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-2px, 2px) rotate(0.8deg); } 75% { transform: translate(2px, -2px) rotate(-0.8deg); } }
-        @keyframes shakeMedium { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-4px, 4px) rotate(1.5deg); } 75% { transform: translate(4px, -4px) rotate(-1.5deg); } }
-        @keyframes shakeHeavy { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-8px, 6px) rotate(2.5deg); } 75% { transform: translate(6px, -8px) rotate(-2.5deg); } }
-        .shake-light { animation: shakeLight 0.1s infinite; will-change: transform; }
-        .shake-medium { animation: shakeMedium 0.08s infinite; will-change: transform; }
-        .shake-heavy { animation: shakeHeavy 0.05s infinite; will-change: transform; }
+        /* SCREEN SHAKE CLASSES — GPU Accelerated */
+        @keyframes shakeLight { 
+          0%, 100% { transform: translate3d(0,0,0) rotate(0deg); } 
+          25% { transform: translate3d(-2px, 2px, 0) rotate(0.5deg); } 
+          75% { transform: translate3d(2px, -2px, 0) rotate(-0.5deg); } 
+        }
+        @keyframes shakeMedium { 
+          0%, 100% { transform: translate3d(0,0,0) rotate(0deg); } 
+          25% { transform: translate3d(-4px, 4px, 0) rotate(1deg); } 
+          75% { transform: translate3d(4px, -4px, 0) rotate(-1deg); } 
+        }
+        @keyframes shakeHeavy { 
+          0%, 100% { transform: translate3d(0,0,0) rotate(0deg); } 
+          25% { transform: translate3d(-6px, 5px, 0) rotate(1.5deg); } 
+          75% { transform: translate3d(5px, -6px, 0) rotate(-1.5deg); } 
+        }
+        .shake-light { animation: shakeLight 0.12s cubic-bezier(.36,.07,.19,.97) infinite; will-change: transform; backface-visibility: hidden; }
+        .shake-medium { animation: shakeMedium 0.1s cubic-bezier(.36,.07,.19,.97) infinite; will-change: transform; backface-visibility: hidden; }
+        .shake-heavy { animation: shakeHeavy 0.08s cubic-bezier(.36,.07,.19,.97) infinite; will-change: transform; backface-visibility: hidden; }
 
         /* === 6 DISTINCT CINEMATIC SHIP SEQUENCES — 5.0s === */
         @keyframes shipSeq-0 {
@@ -557,12 +584,12 @@ export default function ExodusGodTier() {
           100% { transform: translateY(-900px) scale(0.8) rotate(0deg); opacity:0; }
         }
         
-        .ship-rush-0 { animation: shipSeq-0 5.0s cubic-bezier(.23,1,.32,1) forwards; }
-        .ship-rush-1 { animation: shipSeq-1 5.0s cubic-bezier(.23,1,.32,1) forwards; }
-        .ship-rush-2 { animation: shipSeq-2 5.0s linear forwards; }
-        .ship-rush-3 { animation: shipSeq-3 5.0s cubic-bezier(.7,0,.3,1) forwards; }
-        .ship-rush-4 { animation: shipSeq-4 5.0s ease-in forwards; }
-        .ship-rush-5 { animation: shipSeq-5 5.0s cubic-bezier(.4,0,.2,1) forwards; }
+        .ship-rush-0 { animation: shipSeq-0 5.0s cubic-bezier(.23,1,.32,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
+        .ship-rush-1 { animation: shipSeq-1 5.0s cubic-bezier(.23,1,.32,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
+        .ship-rush-2 { animation: shipSeq-2 5.0s cubic-bezier(.23,1,.32,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
+        .ship-rush-3 { animation: shipSeq-3 5.0s cubic-bezier(.7,0,.3,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
+        .ship-rush-4 { animation: shipSeq-4 5.0s cubic-bezier(.4,0,.2,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
+        .ship-rush-5 { animation: shipSeq-5 5.0s cubic-bezier(.4,0,.2,1) forwards; will-change: transform, filter, opacity; backface-visibility: hidden; }
 
         /* PARTICLE DEBRIS — flies outward */
         @keyframes particleBurst {
@@ -700,27 +727,27 @@ export default function ExodusGodTier() {
       {/* FIXED SIDE NAVIGATION BUTTONS */}
       {osBooted && activeShip === null && !warpSpeed && (
         <>
-          <Link href="/" className="fixed left-6 top-[25%] -translate-y-1/2 z-[100] group flex flex-col items-center gap-4 p-4 animate-[pulse_3s_infinite]">
-            <div className="relative flex items-center justify-center w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-cyan-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-cyan-300 hover:bg-cyan-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(0,240,255,0.6)] group-hover:shadow-[0_0_50px_rgba(0,240,255,1)] overflow-hidden">
+          <Link href="/" className="fixed bottom-8 left-6 md:bottom-auto md:left-6 md:top-[25%] md:-translate-y-1/2 z-[100] group flex flex-col items-center gap-2 md:gap-4 p-2 md:p-4 animate-[pulse_3s_infinite]">
+            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full border-[3px] md:border-4 border-cyan-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-cyan-300 hover:bg-cyan-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(0,240,255,0.6)] group-hover:shadow-[0_0_50px_rgba(0,240,255,1)] overflow-hidden">
               <div className="absolute inset-0 bg-cyan-400/30 animate-[ping_2s_infinite]" />
-              <ArrowLeft className="w-8 h-8 md:w-12 md:h-12 text-cyan-200 group-hover:-translate-x-2 transition-transform relative z-10 drop-shadow-[0_0_8px_cyan]" />
+              <ArrowLeft className="w-6 h-6 md:w-12 md:h-12 text-cyan-200 group-hover:-translate-x-2 transition-transform relative z-10 drop-shadow-[0_0_8px_cyan]" />
             </div>
-            <span className="font-mono text-xs md:text-sm tracking-widest text-cyan-200 uppercase font-bold text-center w-32 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_cyan]">Vũ Trụ Gốc</span>
+            <span className="font-mono text-[10px] md:text-sm tracking-widest text-cyan-200 uppercase font-bold text-center w-max opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_cyan] hidden sm:block">Vũ Trụ Gốc</span>
           </Link>
 
-          <Link href="/creative" className="fixed right-6 top-[25%] -translate-y-1/2 z-[100] group flex flex-col items-center gap-4 p-4 animate-[pulse_3s_infinite]">
-            <div className="relative flex items-center justify-center w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-purple-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-purple-300 hover:bg-purple-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(168,85,247,0.6)] group-hover:shadow-[0_0_50px_rgba(168,85,247,1)] overflow-hidden">
+          <Link href="/creative" className="fixed bottom-8 right-6 md:bottom-auto md:right-6 md:top-[25%] md:-translate-y-1/2 z-[100] group flex flex-col items-center gap-2 md:gap-4 p-2 md:p-4 animate-[pulse_3s_infinite]">
+            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full border-[3px] md:border-4 border-purple-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-purple-300 hover:bg-purple-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(168,85,247,0.6)] group-hover:shadow-[0_0_50px_rgba(168,85,247,1)] overflow-hidden">
               <div className="absolute inset-0 bg-purple-400/30 animate-[ping_2s_infinite]" />
-              <Orbit className="w-8 h-8 md:w-12 md:h-12 text-purple-200 group-hover:rotate-180 transition-transform duration-700 relative z-10 drop-shadow-[0_0_8px_purple]" />
+              <Orbit className="w-6 h-6 md:w-12 md:h-12 text-purple-200 group-hover:rotate-180 transition-transform duration-700 relative z-10 drop-shadow-[0_0_8px_purple]" />
             </div>
-            <span className="font-mono text-xs md:text-sm tracking-widest text-purple-200 uppercase font-bold text-center w-32 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_purple]">Hệ Hành Tinh</span>
+            <span className="font-mono text-[10px] md:text-sm tracking-widest text-purple-200 uppercase font-bold text-center w-max opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_purple] hidden sm:block">Hệ Hành Tinh</span>
           </Link>
         </>
       )}
 
       {/* SPACE PORTAL (Lựa chọn 1) */}
       {showGate && activeShip === null && !warpSpeed && (
-        <div className="fixed top-[15%] left-[8%] z-[90] pointer-events-none flex items-center justify-center">
+        <div className="fixed top-[10%] md:top-[15%] left-1/2 -translate-x-1/2 md:left-[8%] md:translate-x-0 z-[90] pointer-events-none flex items-center justify-center scale-50 md:scale-100 origin-top md:origin-center mt-12 md:mt-0">
           <div className="portal-enter">
             <div className="portal-breathe">
               <Link href="/creative" className="pointer-events-auto group relative flex items-center justify-center hover:scale-110 transition-transform duration-700">
@@ -785,9 +812,9 @@ export default function ExodusGodTier() {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 20%, rgba(1,1,3,0.9) 70%)' }} />
       </div>
 
-      <div className={`relative z-20 w-full min-h-screen flex flex-col transition-all duration-700 ease-in-out ${activeShip !== null || warpSpeed ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100 glitch-trans'}`}>
+      <div className={`relative z-20 w-full h-full flex flex-col transition-all duration-700 ease-in-out ${activeShip !== null || warpSpeed ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100 glitch-trans'}`}>
         
-        <header className="p-6 md:p-12 flex justify-between items-start">
+        <header className="p-4 md:p-6 flex justify-between items-start">
           <Link href="/" className="group flex items-center gap-4 cyber-clip bg-[#02050f]/60 backdrop-blur-md border border-white/10 px-6 py-2 hover:border-cyan-500 hover:bg-cyan-950/40 transition-colors" onMouseEnter={() => sfx?.play('hover')} onClick={() => sfx?.play('click')}>
             <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Trang Chủ</span>
           </Link>
@@ -847,19 +874,19 @@ export default function ExodusGodTier() {
                 {/* TITLE TEXT — 3 stacked layers for depth */}
                 <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
                   {/* Shadow layer (deepest) */}
-                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-cyan-900/30 select-none" aria-hidden="true" style={{ transform: 'translateZ(-8px) translateX(3px) translateY(3px)', position: 'absolute', inset: 0 }}>
+                  <h1 className="text-2xl md:text-5xl font-sans font-black uppercase tracking-[0.15em] text-cyan-900/30 select-none" aria-hidden="true" style={{ transform: 'translateZ(-8px) translateX(3px) translateY(3px)', position: 'absolute', inset: 0 }}>
                     Trạm Tốc Độ Cao
                   </h1>
                   {/* Glow layer (mid) */}
-                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-cyan-400/20 select-none blur-[3px]" aria-hidden="true" style={{ transform: 'translateZ(-3px)', position: 'absolute', inset: 0 }}>
+                  <h1 className="text-2xl md:text-5xl font-sans font-black uppercase tracking-[0.15em] text-cyan-400/20 select-none blur-[3px]" aria-hidden="true" style={{ transform: 'translateZ(-3px)', position: 'absolute', inset: 0 }}>
                     Trạm Tốc Độ Cao
                   </h1>
                   {/* Main text (front) */}
-                  <h1 className="relative text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em]" style={{ transform: 'translateZ(4px)', color: 'transparent', backgroundImage: 'linear-gradient(135deg, #a8edea 0%, #ffffff 40%, #d4c4fb 70%, #a8edea 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', filter: 'drop-shadow(0 0 8px rgba(0,242,254,0.4))' }}>
+                  <h1 className="relative text-2xl md:text-5xl font-sans font-black uppercase tracking-[0.15em]" style={{ transform: 'translateZ(4px)', color: 'transparent', backgroundImage: 'linear-gradient(135deg, #a8edea 0%, #ffffff 40%, #d4c4fb 70%, #a8edea 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', filter: 'drop-shadow(0 0 8px rgba(0,242,254,0.4))' }}>
                     Trạm Tốc Độ Cao
                   </h1>
                   {/* Glitch overlay */}
-                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-red-400/10 select-none" aria-hidden="true" style={{ transform: 'translateZ(6px)', position: 'absolute', inset: 0, animation: 'titleGlitch 6s step-end infinite', mixBlendMode: 'screen' }}>
+                  <h1 className="text-2xl md:text-5xl font-sans font-black uppercase tracking-[0.15em] text-red-400/10 select-none" aria-hidden="true" style={{ transform: 'translateZ(6px)', position: 'absolute', inset: 0, animation: 'titleGlitch 6s step-end infinite', mixBlendMode: 'screen' }}>
                     Trạm Tốc Độ Cao
                   </h1>
                 </div>
@@ -886,11 +913,11 @@ export default function ExodusGodTier() {
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full px-4 md:px-8 mt-8">
+        <div className="flex-1 flex flex-col items-center justify-center pb-4 w-full px-4 md:px-8 mt-2">
           
           {/* ===== 3D GLASSMORPHISM STATION HUB ===== */}
-          <div className="relative w-full max-w-[1300px] overflow-visible" style={{ perspective: '1200px' }}>
-            <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-14 overflow-hidden" style={{ transformStyle: 'preserve-3d', animation: 'hubFloat 6s ease-in-out infinite', background: 'linear-gradient(135deg, rgba(4,8,20,0.6) 0%, rgba(10,20,40,0.4) 50%, rgba(4,8,20,0.6) 100%)' }}>
+          <div className="relative w-full max-w-[1200px] overflow-visible" style={{ perspective: '1200px' }}>
+            <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 overflow-hidden" style={{ transformStyle: 'preserve-3d', animation: 'hubFloat 6s ease-in-out infinite', background: 'linear-gradient(135deg, rgba(4,8,20,0.6) 0%, rgba(10,20,40,0.4) 50%, rgba(4,8,20,0.6) 100%)' }}>
               {/* === OUTER FRAME — 3D depth edges === */}
               {/* Top edge */}
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_cyan,0_0_30px_rgba(0,242,254,0.3)]" />
@@ -941,11 +968,11 @@ export default function ExodusGodTier() {
               </div>
 
               {/* === TITLE AREA === */}
-              <div className="relative z-10 text-center mb-12 md:mb-16 mt-6">
-                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-cyan-200" style={{ textShadow: '0 0 40px rgba(0,242,254,0.3)' }}>
+              <div className="relative z-10 text-center mb-6 md:mb-8 mt-2">
+                <h2 className="text-2xl md:text-4xl font-black uppercase tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-cyan-200" style={{ textShadow: '0 0 40px rgba(0,242,254,0.3)' }}>
                   TRẠM CHỈ HUY
                 </h2>
-                <div className="mt-4 flex items-center justify-center gap-3 font-mono text-cyan-400 text-sm md:text-base tracking-[0.2em]">
+                <div className="mt-2 md:mt-4 flex items-center justify-center gap-3 font-mono text-cyan-400 text-xs md:text-sm tracking-[0.2em]">
                   <Target className="w-4 h-4 animate-pulse text-red-500" /> 
                   <span>KÍCH HOẠT PHI THUYỀN ĐỂ KHÁM PHÁ</span>
                   <Target className="w-4 h-4 animate-pulse text-red-500" />
@@ -954,7 +981,7 @@ export default function ExodusGodTier() {
                 <div className="mt-3 mx-auto w-48 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_8px_cyan]" />
               </div>
 
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 w-full mx-auto">
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 w-full mx-auto">
             {fleet.map((ship, idx) => {
               const isRushing = rushingShipId === ship.id || activeShip === ship.id;
               const isOtherRushing = (rushingShipId !== null && rushingShipId !== ship.id) || (activeShip !== null && activeShip !== ship.id);
@@ -967,7 +994,7 @@ export default function ExodusGodTier() {
                     style={{ '--theme': ship.hex } as React.CSSProperties}
                   >
                     {/* SPACESHIP BODY */}
-                    <div className={`relative w-[160px] h-[200px] md:w-[200px] md:h-[250px] ${isRushing ? `ship-rush-${ship.id}` : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
+                    <div className={`relative w-[130px] h-[160px] md:w-[160px] md:h-[200px] ${isRushing ? `ship-rush-${ship.id}` : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
                       {/* Impact Particles — 40 debris pieces with mixed colors */}
                       {isRushing && impactParticles.map(p => (
                         <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius: p.id % 3 === 0 ? '2px' : '50%', background:p.c, boxShadow:`0 0 10px ${p.c}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />

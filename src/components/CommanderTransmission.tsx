@@ -536,6 +536,7 @@ export default function CommanderTransmission() {
   const isAvatarTalking = isTyping || isSpeaking;
 
   const [transmissionCompleted, setTransmissionCompleted] = useState(false);
+  const [isGeneratingCV, setIsGeneratingCV] = useState(false);
 
   const audioRef = useRef<TransmissionAudio | null>(null);
   const typewriterTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -1177,39 +1178,62 @@ export default function CommanderTransmission() {
 
                         {/* 3 NÚT HÀNH ĐỘNG */}
                         <div className="border-t border-cyan-500/20 p-6 md:p-8 flex flex-wrap gap-4 relative z-50 bg-[#01030a]/40">
-                          <motion.a
-                            href="/CV_TranThanhHuy.pdf"
-                            download="CV_TranThanhHuy_2026.pdf"
+                          <motion.button
                             onMouseEnter={() => audioRef.current?.playHover()}
-                            onClick={(e) => {
+                            disabled={isGeneratingCV}
+                            onClick={async (e) => {
                               e.preventDefault();
-                              audioRef.current?.playDownloadSuccess();
-                              const burst = document.createElement('div');
-                              burst.style.cssText =
-                                'position:fixed;inset:0;pointer-events:none;z-index:999999;background:radial-gradient(circle,rgba(0,242,254,0.35)10%,transparent 60%);animation:downloadBurst 800ms forwards;';
-                              for (let i = 0; i < 35; i++) {
-                                const p = document.createElement('div');
-                                const angle = Math.random() * Math.PI * 2;
-                                const velocity = 100 + Math.random() * 250;
-                                p.style.cssText =
-                                  'position:absolute;width:4px;height:4px;background:#00f2fe;border-radius:50%;box-shadow:0 0 15px #00f2fe;animation:particleFly 800ms ease-out forwards;';
-                                p.style.setProperty('--tx', `${Math.cos(angle) * velocity}px`);
-                                p.style.setProperty('--ty', `${Math.sin(angle) * velocity}px`);
-                                burst.appendChild(p);
+                              setIsGeneratingCV(true);
+                              try {
+                                const res = await fetch('/api/cv/download');
+                                if (!res.ok) throw new Error('Failed to generate PDF');
+                                
+                                const blob = await res.blob();
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'CV_TranThanhHuy_CMDR-2003.pdf';
+                                document.body.appendChild(a);
+                                a.click();
+                                a.remove();
+                                window.URL.revokeObjectURL(url);
+
+                                audioRef.current?.playDownloadSuccess();
+                                const burst = document.createElement('div');
+                                burst.style.cssText =
+                                  'position:fixed;inset:0;pointer-events:none;z-index:999999;background:radial-gradient(circle,rgba(0,242,254,0.35)10%,transparent 60%);animation:downloadBurst 800ms forwards;';
+                                for (let i = 0; i < 35; i++) {
+                                  const p = document.createElement('div');
+                                  const angle = Math.random() * Math.PI * 2;
+                                  const velocity = 100 + Math.random() * 250;
+                                  p.style.cssText =
+                                    'position:absolute;width:4px;height:4px;background:#00f2fe;border-radius:50%;box-shadow:0 0 15px #00f2fe;animation:particleFly 800ms ease-out forwards;';
+                                  p.style.setProperty('--tx', `${Math.cos(angle) * velocity}px`);
+                                  p.style.setProperty('--ty', `${Math.sin(angle) * velocity}px`);
+                                  burst.appendChild(p);
+                                }
+                                document.body.appendChild(burst);
+                                setTimeout(() => burst.remove(), 800);
+                              } catch (error) {
+                                alert('❌ Không thể tải CV lúc này. Vui lòng thử lại.');
+                                console.error(error);
+                              } finally {
+                                setIsGeneratingCV(false);
                               }
-                              document.body.appendChild(burst);
-                              setTimeout(() => burst.remove(), 800);
-                              const link = document.createElement('a');
-                              link.href = '/CV_TranThanhHuy.pdf';
-                              link.download = 'CV_TranThanhHuy_2026.pdf';
-                              link.click();
                             }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-black py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(34,211,238,0.6)] cursor-pointer group relative overflow-hidden"
+                            className="touch-safe min-h-[52px] mobile-glow flex-1 min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-black py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(34,211,238,0.6)] cursor-pointer group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                            <Download className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-300" /> <span className="tracking-[0.1em]">TẢI DOSSIER (CV)</span>
-                          </motion.a>
+                            {isGeneratingCV ? (
+                              <span className="tracking-[0.1em]">ĐANG TẠO PDF...</span>
+                            ) : (
+                              <>
+                                <Download className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-300" />
+                                <span className="tracking-[0.1em]">TẢI DOSSIER (CV)</span>
+                              </>
+                            )}
+                          </motion.button>
 
                           <motion.button
                             onMouseEnter={() => audioRef.current?.playHover()}

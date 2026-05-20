@@ -43,7 +43,7 @@ const DIALOGUE: DialogueLine[] = [
   },
   {
     id: 'd3',
-    text: 'Khi sáng tạo giao thoa với trí tuệ công nghệ...',
+    text: 'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
     start: 13.5,
     end: 15.8,
     style: 'large-vibrating',
@@ -96,7 +96,7 @@ const STYLE_CLASSES: Record<DialogueLine['style'], string> = {
   'massive-gold-explosive':
     'font-black text-4xl md:text-7xl tracking-tight uppercase',
   'custom-d10':
-    'font-black text-3xl md:text-6xl lg:text-7xl tracking-tight uppercase',
+    'w-full h-full',
 };
 
 const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
@@ -111,9 +111,7 @@ const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
       '0 0 8px #26e6ff, 0 0 22px #00b8ff, 0 0 44px #0080ff',
   },
   'large-vibrating': {
-    color: '#ffffff',
-    textShadow:
-      '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff',
+    // color and textShadow are now dynamically animated via Framer Motion
   },
   'serif-italic': {
     color: '#f3e6c8',
@@ -148,50 +146,98 @@ const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
 // ============================================================
 // ANIMATION VARIANTS PER STYLE
 // ============================================================
-function getMotionProps(style: DialogueLine['style']) {
+function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinematicTime: number) {
+  const dissolveExit = { 
+    opacity: 0, 
+    y: -30, 
+    filter: 'blur(18px)', 
+    letterSpacing: '0.28em', 
+    scale: 0.92,
+    transition: { duration: 1.35, ease: 'easeIn' as any }
+  };
+
   switch (style) {
     case 'neon-pink-italic':
       return {
         initial: { opacity: 0, y: 30, filter: 'blur(20px)' },
-        animate: { opacity: 1, y: 0, filter: 'blur(0px)' },
-        exit: { opacity: 0, y: -20, filter: 'blur(14px)' },
-        transition: { duration: 1.4, ease: [0.16, 1, 0.3, 1] as any },
+        animate: { 
+          opacity: 1, 
+          y: deviceTier === 'high' ? [0, -7, 0] : [0, -4, 0], 
+          scale: [1, 1.015, 1], 
+          rotateZ: [0, 1, 0, -1, 0],
+          filter: 'blur(0px)' 
+        },
+        exit: dissolveExit,
+        transition: { 
+          duration: 1.4, ease: [0.16, 1, 0.3, 1] as any,
+          y: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' },
+          scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' },
+          rotateZ: { duration: 6, repeat: Infinity, ease: 'easeInOut' }
+        },
       };
     case 'mono-cyan-glitch':
       return {
         initial: { opacity: 0, x: -40, skewX: 12 },
         animate: { opacity: 1, x: 0, skewX: 0 },
-        exit: { opacity: 0, x: 40, skewX: -12 },
+        exit: dissolveExit,
         transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as any },
       };
     case 'large-vibrating':
+      const climaxIntensity = cinematicTime >= 13 && cinematicTime <= 16.8 
+        ? Math.max(0, Math.min(1, (cinematicTime - 13) / 3)) 
+        : 0;
       return {
-        initial: { opacity: 0, scale: 0.7 },
-        animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0, scale: 1.25, filter: 'blur(30px)' },
-        transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as any },
+        initial: { opacity: 0, scale: 0.7, color: '#ffffff', textShadow: '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff' },
+        animate: { 
+          opacity: 1, 
+          scale: climaxIntensity > 0 ? [1, 1 + climaxIntensity * 0.06, 1] : 1,
+          color: climaxIntensity > 0 ? ['#67e8f9', '#ff3a00', '#ffeb8a'] : '#ffffff',
+          textShadow: climaxIntensity > 0 ? `0 0 ${20 + climaxIntensity * 60}px currentColor` : '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff',
+        },
+        exit: dissolveExit,
+        transition: { 
+          duration: 0.9, ease: [0.16, 1, 0.3, 1] as any,
+          scale: { duration: 0.45, repeat: Infinity, ease: 'easeInOut' },
+          color: { duration: 0.35, repeat: Infinity },
+        },
       };
     case 'serif-italic':
       return {
         initial: { opacity: 0, y: 16 },
-        animate: { opacity: 1, y: 0 },
-        exit: { opacity: 0, y: -8 },
-        transition: { duration: 1.3, ease: [0.16, 1, 0.3, 1] as any },
+        animate: { 
+          opacity: 1, 
+          y: deviceTier === 'high' ? [0, -7, 0] : [0, -4, 0],
+          scale: [1, 1.015, 1],
+          rotateZ: [0, -1, 0, 1, 0],
+        },
+        exit: dissolveExit,
+        transition: { 
+          duration: 1.3, ease: [0.16, 1, 0.3, 1] as any,
+          y: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' },
+          scale: { duration: 4.2, repeat: Infinity, ease: 'easeInOut' },
+          rotateZ: { duration: 6.5, repeat: Infinity, ease: 'easeInOut' }
+        },
       };
     case 'gold-scaling':
       return {
         initial: { opacity: 0, scale: 0.85, letterSpacing: '-0.05em' },
         animate: { opacity: 1, scale: 1, letterSpacing: '0.02em' },
-        exit: { opacity: 0, scale: 1.1 },
+        exit: { opacity: 0, scale: 1.1, filter: 'blur(20px)' },
         transition: { duration: 1.6, ease: [0.16, 1, 0.3, 1] as any },
       };
     case 'massive-gold-explosive':
-    case 'custom-d10':
       return {
         initial: { opacity: 0, scale: 0.5, filter: 'blur(40px)' },
         animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
         exit: { opacity: 0, scale: 1.15 },
         transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] as any },
+      };
+    case 'custom-d10':
+      return {
+        initial: { opacity: 1 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0, scale: 1.2, filter: 'blur(30px)' },
+        transition: { duration: 1.5, ease: [0.16, 1, 0.3, 1] as any },
       };
   }
 }
@@ -304,7 +350,8 @@ function DialogueLineView({
   line: DialogueLine;
   cinematicTime: number;
 }) {
-  const motionProps = getMotionProps(line.style);
+  const deviceTier = useCinematicStore((s) => s.deviceTier) || 'high';
+  const motionProps = getMotionProps(line.style, deviceTier, cinematicTime);
   const cls = STYLE_CLASSES[line.style];
   const styleObj = STYLE_INLINE[line.style];
 
@@ -319,8 +366,9 @@ function DialogueLineView({
       case 'gold-scaling':
         return { top: '40%', left: 0, right: 0 };
       case 'massive-gold-explosive':
-      case 'custom-d10':
         return { top: '38%', left: 0, right: 0 };
+      case 'custom-d10':
+        return { top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' };
       case 'large-vibrating':
         return { top: '45%', left: 0, right: 0 };
       default:
@@ -353,36 +401,53 @@ function DialogueLineView({
     );
   } else if (line.style === 'custom-d10') {
     inner = (
-      <motion.span
-        className="inline"
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.18 } } }}
-      >
-        {['Chào mừng đến với', 'Hệ Hành Tinh', 'TH2003'].map((chunk, i) => (
-          <motion.span
-            key={i}
-            className={`block ${i === 2 ? 'mt-2' : ''}`}
-            variants={{
-              hidden: { opacity: 0, scale: 0.6, filter: 'blur(24px)' },
-              visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as any } },
-            }}
-            style={i === 2 ? {
-              background: 'linear-gradient(180deg, #ffee88 0%, #ffaa00 45%, #ff3300 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 0 18px rgba(255,160,0,0.8)) drop-shadow(0 0 40px rgba(255,60,0,0.5))',
-              fontSize: '1.3em',
-            } : {
-              color: '#00e5ff',
-              textShadow: '0 0 12px #00e5ff, 0 0 28px #0099ff',
-              fontSize: i === 0 ? '0.65em' : '0.85em',
-            }}
-          >
-            {chunk}
-          </motion.span>
-        ))}
-      </motion.span>
+      <div className="relative w-full h-full flex flex-col items-center justify-center">
+        {/* Phần 1: Chào mừng đến với hệ hành tinh - Hiệu ứng huyền ảo */}
+        <motion.div
+          className="absolute z-10 flex flex-col items-center justify-center w-full"
+          initial={{ opacity: 0, y: '-5vh', filter: 'blur(30px)', letterSpacing: '0em' }}
+          animate={{ opacity: 1, y: '-10vh', filter: 'blur(0px)', letterSpacing: '0.05em' }}
+          transition={{ duration: 3, ease: 'easeOut' }}
+          style={{
+             top: '25%',
+             color: '#dcfaff',
+             textShadow: '0 0 20px rgba(0,229,255,0.8), 0 0 40px rgba(0,153,255,0.6)',
+             fontFamily: 'serif',
+          }}
+        >
+          <span className="text-2xl md:text-4xl font-light italic mb-3">Chào mừng đến với</span>
+          <span className="text-4xl md:text-6xl font-bold uppercase tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-100 via-cyan-300 to-cyan-100" style={{ filter: 'drop-shadow(0 0 15px rgba(0,229,255,0.8))' }}>
+            Hệ Hành Tinh
+          </span>
+        </motion.div>
+
+        {/* Phần 2: TH2003 bùng sáng ở trung tâm mặt trời */}
+        <motion.div
+          className="absolute z-20 uppercase"
+          initial={{ opacity: 0, scale: 0, x: '-50%', y: '-50%', filter: 'blur(50px) brightness(4)' }}
+          animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%', filter: 'blur(0px) brightness(1)' }}
+          transition={{ 
+            duration: 2.5, 
+            delay: 1.0, 
+            ease: [0.16, 1, 0.3, 1]
+          }}
+          style={{
+            background: 'linear-gradient(180deg, #ffffff 0%, #fff0a0 25%, #ffb800 60%, #ff5500 100%)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            color: 'transparent',
+            filter: 'drop-shadow(0 0 60px rgba(255,200,0,1)) drop-shadow(0 0 100px rgba(255,100,0,0.8)) drop-shadow(0 0 150px rgba(255,50,0,0.6))',
+            fontSize: 'clamp(5rem, 12vw, 12rem)',
+            fontWeight: '900',
+            lineHeight: 1,
+            top: '50%',
+            left: '50%',
+          }}
+        >
+          TH2003
+        </motion.div>
+      </div>
     );
   }
 
@@ -393,7 +458,7 @@ function DialogueLineView({
       style={{
         ...position,
         ...styleObj,
-        willChange: 'transform, opacity, filter',
+        willChange: 'transform, opacity, filter, color',
       }}
       {...motionProps}
     >

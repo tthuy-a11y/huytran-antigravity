@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { WarpCanvasWrapper } from '@/components/canvas/WarpCanvasWrapper';
 import CommanderTransmission from '@/components/CommanderTransmission';
@@ -6,6 +6,19 @@ import CommanderTransmission from '@/components/CommanderTransmission';
 export const metadata: Metadata = {
   title: 'Thanh Huy | Creative Developer • 2003',
   description: 'Antigravity Portfolio - Không gian số có trọng lực riêng',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#010204',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

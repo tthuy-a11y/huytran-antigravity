@@ -126,7 +126,7 @@ export default function Home() {
 
       {/* ===== TRANG CHỦ GỐC VỚI REVEAL EFFECT 1400ms ===== */}
       <main
-        className={`min-h-screen bg-[#020008] overflow-hidden relative flex flex-col items-center justify-center selection:bg-cyan-500/30 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`min-h-[100svh] bg-[#020008] overflow-hidden relative flex flex-col items-center justify-center selection:bg-cyan-500/30 transition-all duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           introDone
             ? 'opacity-100 scale-100 blur-0'
             : 'opacity-0 scale-90 blur-[25px] pointer-events-none'
@@ -136,10 +136,10 @@ export default function Home() {
         {mounted && introDone && <StarfieldCanvas />}
 
         {/* ===== AMBIENT GLOW LAYERS ===== */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(0,242,254,0.07)_0%,transparent_70%)] blur-[80px]" />
-          <div className="absolute bottom-[-10%] right-[15%] w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(176,38,255,0.06)_0%,transparent_70%)] blur-[80px]" />
-          <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse,rgba(255,8,68,0.04)_0%,transparent_70%)] blur-[100px]" />
+        <div className="absolute inset-0 z-0 pointer-events-none opacity-50 md:opacity-100">
+          <div className="absolute top-[-10%] left-[5%] md:top-[-20%] md:left-[20%] w-[120vw] h-[120vw] md:w-[600px] md:h-[600px] bg-[radial-gradient(circle,rgba(0,242,254,0.07)_0%,transparent_70%)] blur-[60px] md:blur-[80px]" />
+          <div className="absolute bottom-[-5%] right-[5%] md:bottom-[-10%] md:right-[15%] w-[100vw] h-[100vw] md:w-[500px] md:h-[500px] bg-[radial-gradient(circle,rgba(176,38,255,0.06)_0%,transparent_70%)] blur-[60px] md:blur-[80px]" />
+          <div className="absolute top-[30%] left-[50%] -translate-x-1/2 w-[150vw] h-[80vw] md:w-[800px] md:h-[400px] bg-[radial-gradient(ellipse,rgba(255,8,68,0.04)_0%,transparent_70%)] blur-[80px] md:blur-[100px]" />
         </div>
 
         {/* ===== SUBTLE GRID ===== */}
@@ -153,13 +153,13 @@ export default function Home() {
         />
 
         {/* ===== MAIN CONTENT ===== */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center mt-12 md:mt-0">
           {/* ===== HERO TITLE: TRẦN THANH HUY ===== */}
           <div className="mb-8 animate-[fadeSlideDown_1.2s_ease-out_both]">
             <div className="inline-flex items-center gap-4 mb-5">
-              <Sparkles className="w-10 h-10 md:w-12 md:h-12 text-cyan-300 animate-[sparkleRotate_3s_ease-in-out_infinite]" />
+              <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-cyan-300 animate-[sparkleRotate_3s_ease-in-out_infinite]" />
               <h1
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight uppercase"
+                className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight uppercase"
                 style={{ fontFamily: "'Orbitron', 'Space Grotesk', sans-serif" }}
               >
                 <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-400 animate-[gradientShift_6s_ease-in-out_infinite] [background-size:200%_200%] drop-shadow-[0_0_40px_rgba(0,242,254,0.3)]">

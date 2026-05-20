@@ -75,12 +75,12 @@ export default function CreativeOverlayHUD({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 60 }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="pointer-events-auto w-full max-w-[300px] md:max-w-sm bg-black/70 backdrop-blur-3xl border border-orange-400/30 p-6 rounded-3xl shadow-[0_0_40px_rgba(249,115,22,0.3)]"
+              className="pointer-events-auto w-full max-w-[280px] md:max-w-sm bg-black/70 backdrop-blur-3xl border border-orange-400/30 p-3 sm:p-4 md:p-6 rounded-3xl shadow-[0_0_40px_rgba(249,115,22,0.3)]"
             >
-              <h2 className="text-2xl font-black text-white tracking-tighter">TRẦN THANH HUY</h2>
-              <p className="text-cyan-400 text-xs font-mono tracking-[2px] mb-4">[CREATOR-2003]</p>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tighter">TRẦN THANH HUY</h2>
+              <p className="text-cyan-400 text-[10px] sm:text-xs font-mono tracking-[2px] mb-3 md:mb-4">[CREATOR-2003]</p>
 
-              <div className="border-l-2 border-orange-500 pl-4 text-sm text-gray-300 leading-relaxed">
+              <div className="border-l-2 border-orange-500 pl-3 md:pl-4 text-xs sm:text-sm text-gray-300 leading-relaxed">
                 &quot;Frontend Developer Intern khám phá điểm giao giữa thiết kế, công nghệ và AI.
                 Mỗi hành tinh đại diện cho một mảnh ghép trong vũ trụ kỹ năng —{' '}
                 <span className="text-cyan-400 italic">hover &amp; click để khám phá.</span>&quot;
@@ -119,26 +119,26 @@ export default function CreativeOverlayHUD({
               className="relative w-full max-w-md bg-[#050b14]/95 border border-cyan-400/40 rounded-3xl shadow-[0_0_60px_rgba(34,211,238,0.25)] flex flex-col max-h-[85vh] overflow-hidden"
             >
               {/* HEADER */}
-              <div className="shrink-0 px-8 pt-8 pb-5 border-b border-cyan-400/20">
+              <div className="shrink-0 px-4 sm:px-6 md:px-8 pt-6 md:pt-8 pb-4 md:pb-5 border-b border-cyan-400/20">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-3xl font-black text-white tracking-tighter">{activePlanet.name}</h3>
-                    <p className="font-mono text-cyan-400 text-sm tracking-widest">[{activePlanet.code}]</p>
+                    <h3 className="text-2xl md:text-3xl font-black text-white tracking-tighter">{activePlanet.name}</h3>
+                    <p className="font-mono text-cyan-400 text-xs md:text-sm tracking-widest">[{activePlanet.code}]</p>
                   </div>
                   <button
                     onClick={() => {
                       playSound('abort');
                       setActivePlanet(null);
                     }}
-                    className="p-2 text-cyan-400 hover:text-white hover:bg-cyan-900/30 rounded-xl transition-all"
+                    className="touch-safe p-2 flex items-center justify-center text-cyan-400 hover:text-white hover:bg-cyan-900/30 rounded-xl transition-all"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-6 h-6 md:w-8 md:h-8" />
                   </button>
                 </div>
               </div>
 
               {/* SCROLLABLE BODY — flex-1 min-h-0 giải quyết triệt để text dài */}
-              <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 custom-scrollbar text-gray-200 text-[15px] leading-relaxed">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 md:px-8 py-4 md:py-6 custom-scrollbar text-gray-200 text-sm md:text-[15px] leading-relaxed">
                 <p className="whitespace-pre-wrap mb-10">{activePlanet.description}</p>
 
                 {/* STATS BARS — stagger animation + neon glow */}
@@ -171,7 +171,7 @@ export default function CreativeOverlayHUD({
               </div>
 
               {/* FOOTER */}
-              <div className="shrink-0 p-8 border-t border-cyan-400/20">
+              <div className="shrink-0 px-4 sm:px-6 md:px-8 py-4 md:py-8 border-t border-cyan-400/20">
                 <button
                   onClick={() => {
                     playSound('deploy');

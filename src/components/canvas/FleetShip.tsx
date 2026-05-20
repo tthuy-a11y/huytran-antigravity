@@ -34,7 +34,6 @@ export const FleetShip = () => {
   // Render nothing visible until warp sequence engages.
   // Group still mounts so useFrame keeps running; Trail only mounts during active warp.
   const isActive = phase !== 'idle';
-  if (!isActive) return null;
 
   const neonColor =
     currentShip === 'NEXUS-01' ? '#00ffff' :
@@ -56,7 +55,7 @@ export const FleetShip = () => {
   );
 
   return (
-    <group ref={shipRef} position={[0, -0.5, 9]}>
+    <group ref={shipRef} position={[0, -0.5, 9]} visible={isActive}>
       {showTrail ? (
         <Trail
           width={1.9}

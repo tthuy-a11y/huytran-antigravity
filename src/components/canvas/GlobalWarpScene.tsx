@@ -14,10 +14,10 @@ import { FleetShip } from './FleetShip';
 // =============================================================================
 function WarpPostFx() {
   const phase = useFleetStore((s) => s.flightPhase);
-  if (phase === 'idle' || phase === 'arrival') return null;
+  const isActive = phase !== 'idle' && phase !== 'arrival';
 
   return (
-    <EffectComposer enableNormalPass={false}>
+    <EffectComposer enableNormalPass={false} enabled={isActive}>
       <Bloom luminanceThreshold={0.2} mipmapBlur intensity={phase === 'warping' ? 4.6 : 1.5} />
     </EffectComposer>
   );

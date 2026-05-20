@@ -74,19 +74,19 @@ export default function CreativePage() {
                 <svg className="icon-drag" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
                 </svg>
-                DRAG TO ORBIT
+                <span>DRAG TO ORBIT</span>
               </div>
               <div className="instruction-box box-scroll">
                 <svg className="icon-scroll" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="5" y="2" width="14" height="20" rx="7"/><path className="scroll-wheel" d="M12 6v4"/>
                 </svg>
-                SCROLL TO ZOOM
+                <span>SCROLL TO ZOOM</span>
               </div>
               <div className="instruction-box box-click">
                 <svg className="icon-click" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/>
                 </svg>
-                CLICK PLANETS
+                <span>CLICK PLANETS</span>
               </div>
             </div>
 
@@ -149,13 +149,21 @@ export default function CreativePage() {
 
         .instruction-container {
           position: fixed;
-          top: 40px;
+          bottom: 120px;
           left: 50%;
+          transform: translateX(-50%);
           z-index: 40;
           display: flex;
-          gap: 16px;
+          flex-direction: row;
+          gap: 12px;
           pointer-events: auto;
           animation: float-instruction 3.5s ease-in-out infinite;
+        }
+        @media (min-width: 768px) {
+          .instruction-container {
+            top: 40px;
+            bottom: auto;
+          }
         }
 
         .instruction-container:hover {
@@ -165,17 +173,34 @@ export default function CreativePage() {
         .instruction-box {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 6px;
           font-family: monospace;
-          font-size: 11px;
-          letter-spacing: 2px;
-          padding: 10px 20px;
+          font-size: 10px;
+          letter-spacing: 1px;
+          padding: 8px 12px;
           border-radius: 8px;
           border: 1px solid rgba(255, 255, 255, 0.15);
           backdrop-filter: blur(8px);
           transition: all 0.3s ease;
           box-shadow: 0 4px 15px rgba(0,0,0,0.3);
           white-space: nowrap;
+        }
+        @media (min-width: 768px) {
+          .instruction-box {
+            font-size: 11px;
+            letter-spacing: 2px;
+            padding: 10px 20px;
+            gap: 10px;
+          }
+        }
+
+        .instruction-box span {
+          display: none;
+        }
+        @media (min-width: 768px) {
+          .instruction-box span {
+            display: inline;
+          }
         }
 
         .box-drag {

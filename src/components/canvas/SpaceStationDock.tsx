@@ -25,7 +25,7 @@ export const SpaceStationDock = () => {
     }
   });
 
-  if (pathname !== '/system' || phase === 'arrival') return null;
+  const isVisible = pathname === '/system' && phase !== 'arrival';
 
   const torusGeo = React.useMemo(() => new THREE.TorusGeometry(9.2, 0.16, 8, 48), []);
   const torusMat = React.useMemo(() => new THREE.MeshStandardMaterial({ color: '#00ffff', emissive: '#00ffff', emissiveIntensity: 1.3, toneMapped: false }), []);
@@ -34,7 +34,7 @@ export const SpaceStationDock = () => {
   const cylMat = React.useMemo(() => new THREE.MeshStandardMaterial({ color: '#001122', wireframe: true, transparent: true, opacity: 0.38, emissive: '#00aaff', emissiveIntensity: 0.18 }), []);
 
   return (
-    <group ref={stationRef}>
+    <group ref={stationRef} visible={isVisible}>
       {[0, -6, -12, -18, -24].map((z, i) => (
         <mesh key={i} position={[0, 0, z]} rotation={[Math.PI / 2, 0, 0]} geometry={torusGeo} material={torusMat} />
       ))}
