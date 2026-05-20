@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion';
 import { useCinematicStore, CINEMATIC_DURATION } from '@/app/creative/lib/cinematicStore';
 
 // ============================================================
@@ -182,26 +182,13 @@ function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinema
         exit: dissolveExit,
         transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as any },
       };
-    case 'large-vibrating': {
-      const climaxIntensity = cinematicTime >= 13 && cinematicTime <= 16.8 
-        ? Math.max(0, Math.min(1, (cinematicTime - 13) / 3)) 
-        : 0;
+    case 'large-vibrating':
       return {
-        initial: { opacity: 0, scale: 0.7, color: '#ffffff', textShadow: '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff' },
-        animate: { 
-          opacity: 1, 
-          scale: climaxIntensity > 0 ? [1, 1 + climaxIntensity * 0.06, 1] : [1, 1, 1],
-          color: climaxIntensity > 0 ? ['#67e8f9', '#ff3a00', '#ffeb8a'] : ['#ffffff', '#ffffff', '#ffffff'],
-          textShadow: climaxIntensity > 0 ? `0 0 ${20 + climaxIntensity * 60}px currentColor` : '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff',
-        },
+        initial: { opacity: 0, scale: 0.7, filter: 'blur(10px)' },
+        animate: { opacity: 1, scale: 1, filter: 'blur(0px)' },
         exit: dissolveExit,
-        transition: { 
-          duration: 0.9, ease: [0.16, 1, 0.3, 1] as any,
-          scale: { duration: 0.45, repeat: Infinity, ease: 'easeInOut' },
-          color: { duration: 0.35, repeat: Infinity },
-        },
+        transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as any },
       };
-    }
     case 'serif-italic':
       return {
         initial: { opacity: 0, y: 16 },
@@ -313,28 +300,53 @@ function GlitchText({ text }: { text: string }) {
 // ============================================================
 // VIBRATING WRAPPER (large-vibrating only) — peaks near 15.8s
 // ============================================================
-function VibratingText({
-  text,
-  cinematicTime,
-}: {
-  text: string;
-  cinematicTime: number;
-}) {
-  // Vibration amplitude ramps up as we approach the Bang
-  const intensity = Math.max(0, Math.min(1, (cinematicTime - 13.5) / 2.3));
-  const amp = 2 + intensity * 6; // pixels
+function VibratingText({ text }: { text: string }) {
   return (
     <motion.span
       className="inline-block"
-      animate={{
-        x: [0, amp, -amp, amp * 0.6, -amp * 0.6, 0],
-        y: [0, -amp * 0.4, amp * 0.4, -amp * 0.2, amp * 0.2, 0],
-      }}
-      transition={{
-        duration: 0.18,
-        repeat: Infinity,
-        ease: [0.16, 1, 0.3, 1] as any,
-      }}
+      animate={{ x: [0, 3, -3, 2, -2, 0], y: [0, -2, 2, -1, 1, 0] }}
+      transition={{ duration: 0.12, repeat: Infinity, ease: 'linear' }}
+    >
+      {text}
+    </motion.span>
+  );
+}
+
+function DynamicClimaxText({ text }: { text: string }) {
+  const progress = useMotionValue(0);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const color = useTransform(
+    progress,
+    [0, 0.3, 0.7, 1],
+    ['#ffffff', '#67e8f9', '#ff3a00', '#ffeb8a']
+  );
+  
+  const scale = useTransform(progress, (p) => 1 + p * 0.08);
+  const textShadow = useTransform(progress, (p) => {
+    const glow = 20 + p * 60;
+    return `0 0 ${glow}px currentColor, 0 0 ${glow * 1.5}px currentColor`;
+  });
+
+  useAnimationFrame((t) => {
+    const timeSec = useCinematicStore.getState().time;
+    const intensity = Math.max(0, Math.min(1, (timeSec - 13.0) / 3.8));
+    
+    let beat = 0;
+    if (intensity > 0) {
+      beat = Math.sin(t * 0.015) * (intensity * 0.06);
+    }
+    progress.set(intensity + beat);
+
+    const amp = 2 + intensity * 6;
+    x.set(Math.sin(t * 0.05) * amp + Math.cos(t * 0.03) * amp * 0.6);
+    y.set(Math.cos(t * 0.04) * (amp * 0.4) + Math.sin(t * 0.02) * (amp * 0.2));
+  });
+
+  return (
+    <motion.span 
+      style={{ x, y, scale, color, textShadow, display: 'inline-block' }}
     >
       {text}
     </motion.span>
@@ -383,7 +395,7 @@ function DialogueLineView({
   } else if (line.style === 'mono-cyan-glitch') {
     inner = <GlitchText text={line.text} />;
   } else if (line.style === 'large-vibrating') {
-    inner = <VibratingText text={line.text} cinematicTime={cinematicTime} />;
+    inner = <DynamicClimaxText text={line.text} />;
   } else if (line.style === 'serif-italic') {
     inner = <SplitWords text={line.text} stagger={0.13} />;
   } else if (line.style === 'gold-scaling') {
@@ -408,7 +420,7 @@ function DialogueLineView({
           className="absolute z-10 flex flex-col items-center justify-center w-full"
           initial={{ opacity: 0, y: '-5vh', filter: 'blur(30px)', letterSpacing: '0em' }}
           animate={{ opacity: 1, y: '-10vh', filter: 'blur(0px)', letterSpacing: '0.05em' }}
-          transition={{ duration: 3, ease: 'easeOut' }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
           style={{
              top: '25%',
              color: '#dcfaff',
@@ -428,9 +440,9 @@ function DialogueLineView({
           initial={{ opacity: 0, scale: 0, x: '-50%', y: '-50%', filter: 'blur(50px) brightness(4)' }}
           animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%', filter: 'blur(0px) brightness(1)' }}
           transition={{ 
-            duration: 2.5, 
-            delay: 1.0, 
-            ease: [0.16, 1, 0.3, 1]
+            duration: 1.2, 
+            delay: 0.6, 
+            ease: [0.16, 1, 0.3, 1] as any
           }}
           style={{
             background: 'linear-gradient(180deg, #ffffff 0%, #fff0a0 25%, #ffb800 60%, #ff5500 100%)',

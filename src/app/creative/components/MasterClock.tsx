@@ -42,7 +42,10 @@ export function MasterClock({
     playAt(BIG_BANG_TIME, 'big-bang', { volume: 1.0 });
     playAt(BIG_BANG_TIME, 'shockwave', { volume: 1.0 });
     playAt(22.5, 'planet-discover', { volume: 0.6 });
-    playAt(27.0, 'data-beep', { volume: 0.5 });
+    // Synced with "Chào mừng đến với Hệ Hành Tinh" (28.0s)
+    playAt(28.0, 'data-beep', { volume: 0.5 });
+    // Synced with "TH2003" explosion (28.0s + 0.6s delay)
+    playAt(28.6, 'shockwave', { volume: 0.4, rate: 1.5 });
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {
       finishedFiredRef.current = true;

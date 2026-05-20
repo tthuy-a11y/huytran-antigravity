@@ -60,6 +60,11 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
 
   const Icon = focusedPlanet ? (ICON_MAP[focusedPlanet.id] || Zap) : Zap;
 
+  const itemVariants: any = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { opacity: 1, x: 0, transition: { type: 'spring', damping: 20, stiffness: 200 } }
+  };
+
   return (
     <div className="fixed inset-0 z-20 pointer-events-none select-none text-white font-sans">
       {/* Top Branding */}
@@ -125,227 +130,247 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
       <AnimatePresence>
         {!!focusedPlanetId && focusedPlanet && (
           <motion.aside
-              key="sidebar-panel"
-              initial={{ x: '100%', opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 180 }}
-              onClick={(e) => e.stopPropagation()}
-              onWheel={(e) => e.stopPropagation()}
-              className="fixed top-0 right-0 z-[1100] h-full w-full md:w-[460px] lg:w-[500px] flex flex-col pointer-events-auto backdrop-blur-3xl border-l shadow-[-40px_0_120px_rgba(0,0,0,0.85)] overflow-hidden"
+            key="sidebar-panel"
+            variants={{
+              hidden: { x: '100%', opacity: 0, filter: 'blur(10px)' },
+              visible: { 
+                x: 0, opacity: 1, filter: 'blur(0px)',
+                transition: { type: 'spring', damping: 25, stiffness: 180, staggerChildren: 0.08, delayChildren: 0.1 }
+              },
+              exit: { x: '100%', opacity: 0, filter: 'blur(10px)', transition: { duration: 0.4, ease: 'easeInOut' } }
+            }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            className="fixed top-4 right-4 bottom-4 md:top-6 md:right-6 md:bottom-6 z-[1100] w-full max-w-[calc(100%-32px)] md:w-[420px] lg:w-[460px] flex flex-col pointer-events-auto rounded-3xl border border-white/10 shadow-2xl overflow-hidden bg-black/60 backdrop-blur-3xl"
+            style={{
+              boxShadow: `-20px 0 80px rgba(0,0,0,0.8), inset 0 0 80px ${focusedPlanet.color}15, 0 0 0 1px ${focusedPlanet.color}33`,
+            }}
+          >
+            {/* Animated Hex/Grid Overlay */}
+            <div 
+              className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay"
               style={{
-                background: `
-                  linear-gradient(180deg, ${focusedPlanet.color}14 0%, rgba(2,5,10,0.86) 18%, rgba(2,5,10,0.92) 60%, ${focusedPlanet.color}10 100%),
-                  rgba(2, 5, 10, 0.78)
-                `,
-                borderLeftColor: `${focusedPlanet.color}80`,
-                boxShadow: `-40px 0 120px rgba(0,0,0,0.85), inset 0 0 80px ${focusedPlanet.color}1f`,
+                backgroundImage: `linear-gradient(${focusedPlanet.color} 1px, transparent 1px), linear-gradient(90deg, ${focusedPlanet.color} 1px, transparent 1px)`,
+                backgroundSize: '24px 24px',
+                backgroundPosition: 'center center'
               }}
-            >
-              {/* Animated accent stripe on left edge */}
-              <motion.div
-                className="absolute left-0 top-0 bottom-0 w-[3px]"
-                style={{ background: `linear-gradient(180deg, transparent, ${focusedPlanet.color}, transparent)` }}
-                animate={{ y: ['-50%', '50%'] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }}
-              />
+            />
+            {/* Ambient Top Glow */}
+            <motion.div
+              className="absolute -top-32 -right-32 w-96 h-96 rounded-full blur-[100px] pointer-events-none"
+              style={{ background: focusedPlanet.color, opacity: 0.4 }}
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            />
 
-              {/* HEADER */}
-              <div className="relative shrink-0 px-5 md:px-7 pt-5 pb-4 border-b border-white/10 overflow-hidden">
-                {/* Glow halo behind title */}
-                <div
-                  className="absolute -top-10 -right-10 w-48 h-48 opacity-30 blur-3xl rounded-full pointer-events-none"
-                  style={{ background: focusedPlanet.color }}
-                />
-                {/* Tracking pulse dot */}
-                <div className="relative flex items-center gap-2 mb-3">
-                  <motion.span
-                    className="block w-2 h-2 rounded-full"
-                    style={{ background: focusedPlanet.color, boxShadow: `0 0 10px ${focusedPlanet.color}` }}
-                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.9, 1.15, 0.9] }}
-                    transition={{ duration: 1.4, repeat: Infinity }}
-                  />
-                  <span className="font-mono text-[10px] tracking-[0.3em] text-white/45">TRACKING TARGET</span>
-                  <div className="flex-1" />
-                  <button
-                    onClick={() => focusPlanet(null)}
-                    aria-label="Đóng"
-                    className="shrink-0 w-9 h-9 flex items-center justify-center text-white/60 hover:text-red-300 hover:bg-red-500/15 rounded-full transition-all border border-white/10 hover:border-red-400/40"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="relative flex items-start gap-4">
-                  {/* Icon with rotating ring */}
-                  <div className="relative shrink-0">
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl border-2 border-dashed"
-                      style={{ borderColor: `${focusedPlanet.color}66` }}
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+            {/* HEADER */}
+            <motion.div variants={itemVariants} className="relative shrink-0 px-6 pt-6 pb-5 border-b border-white/5">
+              {/* Sci-fi Deco Top-Right */}
+              <div className="absolute top-4 right-6 flex flex-col items-end gap-1 pointer-events-none opacity-40">
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div key={i} className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: focusedPlanet.color }} 
+                      animate={{ opacity: [0.2, 1, 0.2] }} 
+                      transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }} 
                     />
-                    <div
-                      className="relative w-14 h-14 flex items-center justify-center rounded-2xl border"
-                      style={{
-                        backgroundColor: `${focusedPlanet.color}1f`,
-                        borderColor: `${focusedPlanet.color}80`,
-                        boxShadow: `0 0 24px ${focusedPlanet.color}55, inset 0 0 12px ${focusedPlanet.color}33`,
-                      }}
-                    >
-                      <Icon className="w-7 h-7" style={{ color: focusedPlanet.color }} />
-                    </div>
-                  </div>
+                  ))}
+                </div>
+                <span className="font-mono text-[9px] tracking-[0.3em]">SYS.ACTIVE</span>
+              </div>
 
-                  {/* Title — multi-line allowed, gradient text */}
-                  <div className="min-w-0 flex-1">
-                    <h2
-                      className="text-xl md:text-2xl font-black uppercase tracking-tight leading-[1.1] break-words"
-                      style={{
-                        background: `linear-gradient(135deg, #ffffff 0%, ${focusedPlanet.color} 100%)`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        filter: `drop-shadow(0 0 12px ${focusedPlanet.color}88)`,
-                      }}
-                    >
-                      {focusedPlanet.name}
-                    </h2>
-                    <p className="font-mono text-[11px] tracking-[0.25em] mt-2">
-                      <span
-                        className="px-2 py-0.5 rounded border bg-white/[0.04]"
-                        style={{ color: focusedPlanet.color, borderColor: `${focusedPlanet.color}55` }}
-                      >
-                        ID • {focusedPlanet.code}
-                      </span>
-                    </p>
+              <div className="relative flex items-center gap-4 mt-2">
+                {/* Icon Container with multi-layered rotation */}
+                <div className="relative shrink-0 w-16 h-16 flex items-center justify-center">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border border-dashed opacity-50"
+                    style={{ borderColor: focusedPlanet.color }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <motion.div
+                    className="absolute inset-1 rounded-full border opacity-30"
+                    style={{ borderTopColor: focusedPlanet.color, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: focusedPlanet.color }}
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <div
+                    className="relative w-12 h-12 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-md shadow-lg"
+                    style={{ boxShadow: `0 0 20px ${focusedPlanet.color}40, inset 0 0 10px ${focusedPlanet.color}40` }}
+                  >
+                    <Icon className="w-6 h-6" style={{ color: focusedPlanet.color, filter: `drop-shadow(0 0 8px ${focusedPlanet.color})` }} />
                   </div>
                 </div>
+
+                <div className="min-w-0 flex-1">
+                  <motion.h2
+                    className="text-2xl md:text-3xl font-black uppercase tracking-tighter leading-none break-words"
+                    style={{
+                      color: '#ffffff',
+                      textShadow: `0 0 20px ${focusedPlanet.color}80, 0 0 40px ${focusedPlanet.color}40`
+                    }}
+                  >
+                    {focusedPlanet.name}
+                  </motion.h2>
+                  <p className="font-mono text-[10px] tracking-[0.3em] mt-2 text-white/50 flex items-center gap-2">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: focusedPlanet.color, boxShadow: `0 0 8px ${focusedPlanet.color}` }} />
+                    ID // {focusedPlanet.code}
+                  </p>
+                </div>
               </div>
+            </motion.div>
 
-              {/* BODY — cuộn nội bộ (with fade-out gradient at bottom edge) */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-5 md:px-7 py-6 space-y-7 relative"
-                style={{
-                  maskImage: 'linear-gradient(180deg, black 0%, black 92%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 92%, transparent 100%)',
-                }}>
-                {/* Description */}
-                <p
-                  className="text-[15px] text-white/90 leading-relaxed font-light border-l-2 pl-5"
-                  style={{ borderColor: focusedPlanet.color }}
-                >
-                  "{focusedPlanet.description}"
+            {/* BODY */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-8 relative z-10"
+              style={{
+                maskImage: 'linear-gradient(180deg, black 0%, black 95%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 95%, transparent 100%)',
+              }}>
+              
+              {/* Description */}
+              <motion.div variants={itemVariants} className="relative group">
+                <div className="absolute left-0 top-0 bottom-0 w-1 rounded-full opacity-50 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: focusedPlanet.color, boxShadow: `0 0 12px ${focusedPlanet.color}` }} />
+                <p className="text-[15px] text-white/80 leading-relaxed font-light pl-5">
+                  <span className="text-white/40 text-lg leading-none font-serif mr-1">"</span>
+                  {focusedPlanet.description}
+                  <span className="text-white/40 text-lg leading-none font-serif ml-1">"</span>
                 </p>
+              </motion.div>
 
-                {/* Stats hoặc Contact */}
-                {focusedPlanet.contact ? (
-                  <div className="space-y-3">
-                    <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-white/45">
-                      Liên hệ
-                    </div>
-                    {focusedPlanet.contact.map((item) => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between bg-black/40 rounded-2xl px-4 py-3.5 border border-white/5 hover:border-cyan-400/40 hover:bg-white/5 transition-all group"
-                      >
-                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/50 group-hover:text-cyan-300/70 transition-colors">
-                          {item.label}
-                        </span>
-                        <span className="text-[14px] font-bold text-white truncate ml-3 group-hover:text-cyan-300 transition-colors">
-                          {item.value}
-                        </span>
-                      </a>
-                    ))}
+              {/* Stats / Contact */}
+              {focusedPlanet.contact ? (
+                <motion.div variants={itemVariants} className="space-y-3">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/40">Giao thức Liên lạc</span>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
                   </div>
-                ) : focusedPlanet.stats.length > 0 ? (
-                  <div className="space-y-5">
-                    <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-white/45">
-                      Thông số lõi
-                    </div>
-                    {focusedPlanet.stats.map((stat, idx) => (
-                      <div key={stat.label}>
-                        <div className="flex justify-between items-end mb-2">
-                          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/55">
-                            {stat.label}
-                          </span>
-                          <span className="text-[15px] font-bold text-white tracking-wide">
-                            {stat.value}
-                          </span>
-                        </div>
-                        <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
-                          <motion.div
-                            className={`h-full bg-gradient-to-r ${STAT_COLORS[idx % STAT_COLORS.length]}`}
-                            initial={{ width: 0 }}
-                            animate={{ width: stat.level ? `${stat.level}%` : '100%' }}
-                            transition={{ duration: 1.2, ease: [0.34, 1.56, 0.64, 1], delay: 0.15 * idx }}
-                            style={{ boxShadow: '0 0 10px currentColor' }}
-                          />
-                        </div>
+                  {focusedPlanet.contact.map((item) => (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative flex items-center justify-between bg-white/[0.02] rounded-xl px-5 py-4 border border-white/5 hover:bg-white/[0.05] transition-all group overflow-hidden"
+                      style={{ borderLeftColor: focusedPlanet.color, borderLeftWidth: '2px' }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-transparent group-hover:from-white/[0.05] transition-all" />
+                      <span className="relative text-[11px] font-mono uppercase tracking-[0.2em] text-white/40 group-hover:text-white/80 transition-colors">
+                        {item.label}
+                      </span>
+                      <span className="relative text-[14px] font-bold text-white tracking-wide group-hover:text-cyan-300 transition-colors" style={{ textShadow: `0 0 10px ${focusedPlanet.color}00` }}>
+                        {item.value}
+                      </span>
+                    </a>
+                  ))}
+                </motion.div>
+              ) : focusedPlanet.stats.length > 0 ? (
+                <motion.div variants={itemVariants} className="space-y-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/40">Phân tích Lõi</span>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
+                  </div>
+                  {focusedPlanet.stats.map((stat, idx) => (
+                    <div key={stat.label} className="group">
+                      <div className="flex justify-between items-end mb-2">
+                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/50 group-hover:text-white/80 transition-colors">
+                          {stat.label}
+                        </span>
+                        <span className="text-[14px] font-mono font-bold text-white tracking-wider" style={{ color: focusedPlanet.color, textShadow: `0 0 10px ${focusedPlanet.color}66` }}>
+                          {stat.value}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {/* Details */}
-                {focusedPlanet.details && focusedPlanet.details.length > 0 && (
-                  <div className="space-y-4">
-                    {focusedPlanet.details.map((paragraph, idx) => (
-                      <p key={idx} className="text-white/65 text-[14px] leading-relaxed">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                )}
-
-                {/* Technologies */}
-                {focusedPlanet.technologies && focusedPlanet.technologies.length > 0 && (
-                  <div>
-                    <div className="text-[11px] font-mono text-white/45 mb-3 tracking-[0.25em] uppercase">
-                      Core Technologies
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {focusedPlanet.technologies.map((tech, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1.5 rounded-lg text-[12px] font-mono border backdrop-blur-xl"
-                          style={{
-                            borderColor: `${focusedPlanet.color}40`,
-                            backgroundColor: `${focusedPlanet.color}10`,
-                            color: focusedPlanet.color,
+                      <div className="relative h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5">
+                        <motion.div
+                          className="absolute top-0 bottom-0 left-0 rounded-full"
+                          style={{ 
+                            background: `linear-gradient(90deg, transparent 0%, ${focusedPlanet.color} 100%)`,
+                            boxShadow: `0 0 10px ${focusedPlanet.color}80` 
                           }}
-                        >
-                          {tech}
-                        </span>
-                      ))}
+                          initial={{ width: 0 }}
+                          animate={{ width: stat.level ? `${stat.level}%` : '100%' }}
+                          transition={{ duration: 1.5, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 + 0.15 * idx }}
+                        />
+                        {/* Glow tip */}
+                        <motion.div
+                          className="absolute top-0 bottom-0 w-2 bg-white rounded-full blur-[2px]"
+                          initial={{ left: 0, opacity: 0 }}
+                          animate={{ left: stat.level ? `calc(${stat.level}% - 8px)` : 'calc(100% - 8px)', opacity: 1 }}
+                          transition={{ duration: 1.5, ease: [0.34, 1.56, 0.64, 1], delay: 0.2 + 0.15 * idx }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </motion.div>
+              ) : null}
 
-              {/* FOOTER — compact pill button, doesn't dominate the panel */}
-              <div className="shrink-0 px-5 md:px-7 py-4 border-t border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between gap-3">
-                <p className="text-[10px] text-white/40 font-mono tracking-[0.22em] uppercase leading-tight">
-                  ESC <span className="text-white/20 mx-1">/</span> ✕ <span className="text-white/20 mx-1">ĐÓNG</span>
-                </p>
-                <motion.button
-                  onClick={() => focusPlanet(null)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full font-bold uppercase tracking-[0.18em] text-xs transition-all"
-                  style={{
-                    backgroundColor: `${focusedPlanet.color}22`,
-                    border: `1.5px solid ${focusedPlanet.color}88`,
-                    color: focusedPlanet.color,
-                    boxShadow: `0 0 18px ${focusedPlanet.color}33`,
-                  }}
-                >
-                  <Zap className="w-3.5 h-3.5" fill="currentColor" />
-                  Rời quỹ đạo
-                </motion.button>
+              {/* Details */}
+              {focusedPlanet.details && focusedPlanet.details.length > 0 && (
+                <motion.div variants={itemVariants} className="space-y-4">
+                  {focusedPlanet.details.map((paragraph, idx) => (
+                    <p key={idx} className="text-white/60 text-[14px] leading-relaxed">
+                      {paragraph}
+                    </p>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Technologies */}
+              {focusedPlanet.technologies && focusedPlanet.technologies.length > 0 && (
+                <motion.div variants={itemVariants}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/10" />
+                    <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/40">Công nghệ</span>
+                    <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/10" />
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {focusedPlanet.technologies.map((tech, idx) => (
+                      <motion.div
+                        key={idx}
+                        whileHover={{ scale: 1.05, y: -2 }}
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-mono uppercase tracking-wider border relative group overflow-hidden cursor-default"
+                        style={{
+                          borderColor: `${focusedPlanet.color}40`,
+                          backgroundColor: `${focusedPlanet.color}10`,
+                          color: '#ffffff',
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
+                        <span className="relative z-10" style={{ textShadow: `0 0 8px ${focusedPlanet.color}80` }}>{tech}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* FOOTER */}
+            <motion.div variants={itemVariants} className="relative shrink-0 px-6 py-5 bg-black/40 border-t border-white/5 backdrop-blur-xl flex items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <span className="text-[9px] text-white/30 font-mono tracking-[0.3em] uppercase">Trạng thái</span>
+                <span className="text-[11px] font-bold text-cyan-300/80 tracking-widest uppercase">ĐÃ KẾT NỐI</span>
               </div>
-            </motion.aside>
+              
+              <motion.button
+                onClick={() => focusPlanet(null)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative flex items-center gap-2 px-5 py-3 rounded-xl font-bold uppercase tracking-[0.2em] text-xs transition-all overflow-hidden group"
+                style={{
+                  backgroundColor: `${focusedPlanet.color}15`,
+                  border: `1px solid ${focusedPlanet.color}50`,
+                  color: '#ffffff',
+                }}
+              >
+                <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors" />
+                <Zap className="w-4 h-4 relative z-10" style={{ color: focusedPlanet.color, filter: `drop-shadow(0 0 5px ${focusedPlanet.color})` }} />
+                <span className="relative z-10" style={{ textShadow: `0 0 10px ${focusedPlanet.color}80` }}>Rời quỹ đạo</span>
+              </motion.button>
+            </motion.div>
+          </motion.aside>
         )}
       </AnimatePresence>
     </div>

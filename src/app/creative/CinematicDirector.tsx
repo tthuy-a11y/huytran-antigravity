@@ -467,6 +467,7 @@ export function CinematicDirector({
         {hasEnteredSystem && (
           <motion.div
             key="interactive-ui"
+            className="absolute inset-0 pointer-events-none"
             initial={{ opacity: 0, filter: 'blur(12px)' }}
             animate={{ opacity: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
