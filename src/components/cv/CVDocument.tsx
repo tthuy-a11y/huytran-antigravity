@@ -1,12 +1,22 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
 import { cvData } from './CVData';
+import path from 'path';
+
+// Register custom font to support Vietnamese
+Font.register({
+  family: 'Roboto',
+  fonts: [
+    { src: path.join(process.cwd(), 'public', 'fonts', 'Roboto-Regular.ttf') },
+    { src: path.join(process.cwd(), 'public', 'fonts', 'Roboto-Bold.ttf'), fontWeight: 'bold' }
+  ]
+});
 
 // Styles for the PDF
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
     backgroundColor: '#ffffff',
     color: '#1a1a2e',
   },
@@ -21,12 +31,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0f3460',
     marginBottom: 4,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto',
   },
   title: {
     fontSize: 12,
     color: '#e94560',
-    fontFamily: 'Courier-Bold',
+    fontFamily: 'Roboto',
+    fontWeight: 'bold',
     letterSpacing: 1,
   },
   contactRow: {
@@ -34,7 +45,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 9,
     color: '#555',
-    fontFamily: 'Courier',
+    fontFamily: 'Roboto',
     flexWrap: 'wrap',
   },
   contactItem: {
@@ -45,7 +56,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
     color: '#e94560',
-    fontFamily: 'Helvetica',
+    fontFamily: 'Roboto',
     textAlign: 'center',
     marginBottom: 25,
     backgroundColor: '#f8f9fa',
@@ -58,7 +69,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto',
     color: '#0f3460',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
@@ -79,7 +90,8 @@ const styles = StyleSheet.create({
   skillCategoryTitle: {
     width: '30%',
     fontSize: 10,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto',
+    fontWeight: 'bold',
     color: '#0f3460',
   },
   skillList: {
@@ -89,7 +101,7 @@ const styles = StyleSheet.create({
   },
   skillItem: {
     fontSize: 9,
-    fontFamily: 'Courier',
+    fontFamily: 'Roboto',
     backgroundColor: '#f1f1f1',
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -108,18 +120,19 @@ const styles = StyleSheet.create({
   },
   expTitle: {
     fontSize: 11,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Roboto',
+    fontWeight: 'bold',
     color: '#0f3460',
   },
   expDate: {
     fontSize: 9,
-    fontFamily: 'Courier',
+    fontFamily: 'Roboto',
     color: '#888',
   },
   expRole: {
     fontSize: 10,
     color: '#e94560',
-    fontFamily: 'Courier',
+    fontFamily: 'Roboto',
     fontStyle: 'italic',
     marginBottom: 6,
   },
@@ -146,7 +159,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#aaa',
     fontSize: 8,
-    fontFamily: 'Courier',
+    fontFamily: 'Roboto',
     borderTopWidth: 1,
     borderTopColor: '#eee',
     paddingTop: 5,
