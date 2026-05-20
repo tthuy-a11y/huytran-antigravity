@@ -91,6 +91,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const creativePreloadedRef = useRef(false);
 
   // STATE QUẢN LÝ INTRO
   const [introDone, setIntroDone] = useState(false);
@@ -102,6 +103,29 @@ export default function Home() {
       setIntroDone(true);
     }
   }, []);
+
+  // Preload CinematicDirector chunk + audio assets after intro done (idle)
+  useEffect(() => {
+    if (!introDone || creativePreloadedRef.current) return;
+    const handle = (window as any).requestIdleCallback?.(() => {
+      creativePreloadedRef.current = true;
+      import('@/app/creative/CinematicDirector').catch(() => {});
+    }, { timeout: 2500 }) ?? window.setTimeout(() => {
+      creativePreloadedRef.current = true;
+      import('@/app/creative/CinematicDirector').catch(() => {});
+    }, 1500);
+    return () => {
+      if (typeof handle === 'number') window.clearTimeout(handle);
+      else (window as any).cancelIdleCallback?.(handle);
+    };
+  }, [introDone]);
+
+  // Preload trên hover — bundle có sẵn khi user click
+  const preloadCreative = () => {
+    if (creativePreloadedRef.current) return;
+    creativePreloadedRef.current = true;
+    import('@/app/creative/CinematicDirector').catch(() => {});
+  };
 
   // Timer gợi ý — chỉ chạy sau khi intro hoàn tất
   useEffect(() => {
@@ -197,7 +221,10 @@ export default function Home() {
             {/* Card 1 - Sáng tạo đột phá */}
             <Link
               href="/creative"
-              onMouseEnter={() => setHoveredCard('creative')}
+              prefetch
+              onMouseEnter={() => { setHoveredCard('creative'); preloadCreative(); }}
+              onFocus={preloadCreative}
+              onTouchStart={preloadCreative}
               onMouseLeave={() => setHoveredCard(null)}
               className={`group relative bg-white/[0.03] backdrop-blur-2xl border rounded-3xl p-9 md:p-10 transition-all duration-700 hover:-translate-y-5 ${
                 hoveredCard === 'creative'

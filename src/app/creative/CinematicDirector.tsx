@@ -247,19 +247,20 @@ export interface CinematicDirectorProps {
 // ============================================================
 function BootSequence({ onReady }: { onReady: () => void }) {
   const [step, setStep] = useState(0);
+  // Rút gọn: 3 dòng × 120ms = 360ms + 100ms buffer ≈ 460ms total
+  // (trước: 4 dòng × 280ms = 1400ms)
   const lines = [
-    '> KẾT NỐI TRẠM ĐIỀU KHIỂN...',
-    '> ĐỒNG BỘ HỆ TRỤC KHÔNG-THỜI-GIAN...',
-    '> NẠP DỮ LIỆU 14.8 TỶ NĂM...',
-    '> KHỞI ĐỘNG TRÌNH CHIẾU ĐIỆN ẢNH...',
+    '> KẾT NỐI HỆ TRỤC KHÔNG-THỜI-GIAN',
+    '> NẠP DỮ LIỆU 14.8 TỶ NĂM',
+    '> KHỞI ĐỘNG ĐIỆN ẢNH',
   ];
 
   useEffect(() => {
     const timers: NodeJS.Timeout[] = [];
     lines.forEach((_, i) => {
-      timers.push(setTimeout(() => setStep(i + 1), 280 * (i + 1)));
+      timers.push(setTimeout(() => setStep(i + 1), 120 * (i + 1)));
     });
-    timers.push(setTimeout(onReady, 280 * (lines.length + 1)));
+    timers.push(setTimeout(onReady, 120 * lines.length + 100));
     return () => timers.forEach(clearTimeout);
   }, [onReady]);
 
@@ -267,7 +268,7 @@ function BootSequence({ onReady }: { onReady: () => void }) {
     <motion.div
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.6 } }}
+      exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeOut' } }}
       className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center font-mono text-cyan-400 pointer-events-none"
     >
       {/* Scanline overlay */}
