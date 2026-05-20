@@ -27,12 +27,20 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
   const focusPlanet = useCinematicStore((s) => s.focusPlanet);
   const resetCamera = useCinematicStore((s) => s.resetCamera);
 
+  // Retain last focused planet for AnimatePresence exit animations
+  const [lastPlanetId, setLastPlanetId] = React.useState<string | null>(null);
+  useEffect(() => {
+    if (focusedPlanetId) setLastPlanetId(focusedPlanetId);
+  }, [focusedPlanetId]);
+
   const focusedPlanet = useMemo(
     () => {
-      if (focusedPlanetId === 'sun-core') return SUN_DATA;
-      return PLANETS.find((p) => p.id === focusedPlanetId);
+      const idToUse = focusedPlanetId || lastPlanetId;
+      if (!idToUse) return undefined;
+      if (idToUse === 'sun-core') return SUN_DATA;
+      return PLANETS.find((p) => p.id === idToUse);
     },
-    [focusedPlanetId]
+    [focusedPlanetId, lastPlanetId]
   );
 
   const isMuted = useCinematicStore((s) => s.isMuted);
@@ -85,7 +93,7 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
 
       {/* Hint ESC khi đang xem chi tiết hành tinh */}
       <AnimatePresence>
-        {focusedPlanet && (
+        {!!focusedPlanetId && focusedPlanet && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,7 +108,7 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {focusedPlanet && (
+        {!!focusedPlanetId && focusedPlanet && (
           <>
             {/* Backdrop bên trái: click để đóng, gradient mờ không che planet */}
             <motion.div
@@ -109,8 +117,7 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
-              onClick={() => focusPlanet(null)}
-              className="fixed inset-0 z-[1090] pointer-events-auto bg-gradient-to-l from-black/60 via-black/10 to-transparent"
+              className="fixed inset-0 z-[1090] pointer-events-none bg-gradient-to-l from-black/60 via-black/10 to-transparent"
             />
 
             {/* RIGHT SIDEBAR — glassmorphism 480px, không che planet */}
@@ -121,59 +128,103 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
               exit={{ x: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 180 }}
               onClick={(e) => e.stopPropagation()}
-              className="fixed top-0 right-0 z-[1100] h-full w-full md:w-[460px] lg:w-[480px] flex flex-col pointer-events-auto bg-black/70 backdrop-blur-3xl border-l shadow-[-40px_0_120px_rgba(0,0,0,0.85)]"
+              onWheel={(e) => e.stopPropagation()}
+              className="fixed top-0 right-0 z-[1100] h-full w-full md:w-[460px] lg:w-[500px] flex flex-col pointer-events-auto backdrop-blur-3xl border-l shadow-[-40px_0_120px_rgba(0,0,0,0.85)] overflow-hidden"
               style={{
-                borderLeftColor: `${focusedPlanet.color}66`,
-                boxShadow: `-40px 0 120px rgba(0,0,0,0.85), inset 0 0 60px ${focusedPlanet.color}1a`,
+                background: `
+                  linear-gradient(180deg, ${focusedPlanet.color}14 0%, rgba(2,5,10,0.86) 18%, rgba(2,5,10,0.92) 60%, ${focusedPlanet.color}10 100%),
+                  rgba(2, 5, 10, 0.78)
+                `,
+                borderLeftColor: `${focusedPlanet.color}80`,
+                boxShadow: `-40px 0 120px rgba(0,0,0,0.85), inset 0 0 80px ${focusedPlanet.color}1f`,
               }}
             >
+              {/* Animated accent stripe on left edge */}
+              <motion.div
+                className="absolute left-0 top-0 bottom-0 w-[3px]"
+                style={{ background: `linear-gradient(180deg, transparent, ${focusedPlanet.color}, transparent)` }}
+                animate={{ y: ['-50%', '50%'] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', repeatType: 'reverse' }}
+              />
+
               {/* HEADER */}
-              <div className="relative shrink-0 px-6 md:px-8 py-6 border-b border-white/10 overflow-hidden">
+              <div className="relative shrink-0 px-5 md:px-7 pt-5 pb-4 border-b border-white/10 overflow-hidden">
+                {/* Glow halo behind title */}
                 <div
-                  className="absolute top-0 right-0 w-40 h-40 opacity-25 blur-3xl rounded-full pointer-events-none"
+                  className="absolute -top-10 -right-10 w-48 h-48 opacity-30 blur-3xl rounded-full pointer-events-none"
                   style={{ background: focusedPlanet.color }}
                 />
-                <div className="relative flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
+                {/* Tracking pulse dot */}
+                <div className="relative flex items-center gap-2 mb-3">
+                  <motion.span
+                    className="block w-2 h-2 rounded-full"
+                    style={{ background: focusedPlanet.color, boxShadow: `0 0 10px ${focusedPlanet.color}` }}
+                    animate={{ opacity: [0.4, 1, 0.4], scale: [0.9, 1.15, 0.9] }}
+                    transition={{ duration: 1.4, repeat: Infinity }}
+                  />
+                  <span className="font-mono text-[10px] tracking-[0.3em] text-white/45">TRACKING TARGET</span>
+                  <div className="flex-1" />
+                  <button
+                    onClick={() => focusPlanet(null)}
+                    aria-label="Đóng"
+                    className="shrink-0 w-9 h-9 flex items-center justify-center text-white/60 hover:text-red-300 hover:bg-red-500/15 rounded-full transition-all border border-white/10 hover:border-red-400/40"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="relative flex items-start gap-4">
+                  {/* Icon with rotating ring */}
+                  <div className="relative shrink-0">
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl border-2 border-dashed"
+                      style={{ borderColor: `${focusedPlanet.color}66` }}
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+                    />
                     <div
-                      className="w-14 h-14 shrink-0 flex items-center justify-center rounded-2xl border"
+                      className="relative w-14 h-14 flex items-center justify-center rounded-2xl border"
                       style={{
                         backgroundColor: `${focusedPlanet.color}1f`,
                         borderColor: `${focusedPlanet.color}80`,
-                        boxShadow: `0 0 24px ${focusedPlanet.color}55`,
+                        boxShadow: `0 0 24px ${focusedPlanet.color}55, inset 0 0 12px ${focusedPlanet.color}33`,
                       }}
                     >
                       <Icon className="w-7 h-7" style={{ color: focusedPlanet.color }} />
                     </div>
-                    <div className="min-w-0">
-                      <h2
-                        className="text-2xl md:text-3xl font-black text-white uppercase tracking-tight leading-tight truncate"
-                        style={{ textShadow: `0 0 18px ${focusedPlanet.color}aa` }}
-                      >
-                        {focusedPlanet.name}
-                      </h2>
-                      <p className="font-mono text-[11px] text-white/60 tracking-[0.25em] mt-1">
-                        <span
-                          className="px-1.5 py-0.5 rounded border border-white/15 bg-white/5 mr-2"
-                          style={{ color: focusedPlanet.color }}
-                        >
-                          [{focusedPlanet.code}]
-                        </span>
-                      </p>
-                    </div>
                   </div>
-                  <button
-                    onClick={() => focusPlanet(null)}
-                    aria-label="Đóng"
-                    className="shrink-0 w-10 h-10 flex items-center justify-center text-white/60 hover:text-red-300 hover:bg-red-500/15 rounded-full transition-all"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+
+                  {/* Title — multi-line allowed, gradient text */}
+                  <div className="min-w-0 flex-1">
+                    <h2
+                      className="text-xl md:text-2xl font-black uppercase tracking-tight leading-[1.1] break-words"
+                      style={{
+                        background: `linear-gradient(135deg, #ffffff 0%, ${focusedPlanet.color} 100%)`,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: `drop-shadow(0 0 12px ${focusedPlanet.color}88)`,
+                      }}
+                    >
+                      {focusedPlanet.name}
+                    </h2>
+                    <p className="font-mono text-[11px] tracking-[0.25em] mt-2">
+                      <span
+                        className="px-2 py-0.5 rounded border bg-white/[0.04]"
+                        style={{ color: focusedPlanet.color, borderColor: `${focusedPlanet.color}55` }}
+                      >
+                        ID • {focusedPlanet.code}
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* BODY — cuộn nội bộ */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-6 md:px-8 py-7 space-y-8">
+              {/* BODY — cuộn nội bộ (with fade-out gradient at bottom edge) */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar px-5 md:px-7 py-6 space-y-7 relative"
+                style={{
+                  maskImage: 'linear-gradient(180deg, black 0%, black 92%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(180deg, black 0%, black 92%, transparent 100%)',
+                }}>
                 {/* Description */}
                 <p
                   className="text-[15px] text-white/90 leading-relaxed font-light border-l-2 pl-5"
@@ -270,22 +321,26 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
                 )}
               </div>
 
-              {/* FOOTER */}
-              <div className="shrink-0 p-5 md:p-6 border-t border-white/10 bg-black/40 backdrop-blur-md">
-                <button
+              {/* FOOTER — compact pill button, doesn't dominate the panel */}
+              <div className="shrink-0 px-5 md:px-7 py-4 border-t border-white/10 bg-black/50 backdrop-blur-md flex items-center justify-between gap-3">
+                <p className="text-[10px] text-white/40 font-mono tracking-[0.22em] uppercase leading-tight">
+                  ESC <span className="text-white/20 mx-1">/</span> ✕ <span className="text-white/20 mx-1">ĐÓNG</span>
+                </p>
+                <motion.button
                   onClick={() => focusPlanet(null)}
-                  className="w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-sm text-black transition-transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full font-bold uppercase tracking-[0.18em] text-xs transition-all"
                   style={{
-                    backgroundColor: focusedPlanet.color,
-                    boxShadow: `0 0 24px ${focusedPlanet.color}55`,
+                    backgroundColor: `${focusedPlanet.color}22`,
+                    border: `1.5px solid ${focusedPlanet.color}88`,
+                    color: focusedPlanet.color,
+                    boxShadow: `0 0 18px ${focusedPlanet.color}33`,
                   }}
                 >
-                  Rời khỏi quỹ đạo
-                  <Zap className="w-4 h-4 ml-1" fill="currentColor" />
-                </button>
-                <p className="text-center text-[10px] text-white/35 mt-3 font-mono tracking-[0.2em]">
-                  ESC • CLICK NGOÀI ĐỂ ĐÓNG
-                </p>
+                  <Zap className="w-3.5 h-3.5" fill="currentColor" />
+                  Rời quỹ đạo
+                </motion.button>
               </div>
             </motion.aside>
           </>
