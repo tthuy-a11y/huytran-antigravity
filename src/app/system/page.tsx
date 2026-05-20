@@ -27,54 +27,51 @@ const getClipPath = (s: ShipShape) => ({
 // ============================================================================
 // 2. SYNTHETIC AUDIO ENGINE (WEB AUDIO API)
 // ============================================================================
+import { audioEngine } from '@/lib/AudioEngine';
+
 class AudioSystem {
-  ctx: AudioContext | null = null;
   init() {
-    if (typeof window !== 'undefined' && !this.ctx) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (AudioCtx) this.ctx = new AudioCtx();
-    }
-    if (this.ctx?.state === 'suspended') this.ctx.resume();
+    audioEngine.init();
   }
-  play(type: 'type' | 'boot' | 'hover' | 'click' | 'warp' | 'abort' | 'deploy' | 'beep' | 'impact') {
-    if (!this.ctx) this.init(); if (!this.ctx) return;
-    try {
-      const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
-      osc.connect(gain); gain.connect(this.ctx.destination); const now = this.ctx.currentTime;
-      switch (type) {
-        case 'type':
-          osc.type = 'square'; osc.frequency.setValueAtTime(800 + Math.random()*200, now);
-          gain.gain.setValueAtTime(0.01, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-          osc.start(now); osc.stop(now + 0.05); break;
-        case 'boot':
-          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(50, now); osc.frequency.exponentialRampToValueAtTime(150, now + 2);
-          gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.05, now + 1); gain.gain.linearRampToValueAtTime(0, now + 3);
-          osc.start(now); osc.stop(now + 3); break;
-        case 'hover':
-          osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-          gain.gain.setValueAtTime(0.01, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-          osc.start(now); osc.stop(now + 0.1); break;
-        case 'warp':
-          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(40, now); osc.frequency.exponentialRampToValueAtTime(800, now + 1.2);
-          gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.1, now + 0.5); gain.gain.linearRampToValueAtTime(0, now + 1.2);
-          osc.start(now); osc.stop(now + 1.2); break;
-        case 'abort':
-          osc.type = 'square'; osc.frequency.setValueAtTime(300, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
-          gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-          osc.start(now); osc.stop(now + 0.4); break;
-        case 'deploy':
-          osc.type = 'square'; osc.frequency.setValueAtTime(400, now); osc.frequency.linearRampToValueAtTime(800, now + 0.3); osc.frequency.linearRampToValueAtTime(400, now + 0.6); osc.frequency.linearRampToValueAtTime(1200, now + 1.2);
-          gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.001, now + 1.2);
-          osc.start(now); osc.stop(now + 1.2); break;
-        case 'impact': // Asteroid collision boom
-          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
-          gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-          osc.start(now); osc.stop(now + 0.3); break;
-        case 'beep':
-          osc.type = 'sine'; osc.frequency.setValueAtTime(1500, now); gain.gain.setValueAtTime(0.03, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-          osc.start(now); osc.stop(now + 0.1); break;
-      }
-    } catch (e) {}
+  play(type: string, id?: number) {
+    switch (type) {
+      case 'type':
+        audioEngine.playHoverTone(800, 0.05);
+        break;
+      case 'boot':
+        audioEngine.playPowerUp();
+        break;
+      case 'hover':
+        audioEngine.playHoverTone(600, 0.1);
+        break;
+      case 'riser':
+        if (id !== undefined) audioEngine.playShipRiser(id);
+        break;
+      case 'click':
+        audioEngine.playClickTone();
+        break;
+      case 'impact':
+        if (id !== undefined) audioEngine.playShipImpact(id);
+        else audioEngine.playSonicBoom();
+        break;
+      case 'warp':
+        if (id !== undefined) audioEngine.playShipWarp(id);
+        else audioEngine.playSonicBoom();
+        break;
+      case 'abort':
+        audioEngine.stopAll();
+        audioEngine.playPowerUp();
+        break;
+      case 'deploy':
+        audioEngine.playPowerUp();
+        break;
+      case 'beep':
+        audioEngine.playArrival();
+        break;
+    }
+  }
+  stopAll() {
+    audioEngine.stopAll();
   }
 }
 const sfx = typeof window !== 'undefined' ? new AudioSystem() : null;
@@ -249,7 +246,15 @@ export default function ExodusGodTier() {
   const [rushingShipId, setRushingShipId] = useState<number | null>(null);
   const [impactParticles, setImpactParticles] = useState<Array<{id:number;x:number;y:number;s:number;d:number;c:string}>>([]);
   const [impactFlash, setImpactFlash] = useState(false);
+  const [screenShake, setScreenShake] = useState<'light' | 'medium' | 'heavy' | ''>('');
   const [asteroids, setAsteroids] = useState<Array<{id:number;x:number;y:number;r:number;s:number;d:number}>>([]);
+  
+  // Cleanup audio on unmount to prevent sound bleed
+  useEffect(() => {
+    return () => {
+      sfx?.stopAll();
+    };
+  }, []);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -273,27 +278,58 @@ export default function ExodusGodTier() {
   const engageShip = useCallback((id: number) => {
     if (activeShip === id || rushingShipId !== null) return;
     const shipColor = fleet.find(f => f.id === id)?.hex || '#fff';
-    sfx?.play('click'); setRushingShipId(id);
-    // 200ms: Asteroids rush in from edges
+    
+    // 0ms: Riser & Init
+    sfx?.play('click'); 
+    sfx?.play('riser', id);
+    setRushingShipId(id);
+
+    // 1200ms: Light Shake
     setTimeout(() => {
-      setAsteroids(Array.from({length:6},(_,i)=>({ id:i, x:(Math.random()-.5)*600, y:-300-Math.random()*200, r:Math.random()*720, s:8+Math.random()*16, d:Math.random()*.2 })));
-    }, 200);
-    // 500ms: IMPACT! Flash + explosion particles + sound
-    setTimeout(() => {
-      sfx?.play('impact'); setImpactFlash(true);
-      setImpactParticles(Array.from({length:40},(_,i)=>({ id:i, x:(Math.random()-.5)*500, y:(Math.random()-.5)*500, s:Math.random()*8+2, d:Math.random()*.2, c: Math.random()>.5 ? shipColor : '#fff' })));
-      setTimeout(() => setImpactFlash(false), 150);
-    }, 500);
-    // 1200ms: Warp drive engage
-    setTimeout(() => {
-      sfx?.play('warp'); setWarpSpeed(true); engineRef.current.targetSpeed = 400;
-      setImpactParticles([]); setAsteroids([]);
+      setScreenShake('light');
     }, 1200);
-    // 1800ms: Arrive at HUD
+
+    // 2400ms: Medium Shake + Asteroids rush
     setTimeout(() => {
+      setScreenShake('medium');
+      // Number of asteroids based on ship
+      const asteroidCount = id === 0 ? 4 : (id === 2 ? 12 : (id === 3 ? 15 : (id === 5 ? 6 : 8)));
+      setAsteroids(Array.from({length:asteroidCount},(_,i)=>({ id:i, x:(Math.random()-.5)*800, y:-400-Math.random()*400, r:Math.random()*720, s:8+Math.random()*20, d:Math.random()*.1 })));
+    }, 2400);
+
+    // 3000ms: IMPACT! Flash + particles + sound
+    setTimeout(() => {
+      sfx?.play('impact', id); setImpactFlash(true);
+      
+      let particleCount = id === 2 ? 80 : (id === 5 ? 60 : 40);
+      let pColor = id === 0 ? '#00f2fe' : (id === 5 ? '#ff007f' : shipColor);
+      setImpactParticles(Array.from({length:particleCount},(_,i)=>({ id:i, x:(Math.random()-.5)*500, y:(Math.random()-.5)*500, s:Math.random()*8+2, d:Math.random()*.2, c: Math.random()>.5 ? pColor : '#fff' })));
+      
+      setTimeout(() => setImpactFlash(false), id === 5 ? 350 : 150); 
+    }, 3000);
+
+    // 4000ms: Warp drive engage
+    setTimeout(() => {
+      sfx?.play('warp', id); 
+      setWarpSpeed(true); 
+      setScreenShake('heavy');
+      
+      engineRef.current.targetSpeed = id === 3 ? 800 : (id === 2 ? 600 : 400); 
+      setImpactParticles([]); setAsteroids([]);
+      
+      if (id === 0) engineRef.current.shockwaves.push({ r: 20, color: '#00f2fe', alpha: 1 });
+      if (id === 4) engineRef.current.shockwaves.push({ r: 50, color: '#f5a623', alpha: 0.8 });
+      if (id === 1) engineRef.current.shockwaves.push({ r: 10, color: '#b026ff', alpha: 1 }, { r: 60, color: '#fff', alpha: 0.5 });
+      if (id === 3) engineRef.current.shockwaves.push({ r: 100, color: '#00ff87', alpha: 1 });
+      
+    }, 4000);
+
+    // 5000ms: Arrive at HUD
+    setTimeout(() => {
+      setScreenShake('');
       setActiveShip(id); setWarpSpeed(false); setRushingShipId(null);
       engineRef.current.targetSpeed = 0.5;
-    }, 1800);
+    }, 5000);
   }, [activeShip, rushingShipId, fleet]);
 
   const abortMission = useCallback(() => {
@@ -422,7 +458,7 @@ export default function ExodusGodTier() {
     animate();
     
     // Auto show gate logic
-    const t = setTimeout(() => setShowGate(true), 6000);
+    const t = setTimeout(() => setShowGate(true), 90000);
     return () => { window.removeEventListener('resize', updateSize); window.removeEventListener('mousemove', handleMouseMove); cancelAnimationFrame(reqId); clearTimeout(t); };
   }, [osBooted]);
 
@@ -462,27 +498,78 @@ export default function ExodusGodTier() {
         .transform-style-3d { transform-style: preserve-3d; }
         .custom-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* === CINEMATIC SHIP SEQUENCE — 1.8s === */
-        @keyframes shipFullSequence {
-          0%   { transform: translateY(0) scale(1) rotate(0deg); opacity:1; }
-          8%   { transform: translateY(20px) scale(.9) rotate(-3deg); opacity:1; } /* crouch */
-          18%  { transform: translateY(-100px) scale(1.15) rotate(12deg); opacity:1; } /* rush up */
-          25%  { transform: translateY(-60px) translateX(-30px) scale(1.05) rotate(-25deg); } /* dodge left */
-          32%  { transform: translateY(-80px) translateX(35px) scale(1.08) rotate(18deg); } /* dodge right */
-          42%  { transform: translateY(-130px) scale(1.2) rotate(360deg); opacity:1; } /* barrel roll 1 */
-          55%  { transform: translateY(-100px) scale(1.1) rotate(720deg); opacity:1; } /* barrel roll 2 */
-          68%  { transform: translateY(-160px) scale(.9) rotate(1080deg); opacity:.8; } /* barrel roll 3 */
-          80%  { transform: translateY(-250px) scale(.5) rotate(1260deg); opacity:.4; } /* fly away */
-          100% { transform: translateY(-500px) scale(.1) rotate(1440deg); opacity:0; } /* vanish */
+        /* SCREEN SHAKE CLASSES */
+        @keyframes shakeLight { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-2px, 2px) rotate(0.8deg); } 75% { transform: translate(2px, -2px) rotate(-0.8deg); } }
+        @keyframes shakeMedium { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-4px, 4px) rotate(1.5deg); } 75% { transform: translate(4px, -4px) rotate(-1.5deg); } }
+        @keyframes shakeHeavy { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-8px, 6px) rotate(2.5deg); } 75% { transform: translate(6px, -8px) rotate(-2.5deg); } }
+        .shake-light { animation: shakeLight 0.1s infinite; will-change: transform; }
+        .shake-medium { animation: shakeMedium 0.08s infinite; will-change: transform; }
+        .shake-heavy { animation: shakeHeavy 0.05s infinite; will-change: transform; }
+
+        /* === 6 DISTINCT CINEMATIC SHIP SEQUENCES — 5.0s === */
+        @keyframes shipSeq-0 {
+          0%, 48% { transform: translateY(0) scale(1); opacity:1; filter: contrast(1); }
+          12%, 36% { transform: translateY(-3px) translateX(3px) scale(1.02); filter: contrast(1.5) hue-rotate(90deg); opacity: 0.8; }
+          24% { transform: translateY(3px) translateX(-3px) scale(0.98); filter: contrast(1.5) hue-rotate(270deg); opacity: 1; }
+          50%, 60% { transform: translateY(-30px) translateX(40px) scale(1.1) skewX(25deg); filter: contrast(2) hue-rotate(180deg); }
+          65%, 75% { transform: translateY(-80px) translateX(-50px) scale(0.9) skewX(-25deg); filter: contrast(2) hue-rotate(-90deg); }
+          82% { transform: translateY(-100px) scale(0.1); opacity:1; }
+          90% { transform: translateY(-300px) scale(0.1, 8); opacity:0.5; }
+          100% { transform: translateY(-600px) scale(0, 10); opacity:0; }
         }
-        .ship-rush-active { animation: shipFullSequence 1.8s cubic-bezier(.23,1,.32,1) forwards; }
+        @keyframes shipSeq-1 {
+          0%, 48% { transform: translateY(0) scale(1) rotate(0deg); box-shadow: 0 0 0px transparent; }
+          24% { transform: translateY(-10px) scale(1.08) rotate(4deg); box-shadow: 0 0 40px rgba(176,38,255,0.4); }
+          55% { transform: translateY(30px) scale(0.8) rotate(15deg); }
+          75% { transform: translateY(-250px) translateX(150px) scale(1.5) rotate(-45deg); }
+          85% { transform: translateY(-300px) translateX(200px) scale(1.8) rotate(-60deg); filter: brightness(2); }
+          100% { transform: translateY(-600px) translateX(400px) scale(0.05) rotate(-180deg); opacity:0; filter: blur(10px); }
+        }
+        @keyframes shipSeq-2 {
+          0%, 48% { transform: translateY(0) rotate(0deg); }
+          24% { transform: translateY(-15px) rotate(15deg) scale(1.05); filter: drop-shadow(0 20px 30px #ff0844); }
+          36% { transform: translateY(10px) rotate(-15deg) scale(1.05); filter: drop-shadow(0 -20px 30px #ff0844); }
+          55% { transform: translateY(-100px) translateX(-120px) scale(1.2) rotate(360deg); }
+          70% { transform: translateY(-200px) translateX(120px) scale(0.9) rotate(720deg); }
+          85% { transform: translateY(-250px) translateX(0) scale(1.4, 0.8); }
+          100% { transform: translateY(-800px) translateX(0) scale(0.5, 3); opacity:0; }
+        }
+        @keyframes shipSeq-3 {
+          0%, 48% { transform: translateY(0) scale(1, 1); }
+          40% { transform: translateY(50px) scale(1.15, 0.75); filter: drop-shadow(0 0 40px #00ff87); }
+          60% { transform: translateY(-150px) scale(0.8, 1.8) translateX(40px); }
+          75% { transform: translateY(-200px) scale(1.2, 1.2) translateX(-40px); }
+          85% { transform: translateY(-250px) scale(1.1, 1.1) rotate(180deg); }
+          100% { transform: translateY(-800px) scale(0.5) rotate(360deg); filter: blur(8px); opacity:0; }
+        }
+        @keyframes shipSeq-4 {
+          0%, 48% { transform: translateY(0) scale(1, 1); filter: blur(0px); }
+          24% { transform: translateY(20px) scale(1.1, 1.2); filter: blur(4px); }
+          65% { transform: translateY(-150px) scale(0.3, 3); filter: blur(12px); opacity:0.8; }
+          90% { transform: translateY(-300px) scale(0.1, 8); filter: blur(20px) brightness(2); opacity:0.5; }
+          100% { transform: translateY(-1000px) scale(0, 15); filter: blur(30px) brightness(3); opacity:0; }
+        }
+        @keyframes shipSeq-5 {
+          0% { transform: translateY(0) scale(1) rotate(0deg); filter: brightness(1); }
+          48% { transform: translateY(0) scale(1.2) rotate(720deg); filter: brightness(2.5) drop-shadow(0 0 50px #ff007f); }
+          65% { transform: translateY(30px) translateX(-40px) scale(1.3); filter: brightness(3) drop-shadow(0 0 80px #ff007f); }
+          85% { transform: translateY(-200px) scale(1.1) rotate(0deg); }
+          100% { transform: translateY(-900px) scale(0.8) rotate(0deg); opacity:0; }
+        }
+        
+        .ship-rush-0 { animation: shipSeq-0 5.0s cubic-bezier(.23,1,.32,1) forwards; }
+        .ship-rush-1 { animation: shipSeq-1 5.0s cubic-bezier(.23,1,.32,1) forwards; }
+        .ship-rush-2 { animation: shipSeq-2 5.0s linear forwards; }
+        .ship-rush-3 { animation: shipSeq-3 5.0s cubic-bezier(.7,0,.3,1) forwards; }
+        .ship-rush-4 { animation: shipSeq-4 5.0s ease-in forwards; }
+        .ship-rush-5 { animation: shipSeq-5 5.0s cubic-bezier(.4,0,.2,1) forwards; }
 
         /* PARTICLE DEBRIS — flies outward */
         @keyframes particleBurst {
           0%   { transform: translate(0,0) scale(1); opacity:1; }
           100% { transform: translate(var(--px),var(--py)) scale(0); opacity:0; }
         }
-        .particle-burst { animation: particleBurst .6s ease-out forwards; }
+        .particle-burst { animation: particleBurst 1.2s ease-out forwards; }
 
         /* ASTEROID RUSH — flies across screen */
         @keyframes asteroidRush {
@@ -491,7 +578,7 @@ export default function ExodusGodTier() {
           90%  { opacity:1; }
           100% { transform: translate(calc(var(--ax) * -1), calc(var(--ay) * -1.5)) rotate(var(--ar)) scale(.3); opacity:0; }
         }
-        .asteroid-rush { animation: asteroidRush .8s linear forwards; }
+        .asteroid-rush { animation: asteroidRush 1.6s linear forwards; }
 
         /* IMPACT FLASH — full screen white flash */
         @keyframes impactFlashAnim {
@@ -514,40 +601,162 @@ export default function ExodusGodTier() {
           animation: bridgeGlow 6s ease-in-out infinite alternate;
         }
         @keyframes parallaxDrift {
-          0%   { transform: scale(1.05) translate(-1%, -1%); }
-          50%  { transform: scale(1.08) translate(1%, 0%); }
-          100% { transform: scale(1.1) translate(-0.5%, 1%); }
+          0%   { transform: scale(1.04) translate(-0.5%, -0.5%); }
+          25%  { transform: scale(1.06) translate(0.3%, -0.3%); }
+          50%  { transform: scale(1.08) translate(0.8%, 0.2%); }
+          75%  { transform: scale(1.06) translate(-0.2%, 0.5%); }
+          100% { transform: scale(1.04) translate(-0.5%, -0.5%); }
         }
         @keyframes gatePulse {
-          0%   { opacity: 0.3; transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(0deg); }
-          50%  { opacity: 0.5; transform: scale(1.02) rotate(1deg); filter: brightness(1.3) hue-rotate(5deg); }
-          100% { opacity: 0.3; transform: scale(1) rotate(-1deg); filter: brightness(1) hue-rotate(-5deg); }
+          0%   { opacity: 0.25; transform: scale(1); filter: brightness(1) hue-rotate(0deg); }
+          25%  { opacity: 0.35; transform: scale(1.01); filter: brightness(1.1) hue-rotate(2deg); }
+          50%  { opacity: 0.45; transform: scale(1.015) rotate(0.5deg); filter: brightness(1.25) hue-rotate(4deg); }
+          75%  { opacity: 0.35; transform: scale(1.005) rotate(-0.3deg); filter: brightness(1.1) hue-rotate(1deg); }
+          100% { opacity: 0.25; transform: scale(1); filter: brightness(1) hue-rotate(0deg); }
         }
         @keyframes bridgeGlow {
-          0%   { filter: brightness(0.8) saturate(1.2); transform: scale(1); }
-          50%  { filter: brightness(1.1) saturate(1.4); transform: scale(1.02); }
-          100% { filter: brightness(0.8) saturate(1.2); transform: scale(1); }
+          0%   { filter: brightness(0.75) saturate(1.15); transform: scale(1); }
+          25%  { filter: brightness(0.85) saturate(1.25); transform: scale(1.005); }
+          50%  { filter: brightness(1.0) saturate(1.4); transform: scale(1.01); }
+          75%  { filter: brightness(0.85) saturate(1.25); transform: scale(1.005); }
+          100% { filter: brightness(0.75) saturate(1.15); transform: scale(1); }
         }
         /* Floating ship card enhancement */
         .ship-card-glow {
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                      box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                      filter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          will-change: transform;
         }
         .ship-card-glow:hover {
-          transform: scale(1.05) translateY(-8px);
+          transform: scale(1.04) translateY(-6px);
+        }
+        @keyframes fadeInPortal { 
+          0% { opacity: 0; transform: scale(0.3) rotate(-5deg); filter: blur(10px); } 
+          60% { opacity: 1; transform: scale(1.03) rotate(0.5deg); filter: blur(0); }
+          100% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0); } 
+        }
+        .portal-enter { animation: fadeInPortal 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes breathePortal { 
+          0%, 100% { transform: scale(0.97); filter: brightness(1); } 
+          50% { transform: scale(1.03); filter: brightness(1.3); } 
+        }
+        .portal-breathe { animation: breathePortal 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; }
+
+        /* 3D FLOATING ANIMATIONS */
+        @keyframes titleFloat {
+          0%   { transform: rotateX(2deg) rotateY(-1.5deg) translateY(0px); }
+          15%  { transform: rotateX(1.5deg) rotateY(0deg) translateY(-3px); }
+          30%  { transform: rotateX(0.5deg) rotateY(1.5deg) translateY(-6px); }
+          45%  { transform: rotateX(-0.5deg) rotateY(2.5deg) translateY(-8px); }
+          60%  { transform: rotateX(-1.5deg) rotateY(1deg) translateY(-5px); }
+          75%  { transform: rotateX(-0.5deg) rotateY(-1.5deg) translateY(-3px); }
+          90%  { transform: rotateX(1deg) rotateY(-2deg) translateY(-1px); }
+          100% { transform: rotateX(2deg) rotateY(-1.5deg) translateY(0px); }
+        }
+        @keyframes hubFloat {
+          0%   { transform: rotateX(1.2deg) rotateY(0deg) translateY(0px); }
+          20%  { transform: rotateX(0.8deg) rotateY(0.5deg) translateY(-2px); }
+          40%  { transform: rotateX(0.3deg) rotateY(0.7deg) translateY(-4px); }
+          60%  { transform: rotateX(-0.2deg) rotateY(0deg) translateY(-3px); }
+          80%  { transform: rotateX(0.5deg) rotateY(-0.5deg) translateY(-1px); }
+          100% { transform: rotateX(1.2deg) rotateY(0deg) translateY(0px); }
+        }
+        @keyframes titleScanline {
+          0%   { top: -10%; opacity: 0; }
+          5%   { opacity: 1; }
+          95%  { opacity: 1; }
+          100% { top: 110%; opacity: 0; }
+        }
+        @keyframes titleGlitch {
+          0%, 92%, 100% { clip-path: inset(0); transform: translateX(0); opacity: 0.1; }
+          93% { clip-path: inset(20% 0 60% 0); transform: translateX(-3px); opacity: 0.15; }
+          95% { clip-path: inset(50% 0 10% 0); transform: translateX(2px); opacity: 0.12; }
+          97% { clip-path: inset(10% 0 70% 0); transform: translateX(-1px); opacity: 0.08; }
+          99% { clip-path: inset(60% 0 20% 0); transform: translateX(3px); opacity: 0.1; }
+        }
+        @keyframes ringOrbit {
+          0%   { transform: rotateZ(0deg); }
+          100% { transform: rotateZ(360deg); }
+        }
+        @keyframes energyPulse {
+          0%   { box-shadow: 0 0 15px rgba(0,242,254,0.15), inset 0 0 15px rgba(0,242,254,0.03); }
+          25%  { box-shadow: 0 0 30px rgba(0,242,254,0.25), inset 0 0 25px rgba(0,242,254,0.05); }
+          50%  { box-shadow: 0 0 50px rgba(0,242,254,0.4), 0 0 100px rgba(0,242,254,0.1), inset 0 0 35px rgba(0,242,254,0.08); }
+          75%  { box-shadow: 0 0 30px rgba(0,242,254,0.25), inset 0 0 25px rgba(0,242,254,0.05); }
+          100% { box-shadow: 0 0 15px rgba(0,242,254,0.15), inset 0 0 15px rgba(0,242,254,0.03); }
+        }
+        /* GPU acceleration hints for smooth compositing */
+        .glitch-trans, .crt-overlay, .fleet-bg, .gate-bg, .bridge-bg {
+          will-change: transform, opacity;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
       `}} />
 
       <div className="crt-overlay" />
       <FPSMonitor />
 
+      {/* FIXED SIDE NAVIGATION BUTTONS */}
+      {osBooted && activeShip === null && !warpSpeed && (
+        <>
+          <Link href="/" className="fixed left-6 top-[25%] -translate-y-1/2 z-[100] group flex flex-col items-center gap-4 p-4 animate-[pulse_3s_infinite]">
+            <div className="relative flex items-center justify-center w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-cyan-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-cyan-300 hover:bg-cyan-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(0,240,255,0.6)] group-hover:shadow-[0_0_50px_rgba(0,240,255,1)] overflow-hidden">
+              <div className="absolute inset-0 bg-cyan-400/30 animate-[ping_2s_infinite]" />
+              <ArrowLeft className="w-8 h-8 md:w-12 md:h-12 text-cyan-200 group-hover:-translate-x-2 transition-transform relative z-10 drop-shadow-[0_0_8px_cyan]" />
+            </div>
+            <span className="font-mono text-xs md:text-sm tracking-widest text-cyan-200 uppercase font-bold text-center w-32 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_cyan]">Vũ Trụ Gốc</span>
+          </Link>
+
+          <Link href="/creative" className="fixed right-6 top-[25%] -translate-y-1/2 z-[100] group flex flex-col items-center gap-4 p-4 animate-[pulse_3s_infinite]">
+            <div className="relative flex items-center justify-center w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-purple-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-purple-300 hover:bg-purple-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(168,85,247,0.6)] group-hover:shadow-[0_0_50px_rgba(168,85,247,1)] overflow-hidden">
+              <div className="absolute inset-0 bg-purple-400/30 animate-[ping_2s_infinite]" />
+              <Orbit className="w-8 h-8 md:w-12 md:h-12 text-purple-200 group-hover:rotate-180 transition-transform duration-700 relative z-10 drop-shadow-[0_0_8px_purple]" />
+            </div>
+            <span className="font-mono text-xs md:text-sm tracking-widest text-purple-200 uppercase font-bold text-center w-32 opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_purple]">Hệ Hành Tinh</span>
+          </Link>
+        </>
+      )}
+
+      {/* SPACE PORTAL (Lựa chọn 1) */}
+      {showGate && activeShip === null && !warpSpeed && (
+        <div className="fixed top-[15%] left-[8%] z-[90] pointer-events-none flex items-center justify-center">
+          <div className="portal-enter">
+            <div className="portal-breathe">
+              <Link href="/creative" className="pointer-events-auto group relative flex items-center justify-center hover:scale-110 transition-transform duration-700">
+                {/* Outer blinding rings */}
+                <div className="absolute w-[250px] h-[250px] md:w-[320px] md:h-[320px] rounded-full border-[6px] border-transparent border-t-cyan-300 border-b-cyan-300 animate-[spin_4s_linear_infinite] shadow-[0_0_50px_rgba(0,255,255,0.8)]" />
+                <div className="absolute w-[280px] h-[280px] md:w-[360px] md:h-[360px] rounded-full border-[4px] border-transparent border-l-yellow-300 border-r-white animate-[spin_6s_linear_infinite_reverse] shadow-[0_0_50px_rgba(255,255,255,0.8)]" />
+                <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border-[2px] border-white/50 animate-[ping_3s_infinite]" />
+                
+                {/* Bright Core */}
+                <div className="w-[200px] h-[200px] md:w-[260px] md:h-[260px] rounded-full flex items-center justify-center relative overflow-hidden shadow-[0_0_120px_rgba(0,255,255,1)] group-hover:shadow-[0_0_200px_rgba(255,255,255,1)] transition-all duration-700 border-4 border-cyan-200 bg-cyan-900/30 backdrop-blur-sm">
+                  {/* Event horizon swirl - super bright */}
+                  <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.8),rgba(0,255,255,0.8),transparent)] animate-[spin_1.5s_linear_infinite] mix-blend-screen" />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,white_10%,rgba(0,240,255,0.8)_40%,transparent_80%)] opacity-80 animate-pulse" />
+                  
+                  {/* Blinding Center */}
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full shadow-[0_0_80px_white,0_0_120px_cyan,0_0_150px_yellow] animate-[ping_1.5s_infinite]" />
+                  
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none pt-[110px] md:pt-[140px]">
+                     <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] font-black text-black bg-cyan-300/90 px-3 py-1 rounded mb-1 shadow-[0_0_15px_cyan]">CỔNG DỊCH CHUYỂN</span>
+                     <span className="font-sans text-xl md:text-2xl font-black tracking-widest text-white uppercase drop-shadow-[0_0_10px_black]" style={{ textShadow: '0 0 15px black, 0 0 30px black' }}>Hệ Hành Tinh</span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CORE CANVAS — 2D Blackhole Engine */}
-      <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''}`}>
+      <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''} ${screenShake ? `shake-${screenShake}` : ''}`}>
         <canvas ref={canvasRef} className="absolute inset-0 block" />
       </div>
 
       {/* 3D FLEET LAYER — Ships bay lơ lửng */}
       {osBooted && (
-        <div className={`fixed inset-0 z-[1] pointer-events-auto ${warpSpeed ? 'warp-shake' : ''} ${activeShip !== null ? 'pointer-events-none' : ''}`}>
+        <div className={`fixed inset-0 z-[1] pointer-events-auto ${warpSpeed ? 'warp-shake' : ''} ${activeShip !== null ? 'pointer-events-none' : ''} ${screenShake ? `shake-${screenShake}` : ''}`}>
           <DynamicFleetSystem3D
             fleet={fleet.map(s => ({ id: s.id, shape: s.shape as any, hex: s.hex, shipName: s.shipName, code: s.code }))}
             activeShip={activeShip}
@@ -582,39 +791,173 @@ export default function ExodusGodTier() {
           <Link href="/" className="group flex items-center gap-4 cyber-clip bg-[#02050f]/60 backdrop-blur-md border border-white/10 px-6 py-2 hover:border-cyan-500 hover:bg-cyan-950/40 transition-colors" onMouseEnter={() => sfx?.play('hover')} onClick={() => sfx?.play('click')}>
             <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-xs tracking-widest text-slate-300 uppercase font-bold hidden sm:inline">Trang Chủ</span>
           </Link>
-          <div className="text-right">
-            <h1 className="text-2xl md:text-5xl font-black uppercase tracking-[0.2em] text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.4)]">Trạm Tốc Độ Cao</h1>
+          {/* === 3D HOLOGRAPHIC TITLE BANNER — CINEMATIC === */}
+          <div className="text-right" style={{ perspective: '600px' }}>
+            <div className="relative inline-block" style={{ transformStyle: 'preserve-3d', animation: 'titleFloat 5s ease-in-out infinite' }}>
+
+              {/* LAYER 0: Orbital rings behind the panel */}
+              <div className="absolute -inset-12 pointer-events-none" style={{ transformStyle: 'preserve-3d' }}>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-[120%] h-[120%] rounded-full border border-cyan-500/15" style={{ animation: 'ringOrbit 12s linear infinite', transform: 'rotateX(70deg)' }} />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-[140%] h-[140%] rounded-full border border-purple-500/10 border-dashed" style={{ animation: 'ringOrbit 20s linear infinite reverse', transform: 'rotateX(75deg) rotateZ(30deg)' }} />
+                </div>
+                {/* Orbiting dot */}
+                <div className="absolute top-1/2 left-1/2" style={{ animation: 'ringOrbit 8s linear infinite' }}>
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_12px_cyan,0_0_24px_cyan] -translate-x-1/2 -translate-y-1/2" style={{ transform: 'translateX(calc(min(200px, 12vw)))' }} />
+                </div>
+              </div>
+
+              {/* LAYER 1: Deep glow halo */}
+              <div className="absolute -inset-8 bg-gradient-to-r from-cyan-500/25 via-blue-600/35 to-purple-500/25 blur-3xl rounded-2xl" style={{ animation: 'energyPulse 3s ease-in-out infinite' }} />
+
+              {/* LAYER 2: Main glass panel */}
+              <div className="relative overflow-hidden rounded-2xl px-10 py-6 md:px-16 md:py-8" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 50%, rgba(0,242,254,0.04) 100%)', backdropFilter: 'blur(20px) saturate(1.5)', border: '1px solid rgba(255,255,255,0.15)', animation: 'energyPulse 3s ease-in-out infinite' }}>
+
+                {/* Top neon edge */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_cyan,0_0_30px_rgba(0,242,254,0.4)]" />
+                {/* Bottom neon edge */}
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_15px_purple]" />
+                {/* Left neon */}
+                <div className="absolute top-0 bottom-0 left-0 w-[2px] bg-gradient-to-b from-cyan-400 via-blue-500/40 to-purple-500 shadow-[0_0_12px_cyan]" />
+                {/* Right neon */}
+                <div className="absolute top-0 bottom-0 right-0 w-[2px] bg-gradient-to-b from-cyan-400 via-blue-500/40 to-purple-500 shadow-[0_0_12px_purple]" />
+
+                {/* 3D thickness — bottom face */}
+                <div className="absolute -bottom-3 left-3 right-3 h-3 rounded-b-xl" style={{ background: 'linear-gradient(to bottom, #0c1a30, #050a14)', borderLeft: '1px solid rgba(255,255,255,0.03)', borderRight: '1px solid rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.03)' }} />
+                {/* 3D thickness — right face */}
+                <div className="absolute top-3 -right-2 bottom-3 w-2 rounded-r-lg" style={{ background: 'linear-gradient(to right, #0c1a30, #060c18)' }} />
+
+                {/* Corner brackets */}
+                <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-cyan-400/70 rounded-tl shadow-[0_0_6px_cyan]" />
+                <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-cyan-400/70 rounded-tr shadow-[0_0_6px_cyan]" />
+                <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-purple-400/70 rounded-bl shadow-[0_0_6px_purple]" />
+                <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-purple-400/70 rounded-br shadow-[0_0_6px_purple]" />
+
+                {/* Hologram scanline */}
+                <div className="absolute left-0 right-0 h-[2px] pointer-events-none" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,242,254,0.4), transparent)', animation: 'titleScanline 2.5s linear infinite' }} />
+
+                {/* Circuit lines decoration */}
+                <div className="absolute top-[30%] left-3 w-6 h-[1px] bg-cyan-500/30" />
+                <div className="absolute top-[30%] left-9 w-1 h-1 rounded-full bg-cyan-400/50" />
+                <div className="absolute bottom-[30%] right-3 w-6 h-[1px] bg-purple-500/30" />
+                <div className="absolute bottom-[30%] right-9 w-1 h-1 rounded-full bg-purple-400/50" />
+
+                {/* TITLE TEXT — 3 stacked layers for depth */}
+                <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
+                  {/* Shadow layer (deepest) */}
+                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-cyan-900/30 select-none" aria-hidden="true" style={{ transform: 'translateZ(-8px) translateX(3px) translateY(3px)', position: 'absolute', inset: 0 }}>
+                    Trạm Tốc Độ Cao
+                  </h1>
+                  {/* Glow layer (mid) */}
+                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-cyan-400/20 select-none blur-[3px]" aria-hidden="true" style={{ transform: 'translateZ(-3px)', position: 'absolute', inset: 0 }}>
+                    Trạm Tốc Độ Cao
+                  </h1>
+                  {/* Main text (front) */}
+                  <h1 className="relative text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em]" style={{ transform: 'translateZ(4px)', color: 'transparent', backgroundImage: 'linear-gradient(135deg, #a8edea 0%, #ffffff 40%, #d4c4fb 70%, #a8edea 100%)', backgroundClip: 'text', WebkitBackgroundClip: 'text', filter: 'drop-shadow(0 0 8px rgba(0,242,254,0.4))' }}>
+                    Trạm Tốc Độ Cao
+                  </h1>
+                  {/* Glitch overlay */}
+                  <h1 className="text-3xl md:text-6xl font-sans font-black uppercase tracking-[0.15em] text-red-400/10 select-none" aria-hidden="true" style={{ transform: 'translateZ(6px)', position: 'absolute', inset: 0, animation: 'titleGlitch 6s step-end infinite', mixBlendMode: 'screen' }}>
+                    Trạm Tốc Độ Cao
+                  </h1>
+                </div>
+
+                {/* Subtitle row */}
+                <div className="mt-3 flex items-center justify-end gap-3 relative" style={{ transform: 'translateZ(2px)' }}>
+                  <div className="h-[1px] flex-1 max-w-16 bg-gradient-to-r from-transparent to-cyan-500/50" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_cyan] animate-pulse" />
+                  <span className="font-mono text-[10px] md:text-xs tracking-[0.3em] text-cyan-300/80 uppercase">Exodus Command Station</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_purple] animate-pulse" />
+                  <div className="h-[1px] flex-1 max-w-16 bg-gradient-to-l from-transparent to-purple-500/50" />
+                </div>
+
+                {/* Status indicators */}
+                <div className="mt-2 flex items-center justify-end gap-4 text-[8px] md:text-[10px] font-mono tracking-widest">
+                  <span className="text-green-400/60 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-green-400 inline-block shadow-[0_0_4px_#4ade80] animate-pulse" /> SYS.ONLINE</span>
+                  <span className="text-cyan-400/40">|</span>
+                  <span className="text-cyan-400/50">FLEET.READY</span>
+                  <span className="text-cyan-400/40">|</span>
+                  <span className="text-amber-400/50">SEC.LV5</span>
+                </div>
+              </div>
+            </div>
           </div>
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full px-4 md:px-8 mt-8">
           
-          {/* GLASSMORPHISM STATION HUB */}
-          <div className="relative w-full max-w-[1300px] rounded-[2.5rem] border border-white/10 bg-[#040814]/40 backdrop-blur-xl p-8 md:p-14 shadow-[0_0_80px_rgba(0,242,254,0.07)] overflow-hidden">
-            {/* Tech accents for the glass frame */}
-            <div className="absolute top-0 left-0 w-32 h-1 bg-gradient-to-r from-cyan-500 to-transparent" />
-            <div className="absolute bottom-0 right-0 w-32 h-1 bg-gradient-to-l from-purple-500 to-transparent" />
-            <div className="absolute top-0 left-0 w-1 h-32 bg-gradient-to-b from-cyan-500 to-transparent" />
-            <div className="absolute bottom-0 right-0 w-1 h-32 bg-gradient-to-t from-purple-500 to-transparent" />
-            
-            {/* Grid pattern background inside frame */}
-            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
-
-            <div className="relative z-10 text-center mb-12 md:mb-16">
-              <h2 className="text-4xl md:text-6xl font-black uppercase tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                TRẠM CHỈ HUY
-              </h2>
-              <div className="mt-4 flex items-center justify-center gap-3 font-mono text-cyan-400 text-sm md:text-base tracking-[0.2em]">
-                <Target className="w-4 h-4 animate-pulse text-red-500" /> 
-                <span>KÍCH HOẠT PHI THUYỀN ĐỂ KHÁM PHÁ</span>
-                <Target className="w-4 h-4 animate-pulse text-red-500" />
+          {/* ===== 3D GLASSMORPHISM STATION HUB ===== */}
+          <div className="relative w-full max-w-[1300px] overflow-visible" style={{ perspective: '1200px' }}>
+            <div className="relative rounded-[2rem] md:rounded-[2.5rem] p-8 md:p-14 overflow-hidden" style={{ transformStyle: 'preserve-3d', animation: 'hubFloat 6s ease-in-out infinite', background: 'linear-gradient(135deg, rgba(4,8,20,0.6) 0%, rgba(10,20,40,0.4) 50%, rgba(4,8,20,0.6) 100%)' }}>
+              {/* === OUTER FRAME — 3D depth edges === */}
+              {/* Top edge */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_cyan,0_0_30px_rgba(0,242,254,0.3)]" />
+              {/* Bottom edge + thickness */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent shadow-[0_0_15px_purple]" />
+              <div className="absolute -bottom-3 left-4 right-4 h-3 bg-gradient-to-b from-[#0a1628]/80 to-[#040810]/60 rounded-b-2xl border-x border-b border-white/5 backdrop-blur-sm" />
+              {/* Left edge */}
+              <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-cyan-400 via-blue-500/30 to-purple-500 shadow-[0_0_10px_rgba(0,242,254,0.5)]" />
+              {/* Right edge */}
+              <div className="absolute top-0 bottom-0 right-0 w-1 bg-gradient-to-b from-cyan-400 via-blue-500/30 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+              
+              {/* === CORNER BRACKETS (Tech Detail) === */}
+              <div className="absolute top-3 left-3 w-8 h-8 border-t-2 border-l-2 border-cyan-400/80 rounded-tl-lg shadow-[0_0_8px_cyan]" />
+              <div className="absolute top-3 right-3 w-8 h-8 border-t-2 border-r-2 border-cyan-400/80 rounded-tr-lg shadow-[0_0_8px_cyan]" />
+              <div className="absolute bottom-3 left-3 w-8 h-8 border-b-2 border-l-2 border-purple-400/80 rounded-bl-lg shadow-[0_0_8px_purple]" />
+              <div className="absolute bottom-3 right-3 w-8 h-8 border-b-2 border-r-2 border-purple-400/80 rounded-br-lg shadow-[0_0_8px_purple]" />
+              
+              {/* === GLASS REFLECTION (moving light sweep) === */}
+              <div className="absolute inset-0 overflow-hidden rounded-[2rem] pointer-events-none">
+                <div className="absolute -top-1/2 -left-1/2 w-[200%] h-[200%] bg-[conic-gradient(from_0deg_at_50%_50%,transparent_0%,rgba(255,255,255,0.03)_10%,transparent_20%)] animate-[spin_20s_linear_infinite]" />
               </div>
-            </div>
+              
+              {/* === BACKDROP BLUR + INNER GLOW === */}
+              <div className="absolute inset-0 backdrop-blur-xl rounded-[2rem]" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.04] to-transparent rounded-[2rem]" />
+              
+              {/* === TECH GRID PATTERN === */}
+              <div className="absolute inset-0 bg-[radial-gradient(rgba(0,242,254,0.05)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(0,242,254,0.02)_1px,transparent_1px)] bg-[size:100%_60px] pointer-events-none" />
+              
+              {/* === RADAR HUD ELEMENT (top-right corner) === */}
+              <div className="absolute top-6 right-6 w-16 h-16 md:w-20 md:h-20 pointer-events-none z-20">
+                <div className="absolute inset-0 rounded-full border border-cyan-500/30" />
+                <div className="absolute inset-2 rounded-full border border-cyan-500/20" />
+                <div className="absolute inset-4 rounded-full border border-cyan-500/10" />
+                <div className="absolute inset-0 rounded-full overflow-hidden">
+                  <div className="absolute top-1/2 left-1/2 w-1/2 h-[1px] bg-gradient-to-r from-cyan-400 to-transparent origin-left animate-[spin_3s_linear_infinite]" />
+                </div>
+                <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 -translate-x-1/2 -translate-y-1/2 bg-cyan-400 rounded-full shadow-[0_0_6px_cyan] animate-pulse" />
+              </div>
+              
+              {/* === STATUS BAR (top-left) === */}
+              <div className="absolute top-6 left-6 flex items-center gap-2 z-20 pointer-events-none">
+                <div className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ade80] animate-pulse" />
+                <span className="font-mono text-[9px] tracking-[0.2em] text-green-400/70 uppercase">ONLINE</span>
+                <div className="w-px h-3 bg-white/20 mx-1" />
+                <span className="font-mono text-[9px] tracking-[0.2em] text-cyan-400/50">FLEET: 6 UNITS</span>
+              </div>
+
+              {/* === TITLE AREA === */}
+              <div className="relative z-10 text-center mb-12 md:mb-16 mt-6">
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-cyan-200" style={{ textShadow: '0 0 40px rgba(0,242,254,0.3)' }}>
+                  TRẠM CHỈ HUY
+                </h2>
+                <div className="mt-4 flex items-center justify-center gap-3 font-mono text-cyan-400 text-sm md:text-base tracking-[0.2em]">
+                  <Target className="w-4 h-4 animate-pulse text-red-500" /> 
+                  <span>KÍCH HOẠT PHI THUYỀN ĐỂ KHÁM PHÁ</span>
+                  <Target className="w-4 h-4 animate-pulse text-red-500" />
+                </div>
+                {/* Underline glow */}
+                <div className="mt-3 mx-auto w-48 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_8px_cyan]" />
+              </div>
 
             <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 w-full mx-auto">
             {fleet.map((ship, idx) => {
-              const isRushing = rushingShipId === ship.id;
-              const isOtherRushing = rushingShipId !== null && rushingShipId !== ship.id;
+              const isRushing = rushingShipId === ship.id || activeShip === ship.id;
+              const isOtherRushing = (rushingShipId !== null && rushingShipId !== ship.id) || (activeShip !== null && activeShip !== ship.id);
               return (
                 <div key={ship.id} className={`flex justify-center transition-all duration-500 ${isOtherRushing ? 'scale-90 opacity-10 blur-sm pointer-events-none' : ''}`}>
                   <div
@@ -624,7 +967,7 @@ export default function ExodusGodTier() {
                     style={{ '--theme': ship.hex } as React.CSSProperties}
                   >
                     {/* SPACESHIP BODY */}
-                    <div className={`relative w-[160px] h-[200px] md:w-[200px] md:h-[250px] ${isRushing ? 'ship-rush-active' : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
+                    <div className={`relative w-[160px] h-[200px] md:w-[200px] md:h-[250px] ${isRushing ? `ship-rush-${ship.id}` : ''}`} style={{ filter: `drop-shadow(0 0 ${isRushing ? 60 : 18}px ${ship.hex})`, transition: 'filter .3s' }}>
                       {/* Impact Particles — 40 debris pieces with mixed colors */}
                       {isRushing && impactParticles.map(p => (
                         <div key={p.id} className="particle-burst" style={{ position:'absolute', top:'40%', left:'50%', width:p.s, height:p.s, borderRadius: p.id % 3 === 0 ? '2px' : '50%', background:p.c, boxShadow:`0 0 10px ${p.c}`, '--px':`${p.x}px`, '--py':`${p.y}px`, animationDelay:`${p.d}s` } as React.CSSProperties} />
@@ -633,14 +976,46 @@ export default function ExodusGodTier() {
                       {isRushing && asteroids.map(a => (
                         <div key={a.id} className="asteroid-rush" style={{ position:'absolute', top:'30%', left:'50%', width:a.s, height:a.s, background:'linear-gradient(135deg,#888 0%,#333 100%)', borderRadius:'30% 70% 50% 40%', boxShadow:'inset -2px -2px 4px rgba(0,0,0,.6), 0 0 12px rgba(255,150,50,.3)', '--ax':`${a.x}px`, '--ay':`${a.y}px`, '--ar':`${a.r}deg`, animationDelay:`${a.d}s`, zIndex:30 } as React.CSSProperties} />
                       ))}
-                      {/* Ship Hull */}
-                      <div className="w-full h-full relative overflow-hidden" style={{ clipPath: getClipPath(ship.shape) }}>
-                        <div className="absolute inset-0" style={{ background:`linear-gradient(180deg,${ship.hex}15 0%,#000 50%,${ship.hex}08 100%)`, border:`2px solid ${ship.hex}50`, borderRadius:16 }} />
-                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-0 h-0" style={{ borderLeft:'30px solid transparent', borderRight:'30px solid transparent', borderBottom:`50px solid ${ship.hex}40` }} />
-                        <div className="absolute top-[45%] left-2 w-2 h-16 rounded-full -skew-y-12 rotate-12" style={{ background:`${ship.hex}30` }} />
-                        <div className="absolute top-[45%] right-2 w-2 h-16 rounded-full skew-y-12 -rotate-12" style={{ background:`${ship.hex}30` }} />
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full blur-xl opacity-0 group-hover:opacity-60 transition-opacity animate-pulse" style={{ background:ship.hex }} />
-                        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:6px_6px]" />
+                      {/* 3D Ship Hull */}
+                      <div className="w-full h-full relative" style={{ filter: `drop-shadow(0 15px 25px rgba(0,0,0,0.9)) drop-shadow(0 0 10px ${ship.hex}40)` }}>
+                        {/* MAIN BODY */}
+                        <div className="absolute inset-0 overflow-hidden" style={{ clipPath: getClipPath(ship.shape) }}>
+                          {/* Base Metal Texture */}
+                          <div className="absolute inset-0 bg-gradient-to-b from-[#1e2336] via-[#0b0d17] to-[#040509]" />
+                          
+                          {/* 3D Lighting Highlight */}
+                          <div className="absolute top-0 left-[-20%] w-[140%] h-[40%] bg-gradient-to-b from-white/30 to-transparent rotate-[-15deg] mix-blend-overlay" />
+                          
+                          {/* Hexagonal Tech Texture */}
+                          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `repeating-linear-gradient(60deg, ${ship.hex} 0, ${ship.hex} 1px, transparent 1px, transparent 10px), repeating-linear-gradient(-60deg, ${ship.hex} 0, ${ship.hex} 1px, transparent 1px, transparent 10px)` }} />
+
+                          {/* INNER ARMOR PLATE */}
+                          <div className="absolute top-[10%] bottom-[10%] left-[10%] right-[10%] bg-gradient-to-t from-black/80 to-transparent border-t border-white/20" style={{ clipPath: getClipPath(ship.shape) }} />
+
+                          {/* COCKPIT */}
+                          <div className="absolute top-[25%] left-1/2 -translate-x-1/2 w-[25%] h-[20%] bg-[#0a0a0a] border border-white/10 shadow-[inset_0_-8px_15px_rgba(255,255,255,0.1)] rounded-t-3xl overflow-hidden z-10">
+                            {/* Cockpit reflection */}
+                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-transparent via-white/5 to-white/20" />
+                            <div className="absolute top-[10%] left-[10%] w-[20%] h-[80%] bg-white/20 rounded-full blur-[2px] transform rotate-12" />
+                          </div>
+
+                          {/* ENERGY CORE / REACTOR */}
+                          <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-[30%] aspect-square rounded-full flex items-center justify-center z-10">
+                            <div className="absolute inset-0 rounded-full opacity-40 group-hover:opacity-100 group-hover:animate-ping transition-all duration-700" style={{ backgroundColor: ship.hex, filter: `blur(12px)` }} />
+                            <div className="absolute w-[60%] h-[60%] bg-white rounded-full blur-[2px] opacity-90 mix-blend-screen" />
+                            <div className="absolute w-[80%] h-[80%] border border-white/30 rounded-full animate-[spin_4s_linear_infinite]" />
+                          </div>
+
+                          {/* WING VENTS / LIGHTS */}
+                          <div className="absolute top-[40%] left-[5%] w-[10%] h-[30%] bg-gradient-to-r from-black to-transparent" />
+                          <div className="absolute top-[40%] right-[5%] w-[10%] h-[30%] bg-gradient-to-l from-black to-transparent" />
+                          <div className="absolute top-[45%] left-[8%] w-[2px] h-[20%] rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: ship.hex, color: ship.hex }} />
+                          <div className="absolute top-[45%] right-[8%] w-[2px] h-[20%] rounded-full shadow-[0_0_10px_currentColor]" style={{ backgroundColor: ship.hex, color: ship.hex }} />
+
+                          {/* MAIN ENGINE GLOW */}
+                          <div className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[50%] h-[30%] rounded-full opacity-40 group-hover:opacity-100 transition-all duration-300 z-0" style={{ backgroundColor: ship.hex, filter: `blur(20px)` }} />
+                          <div className="absolute bottom-[2%] left-1/2 -translate-x-1/2 w-[30%] h-[10%] bg-white rounded-t-full blur-[3px] opacity-60 group-hover:opacity-100 transition-all duration-300 z-10" />
+                        </div>
                       </div>
                       {/* TEXT ON SHIP */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-3 z-20 pointer-events-none">
@@ -660,6 +1035,7 @@ export default function ExodusGodTier() {
               );
             })}
             </div>
+          </div>
           </div>
         </div>
 

@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useRef, useEffect, useState, Component } from 'react';
+import React, { useRef, useEffect, useState, Component, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Stars, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import Ship3D, { type ShipShape } from './Ship3D';
+import { SpaceStationDock } from '@/components/canvas/SpaceStationDock';
 
 // ErrorBoundary prevents R3F errors from crashing the app
 class R3FErrorBoundary extends Component<
@@ -87,13 +88,90 @@ function WarpTunnel({ isWarping }: { isWarping: boolean }) {
     if (tunnelRef.current.position.z > 200) tunnelRef.current.position.z = -200;
   });
 
+  const boxGeo = useMemo(() => new THREE.BoxGeometry(0.2, 0.2, 1), []);
+  const boxMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#00f2fe', transparent: true, opacity: 0.6 }), []);
+
   return (
     <group ref={tunnelRef} visible={isWarping}>
       {bars.map((b, i) => (
-        <mesh key={i} position={[b.x, b.y, b.z]}>
-          <boxGeometry args={[0.2, 0.2, b.len]} />
-          <meshBasicMaterial color="#00f2fe" transparent opacity={0.6} />
-        </mesh>
+        <mesh key={i} position={[b.x, b.y, b.z]} scale={[1, 1, b.len]} geometry={boxGeo} material={boxMat} />
+      ))}
+    </group>
+  );
+}
+
+// ==========================================
+// THIÊN THẠCH TRÔI (ASTEROIDS)
+// ==========================================
+const ASTEROID_DATA = Array.from({ length: 40 }, () => ({
+  x: (Math.random() - 0.5) * 80,
+  y: (Math.random() - 0.5) * 40,
+  z: (Math.random() - 0.5) * 60 - 10,
+  scale: Math.random() * 0.4 + 0.1,
+  rx: Math.random() * Math.PI,
+  ry: Math.random() * Math.PI,
+  speed: Math.random() * 0.2 + 0.05,
+}));
+
+function AsteroidField({ isWarping }: { isWarping: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    if (!groupRef.current || isWarping) return;
+    groupRef.current.children.forEach((mesh: any, i) => {
+      mesh.rotation.x += ASTEROID_DATA[i].speed * delta;
+      mesh.rotation.y += ASTEROID_DATA[i].speed * delta;
+      mesh.position.y += Math.sin(Date.now() * 0.001 + i) * 0.005;
+    });
+  });
+  const astGeo = useMemo(() => new THREE.DodecahedronGeometry(1, 0), []);
+  const astMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#111522', roughness: 0.9, metalness: 0.1 }), []);
+
+  return (
+    <group ref={groupRef} visible={!isWarping}>
+      {ASTEROID_DATA.map((a, i) => (
+        <mesh key={i} position={[a.x, a.y, a.z]} rotation={[a.rx, a.ry, 0]} scale={a.scale} geometry={astGeo} material={astMat} />
+      ))}
+    </group>
+  );
+}
+
+// ==========================================
+// PHI THUYỀN TUẦN TRA (FIGHTERS)
+// ==========================================
+const FIGHTER_DATA = Array.from({ length: 15 }, () => ({
+  x: (Math.random() - 0.5) * 60,
+  y: (Math.random() - 0.5) * 20,
+  z: (Math.random() - 0.5) * 40 - 20,
+  speed: Math.random() * 5 + 2,
+  offset: Math.random() * Math.PI * 2,
+}));
+
+function FighterSwarm({ isWarping }: { isWarping: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((state, delta) => {
+    if (!groupRef.current || isWarping) return;
+    const time = state.clock.elapsedTime;
+    groupRef.current.children.forEach((mesh: any, i) => {
+      const data = FIGHTER_DATA[i];
+      mesh.position.x = data.x + Math.sin(time * 0.5 + data.offset) * 15;
+      mesh.position.z = data.z + Math.cos(time * 0.5 + data.offset) * 15;
+      mesh.rotation.y = time * 0.5 + data.offset;
+      mesh.position.y = data.y + Math.sin(time * 2 + i) * 2;
+    });
+  });
+
+  const fighterGeo = useMemo(() => new THREE.ConeGeometry(1, 3, 3), []);
+  const fighterMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#333', emissive: '#00f2fe', emissiveIntensity: 0.2 }), []);
+  const engineGeo = useMemo(() => new THREE.BoxGeometry(0.2, 0.2, 1.5), []);
+  const engineMat = useMemo(() => new THREE.MeshBasicMaterial({ color: '#00f2fe' }), []);
+
+  return (
+    <group ref={groupRef} visible={!isWarping}>
+      {FIGHTER_DATA.map((f, i) => (
+        <group key={i} position={[f.x, f.y, f.z]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]} scale={0.3} geometry={fighterGeo} material={fighterMat} />
+          <mesh position={[0, 0, -0.6]} geometry={engineGeo} material={engineMat} />
+        </group>
       ))}
     </group>
   );
@@ -138,6 +216,14 @@ export default function FleetSystem3D({
           />
           <WarpTunnel isWarping={warpSpeed} />
 
+          {/* BACKGROUND ENVIRONMENT SCENE */}
+          <group position={[0, 0, -15]} scale={1.5}>
+            <SpaceStationDock />
+          </group>
+          <AsteroidField isWarping={warpSpeed} />
+          <FighterSwarm isWarping={warpSpeed} />
+
+          {/* MAIN FLEET */}
           <group position={[0, -2, 0]}>
             {fleet.map((ship, idx) => {
               const row = Math.floor(idx / 2);

@@ -26,35 +26,49 @@ export const FleetShip = () => {
       s.position.z = THREE.MathUtils.lerp(s.position.z, 0, delta * 4.5);
       s.rotation.z = THREE.MathUtils.lerp(s.rotation.z, 0, delta * 3.5);
     } else {
-      s.position.z = THREE.MathUtils.lerp(s.position.z, 12, delta * 2.5);
+      // Idle — keep ship out of view far away
+      s.position.z = THREE.MathUtils.lerp(s.position.z, 50, delta * 2.5);
     }
   });
 
-  if (!currentShip && phase === 'idle') return null;
+  // Render nothing visible until warp sequence engages.
+  // Group still mounts so useFrame keeps running; Trail only mounts during active warp.
+  const isActive = phase !== 'idle';
+  if (!isActive) return null;
 
   const neonColor =
     currentShip === 'NEXUS-01' ? '#00ffff' :
     currentShip === 'UIX-99'   ? '#ff00ff' :
     '#00ffaa';
 
+  const showTrail = phase === 'warping' || phase === 'power-up';
+
+  const shipBody = (
+    <mesh position={[0, 0, 1.7]}>
+      <boxGeometry args={[0.42, 0.42, 0.42]} />
+      <meshStandardMaterial
+        color={neonColor}
+        emissive={neonColor}
+        emissiveIntensity={14}
+        toneMapped={false}
+      />
+    </mesh>
+  );
+
   return (
     <group ref={shipRef} position={[0, -0.5, 9]}>
-      <Trail
-        width={1.9}
-        length={phase === 'warping' ? 34 : 8}
-        color={new THREE.Color(neonColor)}
-        attenuation={(t) => t * t * t}
-      >
-        <mesh position={[0, 0, 1.7]}>
-          <boxGeometry args={[0.42, 0.42, 0.42]} />
-          <meshStandardMaterial
-            color={neonColor}
-            emissive={neonColor}
-            emissiveIntensity={14}
-            toneMapped={false}
-          />
-        </mesh>
-      </Trail>
+      {showTrail ? (
+        <Trail
+          width={1.9}
+          length={phase === 'warping' ? 34 : 8}
+          color={new THREE.Color(neonColor)}
+          attenuation={(t) => t * t * t}
+        >
+          {shipBody}
+        </Trail>
+      ) : (
+        shipBody
+      )}
 
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <coneGeometry args={[0.88, 3.5, 4]} />

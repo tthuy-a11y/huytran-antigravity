@@ -549,12 +549,12 @@ export default function CommanderTransmission() {
   const springRotateX = useSpring(rotateX, { stiffness: 260, damping: 28 });
   const springRotateY = useSpring(rotateY, { stiffness: 260, damping: 28 });
 
-  const checkTrigger = useCallback(() => {
+  const checkTrigger = useCallback((currentPhase: TransmissionPhase) => {
     if (typeof window === 'undefined') return false;
     const played = localStorage.getItem(`${COMMANDER_KEY}_played`) === 'true';
     const completed = localStorage.getItem(`${COMMANDER_KEY}_completed`) === 'true';
     if (played || completed) {
-      if (completed) {
+      if (completed && currentPhase === 'idle') {
         setTransmissionCompleted(true);
         setPhase('collapsed');
       }
@@ -697,18 +697,14 @@ export default function CommanderTransmission() {
     }, 800);
   };
 
-  // Init + trigger polling
+  // Audio & Timeout Cleanup
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new TransmissionAudio();
       audioRef.current.init();
       audioRef.current.loadVoices();
     }
-    const checkInterval = setInterval(() => {
-      if (checkTrigger() && phase === 'idle') setPhase('incoming');
-    }, 1000);
     return () => {
-      clearInterval(checkInterval);
       if (audioRef.current) {
         audioRef.current.dispose();
         audioRef.current = null;
@@ -716,6 +712,14 @@ export default function CommanderTransmission() {
       if (typewriterTimeout.current) clearTimeout(typewriterTimeout.current);
       if (autoNextTimeout.current) clearTimeout(autoNextTimeout.current);
     };
+  }, []);
+
+  // Init + trigger polling
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      if (checkTrigger(phase) && phase === 'idle') setPhase('incoming');
+    }, 1000);
+    return () => clearInterval(checkInterval);
   }, [checkTrigger, phase]);
 
   // Route tracking

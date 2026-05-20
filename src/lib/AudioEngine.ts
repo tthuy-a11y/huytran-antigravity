@@ -182,57 +182,92 @@ class GlobalAudioEngine {
     // Sharp interaction click
     this.uiSynth.triggerAttackRelease("C6", 0.1, now, 0.2);
   }
-  // ── Ship Specific Motifs ─────────────────────────────────────────────
 
-  public async playShipEngage(shipId: number) {
+  // ── Ship Specific Motifs (5-Second Cinematic) ───────────────────────
+
+  public async playShipRiser(shipId: number) {
     await this.init();
     const now = Tone.now();
     switch (shipId) {
-      case 0: // AI (Nexus) - Digital calculations
-        this.uiSynth.triggerAttackRelease(["C5", "D#5", "G5"], 0.1, now);
-        this.uiSynth.triggerAttackRelease(["C6", "D#6", "G6"], 0.1, now + 0.15);
-        this.uiSynth.triggerAttackRelease(["C7", "D#7", "G7"], 0.2, now + 0.3);
-        break;
-      case 1: // Web3D (UIX) - Smooth sweep
-        this.subSynth.triggerAttackRelease("C3", 1, now);
-        this.subSynth.frequency.exponentialRampTo("C6", 1, now);
-        break;
-      case 2: // Prompt (Prmpt) - Glitchy/Typing
-        for (let i = 0; i < 8; i++) {
-          this.noiseSynth.triggerAttackRelease("32n", now + i * 0.05, 0.3);
-          if (i % 2 === 0) this.uiSynth.triggerAttackRelease("C6", "32n", now + i * 0.05);
+      case 0: // Digital Phantom - Triangle + rapid arpeggio
+        this.engineSynth.triggerAttackRelease("C3", 2.4, now);
+        this.engineSynth.frequency.exponentialRampTo("C6", 2.4, now);
+        for (let i = 0; i < 20; i++) {
+          this.uiSynth.triggerAttackRelease(Math.random() > 0.5 ? "C5" : "G5", "32n", now + i * 0.12);
         }
         break;
-      case 3: // Physics (Phys) - Gravity Bass Drop
-        this.boomSynth.triggerAttackRelease("C1", 2, now);
-        this.subSynth.triggerAttackRelease("C2", 2, now);
-        this.subSynth.frequency.exponentialRampTo("C0", 1.5, now + 0.5);
+      case 1: // Cosmic Explorer - Sine pad + long reverb
+        this.subSynth.triggerAttackRelease("C3", 2.4, now, 0.5);
+        this.subSynth.frequency.exponentialRampTo("G5", 2.4, now);
+        this.uiSynth.triggerAttackRelease(["C4", "E4", "G4"], 2.4, now, 0.3);
         break;
-      case 4: // Data (Cloud) - Ethereal Drone
-        this.uiSynth.triggerAttackRelease(["C4", "G4", "D5"], 2, now, 0.3);
-        this.engineSynth.triggerAttackRelease("G2", 2, now, 0.2);
+      case 2: // Assault Fighter - Sawtooth + distortion riser
+        this.engineSynth.triggerAttackRelease("C2", 2.4, now, 0.8);
+        this.engineSynth.frequency.exponentialRampTo("C6", 2.4, now);
         break;
-      case 5: // Security (Shield) - Heavy lock
-        this.chimeSynth.triggerAttackRelease("4n", now);
-        setTimeout(() => this.boomSynth.triggerAttackRelease("C2", "8n", Tone.now()), 200);
-        setTimeout(() => this.boomSynth.triggerAttackRelease("C1", "8n", Tone.now()), 400);
+      case 3: // Heavy Dreadnought - Square + sub-bass
+        this.subSynth.triggerAttackRelease("C1", 2.4, now, 1);
+        this.subSynth.frequency.linearRampTo("C2", 2.4, now);
+        break;
+      case 4: // Ethereal Streamer - FM + overtones
+        this.engineSynth.triggerAttackRelease("G2", 2.4, now, 0.4);
+        this.engineSynth.frequency.exponentialRampTo("G5", 2.4, now);
+        this.uiSynth.triggerAttackRelease(["G4", "D5", "A5"], 2.4, now, 0.2);
+        break;
+      case 5: // Fortress Ram - Heavy metallic charging
+        this.chimeSynth.triggerAttackRelease("1n", now);
+        this.subSynth.triggerAttackRelease("C2", 2.4, now, 0.8);
+        this.subSynth.frequency.linearRampTo("C4", 2.4, now);
+        break;
+    }
+  }
+
+  public async playShipImpact(shipId: number) {
+    await this.init();
+    const now = Tone.now();
+    switch (shipId) {
+      case 0: 
+        this.noiseSynth.triggerAttackRelease("16n", now, 1);
+        this.uiSynth.triggerAttackRelease(["C6", "D#6", "G6"], 0.2, now);
+        break;
+      case 1: 
+        this.boomSynth.triggerAttackRelease("C2", "8n", now);
+        this.uiSynth.triggerAttackRelease(["C5", "G5"], 0.5, now);
+        break;
+      case 2: 
+        this.boomSynth.triggerAttackRelease("C1", "4n", now);
+        this.noiseSynth.triggerAttackRelease("8n", now, 0.8);
+        break;
+      case 3: 
+        this.boomSynth.triggerAttackRelease("C0", "2n", now);
+        break;
+      case 4: 
+        this.chimeSynth.triggerAttackRelease("8n", now);
+        this.noiseSynth.triggerAttackRelease("4n", now, 0.5);
+        break;
+      case 5: 
+        this.boomSynth.triggerAttackRelease("C1", "4n", now);
+        this.chimeSynth.triggerAttackRelease("8n", now);
         break;
     }
   }
 
   public async playShipWarp(shipId: number) {
     await this.init();
-    const now = Tone.now();
-    // Universal warp boom but colored by ship
-    this.boomSynth.triggerAttackRelease("C1", "4n", now);
-    this.noiseSynth.triggerAttackRelease("2n", now, 0.6);
+    // 100ms silence gap before boom for dramatic effect
+    const now = Tone.now() + 0.1; 
+    
+    // Massive decay boom for 5s cinematic
+    this.boomSynth.triggerAttackRelease("C1", 1.5, now);
+    this.noiseSynth.triggerAttackRelease("1n", now, 0.8);
+
     switch (shipId) {
-      case 0: this.engineSynth.triggerAttackRelease("C6", 1, now); break;
-      case 1: this.uiSynth.triggerAttackRelease(["C4", "E4", "G4"], 1, now); break;
-      case 2: this.noiseSynth.triggerAttackRelease("8n", now, 1); break;
-      case 3: this.subSynth.triggerAttackRelease("C1", 1, now); break;
+      case 0: this.engineSynth.triggerAttackRelease("C6", 1.5, now); break;
+      case 1: this.uiSynth.triggerAttackRelease(["C4", "E4", "G4", "C5"], 1.5, now); break;
+      case 2: this.noiseSynth.triggerAttackRelease("2n", now, 1); break;
+      case 3: this.subSynth.triggerAttackRelease("C0", 1.5, now); break;
       case 4: this.chimeSynth.triggerAttackRelease("1n", now); break;
-      case 5: this.boomSynth.triggerAttackRelease("C1", 1, now); break;
+      case 5: this.boomSynth.triggerAttackRelease("C1", 1.5, now); break;
     }
   }
 }
