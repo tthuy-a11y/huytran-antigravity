@@ -84,19 +84,19 @@ const DIALOGUE: DialogueLine[] = [
 // ============================================================
 const STYLE_CLASSES: Record<DialogueLine['style'], string> = {
   'neon-pink-italic':
-    'italic font-light text-2xl md:text-4xl tracking-wide',
+    'italic font-light text-2xl md:text-4xl lg:text-5xl tracking-wide',
   'mono-cyan-glitch':
-    'font-mono text-xl md:text-3xl tracking-[0.15em] uppercase',
+    'font-mono text-xl md:text-3xl lg:text-4xl tracking-[0.18em] uppercase',
   'large-vibrating':
-    'font-bold text-3xl md:text-6xl tracking-tight',
+    'font-bold text-3xl md:text-5xl lg:text-7xl tracking-tight',
   'serif-italic':
-    'italic font-serif text-xl md:text-3xl tracking-wide',
+    'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-wide',
   'gold-scaling':
-    'font-serif text-2xl md:text-5xl tracking-wide',
+    'font-serif text-2xl md:text-5xl lg:text-6xl tracking-wide',
   'massive-gold-explosive':
     'font-black text-4xl md:text-7xl tracking-tight uppercase',
   'custom-d10':
-    'font-black text-4xl md:text-7xl tracking-tight uppercase',
+    'font-black text-3xl md:text-6xl lg:text-7xl tracking-tight uppercase',
 };
 
 const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
@@ -197,30 +197,68 @@ function getMotionProps(style: DialogueLine['style']) {
 }
 
 // ============================================================
-// GLITCH OVERLAY (mono-cyan-glitch only) — chromatic split layers
+// WORD-STAGGER — stagger each word in on entry
+// ============================================================
+function SplitWords({ text, stagger = 0.09 }: { text: string; stagger?: number }) {
+  const words = text.split(' ');
+  return (
+    <motion.span
+      className="inline"
+      initial="hidden"
+      animate="visible"
+      variants={{ visible: { transition: { staggerChildren: stagger } } }}
+    >
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          className="inline-block mr-[0.28em] last:mr-0"
+          variants={{
+            hidden: { opacity: 0, y: 22, filter: 'blur(10px)' },
+            visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] as any } },
+          }}
+        >
+          {w}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+}
+
+// ============================================================
+// GLITCH OVERLAY (mono-cyan-glitch) — RGB split + scan sweep
 // ============================================================
 function GlitchText({ text }: { text: string }) {
   return (
     <span className="relative inline-block">
       <span className="relative z-10">{text}</span>
+      {/* Red channel */}
       <motion.span
         aria-hidden
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 select-none"
         style={{ color: '#ff3a8a', mixBlendMode: 'screen' }}
-        animate={{ x: [0, -2, 1, -1, 0], opacity: [0.7, 0.9, 0.6, 0.8, 0.7] }}
-        transition={{ duration: 0.35, repeat: Infinity, ease: [0.16, 1, 0.3, 1] as any }}
+        animate={{ x: [0, -3, 2, -1, 0, -2, 0], skewX: [0, 1.5, -1, 0.5, 0], opacity: [0.7, 0.95, 0.5, 0.85, 0.7] }}
+        transition={{ duration: 0.38, repeat: Infinity }}
       >
         {text}
       </motion.span>
+      {/* Cyan channel */}
       <motion.span
         aria-hidden
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 select-none"
         style={{ color: '#26ffe6', mixBlendMode: 'screen' }}
-        animate={{ x: [0, 2, -1, 1, 0], opacity: [0.7, 0.6, 0.9, 0.7, 0.8] }}
-        transition={{ duration: 0.35, repeat: Infinity, ease: [0.16, 1, 0.3, 1] as any }}
+        animate={{ x: [0, 3, -2, 1, 0, 2, 0], opacity: [0.7, 0.55, 0.9, 0.65, 0.8, 0.7] }}
+        transition={{ duration: 0.38, repeat: Infinity, delay: 0.06 }}
       >
         {text}
       </motion.span>
+      {/* Scan line sweeping through */}
+      <motion.span
+        aria-hidden
+        className="absolute left-0 right-0 h-[2px] bg-cyan-300/70 blur-[1px] pointer-events-none"
+        style={{ top: 0 }}
+        animate={{ top: ['-5%', '110%'] }}
+        transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 0.8 }}
+      />
     </span>
   );
 }
@@ -291,26 +329,60 @@ function DialogueLineView({
   })();
 
   let inner: React.ReactNode = line.text;
-  if (line.style === 'mono-cyan-glitch') {
+  if (line.style === 'neon-pink-italic') {
+    inner = <SplitWords text={line.text} stagger={0.1} />;
+  } else if (line.style === 'mono-cyan-glitch') {
     inner = <GlitchText text={line.text} />;
   } else if (line.style === 'large-vibrating') {
     inner = <VibratingText text={line.text} cinematicTime={cinematicTime} />;
+  } else if (line.style === 'serif-italic') {
+    inner = <SplitWords text={line.text} stagger={0.13} />;
+  } else if (line.style === 'gold-scaling') {
+    inner = (
+      <>
+        <SplitWords text={line.text} stagger={0.12} />
+        {/* Gold shimmer sweep */}
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,240,150,0.35) 50%, transparent 70%)', backgroundSize: '200% 100%' }}
+          animate={{ backgroundPosition: ['-100% 0', '200% 0'] }}
+          transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+        />
+      </>
+    );
   } else if (line.style === 'custom-d10') {
     inner = (
-      <span>
-        <span style={{ 
-          color: '#00e5ff', 
-          textShadow: '0 0 10px #00e5ff, 0 0 20px #0088ff, 0 0 40px #00ffff' 
-        }}>Chào mừng đến với Hệ Hành Tinh </span>
-        <span style={{ 
-          color: '#ff4d00',
-          background: 'linear-gradient(180deg, #ffcc00 0%, #ff3300 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 0 20px rgba(255, 50, 0, 0.8), 0 0 40px rgba(255, 100, 0, 0.6)',
-          filter: 'drop-shadow(0 0 10px #ff0000)'
-        }}>TH2003</span>
-      </span>
+      <motion.span
+        className="inline"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.18 } } }}
+      >
+        {['Chào mừng đến với', 'Hệ Hành Tinh', 'TH2003'].map((chunk, i) => (
+          <motion.span
+            key={i}
+            className={`block ${i === 2 ? 'mt-2' : ''}`}
+            variants={{
+              hidden: { opacity: 0, scale: 0.6, filter: 'blur(24px)' },
+              visible: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] as any } },
+            }}
+            style={i === 2 ? {
+              background: 'linear-gradient(180deg, #ffee88 0%, #ffaa00 45%, #ff3300 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              filter: 'drop-shadow(0 0 18px rgba(255,160,0,0.8)) drop-shadow(0 0 40px rgba(255,60,0,0.5))',
+              fontSize: '1.3em',
+            } : {
+              color: '#00e5ff',
+              textShadow: '0 0 12px #00e5ff, 0 0 28px #0099ff',
+              fontSize: i === 0 ? '0.65em' : '0.85em',
+            }}
+          >
+            {chunk}
+          </motion.span>
+        ))}
+      </motion.span>
     );
   }
 
@@ -331,7 +403,7 @@ function DialogueLineView({
 }
 
 // ============================================================
-// SKIP BUTTON
+// SKIP BUTTON — above letterbox (bottom-24), prominent design
 // ============================================================
 function SkipButton() {
   const skip = useCinematicStore((s) => s.skip);
@@ -340,24 +412,52 @@ function SkipButton() {
   return (
     <motion.button
       onClick={skip}
-      className="absolute bottom-8 right-8 pointer-events-auto group"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.7 }}
-      whileHover={{ opacity: 1, scale: 1.05 }}
-      transition={{ duration: 0.6, delay: 1.2 }}
+      className="absolute bottom-24 right-6 pointer-events-auto"
+      initial={{ opacity: 0, x: 28 }}
+      animate={{ opacity: 1, x: 0 }}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ duration: 0.6, delay: 1.5, ease: [0.16, 1, 0.3, 1] as any }}
     >
-      <div
-        className="px-5 py-2.5 rounded-full border border-white/30 backdrop-blur-md bg-black/30 text-white/90 text-sm tracking-widest uppercase font-light hover:border-white/70 transition-colors"
-        style={{ letterSpacing: '0.2em' }}
-      >
-        Skip Intro →
+      {/* Pulsing outer ring */}
+      <motion.span
+        className="absolute inset-0 rounded-2xl border border-white/25"
+        animate={{ scale: [1, 1.14], opacity: [0.5, 0] }}
+        transition={{ repeat: Infinity, duration: 2.2, ease: 'easeOut' }}
+      />
+      <div className="relative flex items-center gap-2.5 px-6 py-3 rounded-2xl border border-white/25 bg-black/45 backdrop-blur-xl">
+        <span className="text-white/75 text-sm tracking-[0.22em] uppercase font-light">Bỏ qua</span>
+        {/* Double-bar skip icon */}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.2" strokeLinecap="round">
+          <polygon points="5 3 19 12 5 21 5 3" />
+          <line x1="19" y1="3" x2="19" y2="21" />
+        </svg>
       </div>
     </motion.button>
   );
 }
 
+// Sound wave bars — animated when unmuted
+const WAVE_HEIGHTS = [0.35, 0.65, 1.0, 0.65, 0.35];
+
+function SoundWaveBars() {
+  return (
+    <div className="flex items-center gap-[3px]" style={{ height: 20 }}>
+      {WAVE_HEIGHTS.map((peak, i) => (
+        <motion.span
+          key={i}
+          className="block w-[3px] rounded-full bg-cyan-400"
+          animate={{ scaleY: [peak * 0.3, peak, peak * 0.45, peak * 0.85, peak * 0.3] }}
+          transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.09, ease: 'easeInOut' }}
+          style={{ height: 20, transformOrigin: 'center' }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ============================================================
-// AUDIO HINT (mute toggle)
+// MUTE TOGGLE — above letterbox (bottom-24), with sound-wave bars
 // ============================================================
 function MuteToggle() {
   const isMuted = useCinematicStore((s) => s.isMuted);
@@ -365,51 +465,60 @@ function MuteToggle() {
   return (
     <motion.button
       onClick={toggleMute}
-      className="absolute bottom-8 left-8 pointer-events-auto"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 0.6 }}
-      whileHover={{ opacity: 1 }}
-      transition={{ duration: 0.6, delay: 1.2 }}
-      aria-label={isMuted ? 'Unmute' : 'Mute'}
+      className="absolute bottom-24 left-6 pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-2xl backdrop-blur-xl transition-colors"
+      initial={{ opacity: 0, x: -28 }}
+      animate={{ opacity: 1, x: 0 }}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
+      transition={{ duration: 0.6, delay: 1.5, ease: [0.16, 1, 0.3, 1] as any }}
+      style={{
+        border: isMuted
+          ? '1px solid rgba(255,255,255,0.2)'
+          : '1px solid rgba(0,242,254,0.4)',
+        background: isMuted ? 'rgba(0,0,0,0.4)' : 'rgba(0,242,254,0.06)',
+        boxShadow: isMuted ? 'none' : '0 0 20px rgba(0,242,254,0.12)',
+      }}
+      aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
     >
-      <div className="w-10 h-10 rounded-full border border-white/30 backdrop-blur-md bg-black/30 flex items-center justify-center text-white/90">
-        {isMuted ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 5L6 9H2v6h4l5 4V5z" />
-            <line x1="23" y1="9" x2="17" y2="15" />
-            <line x1="17" y1="9" x2="23" y2="15" />
-          </svg>
-        ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M11 5L6 9H2v6h4l5 4V5z" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
-        )}
-      </div>
+      {isMuted ? (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      ) : (
+        <SoundWaveBars />
+      )}
+      <span
+        className="text-xs tracking-[0.2em] uppercase font-light"
+        style={{ color: isMuted ? 'rgba(255,255,255,0.45)' : 'rgba(0,242,254,0.9)' }}
+      >
+        {isMuted ? 'Tắt tiếng' : 'Âm thanh'}
+      </span>
     </motion.button>
   );
 }
 
 // ============================================================
-// PROGRESS BAR — thin, bottom edge, fades after cinematic
+// PROGRESS BAR — sits at bottom-16 (above 64px letterbox)
 // ============================================================
 function ProgressBar({ cinematicTime }: { cinematicTime: number }) {
   const pct = Math.min(100, (cinematicTime / CINEMATIC_DURATION) * 100);
   const isFinished = useCinematicStore((s) => s.isFinished);
   return (
     <motion.div
-      className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5"
+      className="absolute left-6 right-6 h-[3px] rounded-full bg-white/8"
+      style={{ bottom: 80 }}
       animate={{ opacity: isFinished ? 0 : 1 }}
       transition={{ duration: 0.8 }}
     >
       <div
-        className="h-full"
+        className="h-full rounded-full"
         style={{
           width: `${pct}%`,
           background:
-            'linear-gradient(90deg, rgba(255,106,208,0.8), rgba(38,230,255,0.9), rgba(255,200,87,0.95))',
-          boxShadow: '0 0 12px rgba(255,200,87,0.6)',
+            'linear-gradient(90deg, rgba(255,106,208,0.9), rgba(38,230,255,1), rgba(255,200,87,1))',
+          boxShadow: '0 0 10px rgba(38,230,255,0.7), 0 0 22px rgba(255,200,87,0.4)',
           transition: 'width 0.08s linear',
         }}
       />

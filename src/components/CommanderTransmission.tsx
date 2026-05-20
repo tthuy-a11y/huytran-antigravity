@@ -260,6 +260,20 @@ class TransmissionAudio {
     osc.stop(this.audioContext.currentTime + 0.15);
   }
 
+  playHover() {
+    if (!this.audioContext) return;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(620, this.audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(820, this.audioContext.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.04, this.audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.18);
+    osc.connect(gain).connect(this.audioContext.destination);
+    osc.start();
+    osc.stop(this.audioContext.currentTime + 0.2);
+  }
+
   dispose() {
     this.stopBGM();
     this.stopSpeaking();
@@ -658,19 +672,27 @@ export default function CommanderTransmission() {
     setPhase('dossier');
   }, []);
 
+  const triggerCyberTransition = () => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;pointer-events:none;display:flex;align-items:center;justify-content:center;background:black;animation:fade-in 0.2s forwards;';
+    overlay.innerHTML = `
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,242,254,0.1) 2px, rgba(0,242,254,0.1) 4px);z-index:1;"></div>
+      <div style="width:100%;height:100%;background:#00f2fe;animation:crt-collapse-y 0.4s ease-out forwards, crt-collapse-x 0.4s ease-in 0.4s forwards;z-index:2;box-shadow:0 0 50px #00f2fe;"></div>
+    `;
+    document.body.appendChild(overlay);
+    return overlay;
+  };
+
   const collapseToMailbox = () => {
     audioRef.current?.playWarp();
     audioRef.current?.stopSpeaking();
-    const flash = document.createElement('div');
-    flash.style.cssText =
-      'position:fixed;inset:0;background:white;z-index:999999;animation:impactFlashAnim 0.6s ease-out forwards;pointer-events:none;';
-    document.body.appendChild(flash);
+    const overlay = triggerCyberTransition();
     localStorage.setItem(`${COMMANDER_KEY}_completed`, 'true');
     setPhase('collapsing');
     setTimeout(() => {
       setPhase('collapsed');
       setTransmissionCompleted(true);
-      if (document.body.contains(flash)) flash.remove();
+      if (document.body.contains(overlay)) overlay.remove();
       audioRef.current?.dispose();
     }, 800);
   };
@@ -748,6 +770,19 @@ export default function CommanderTransmission() {
     @keyframes downloadBurst { 0% { opacity: 1; transform: scale(0.8); filter: brightness(2); } 100% { opacity: 0; transform: scale(3.5); filter: brightness(1); } }
     @keyframes particleFly { 0% { transform: translate(0, 0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
     @keyframes impactFlashAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes crt-collapse-y {
+      0% { transform: scaleY(1); opacity: 0.8; filter: brightness(2); }
+      50% { transform: scaleY(0.01); opacity: 1; filter: brightness(3); }
+      100% { transform: scaleY(0.005); opacity: 1; }
+    }
+    @keyframes crt-collapse-x {
+      0% { transform: scaleY(0.005) scaleX(1); }
+      100% { transform: scaleY(0.005) scaleX(0); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
     @keyframes holo-float {
       0%, 100% { filter: invert(1) grayscale(100%) hue-rotate(180deg) saturate(3) contrast(1.4) brightness(1.15) drop-shadow(0 0 25px rgba(0,242,254,0.65)); }
       50% { filter: invert(1) grayscale(100%) hue-rotate(180deg) saturate(3) contrast(1.4) brightness(1.25) drop-shadow(0 0 35px rgba(0,242,254,0.9)); }
@@ -774,19 +809,31 @@ export default function CommanderTransmission() {
   if (phase === 'collapsed' || transmissionCompleted) {
     return (
       <motion.div
-        initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
-        animate={{ scale: 1, opacity: 1, rotate: 0 }}
-        whileHover={{ scale: 1.18, rotate: 12 }}
-        className="fixed bottom-8 right-8 z-[99999] w-20 h-20 rounded-full bg-gradient-to-br from-cyan-400/30 to-purple-500/30 backdrop-blur-3xl border border-cyan-300/70 flex items-center justify-center cursor-pointer shadow-[0_0_70px_#22d3ee,0_0_140px_#c026d3]"
+        initial={{ scale: 0, opacity: 0, y: 50, rotate: -45 }}
+        animate={{ scale: 1, opacity: 1, y: 0, rotate: 0 }}
+        whileHover={{ scale: 1.15, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        className="fixed bottom-8 right-8 z-[99999] w-20 h-20 rounded-2xl bg-[#010614]/80 backdrop-blur-xl border border-cyan-500/50 flex items-center justify-center cursor-pointer shadow-[0_0_30px_rgba(34,211,238,0.3),inset_0_0_20px_rgba(34,211,238,0.2)] group"
         onClick={() => {
+          setTransmissionCompleted(false);
           setPhase('dossier-reopen');
           audioRef.current?.init();
           audioRef.current?.loadVoices();
         }}
       >
-        <div className="text-5xl z-10 relative">📬</div>
-        <div className="absolute inset-0 rounded-full border-2 border-white/40 animate-[spin_6s_linear_infinite]" />
-        <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold animate-ping">!</div>
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute inset-[-2px] rounded-2xl bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 opacity-70 group-hover:opacity-100 blur-[2px]" style={{ backgroundSize: '200% 200%', animation: 'border-rotate 3s linear infinite' }} />
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full bg-[#010308] rounded-2xl">
+          <Mail className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_10px_#22d3ee] group-hover:scale-110 transition-transform duration-300" />
+          <span className="text-[9px] font-mono font-bold text-cyan-300 mt-1 tracking-widest">DOSSIER</span>
+        </div>
+        
+        {/* Pulsing notification dot */}
+        <div className="absolute -top-2 -right-2 w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center shadow-[0_0_15px_#22d3ee]">
+          <span className="absolute w-full h-full bg-cyan-400 rounded-full animate-ping opacity-75" />
+          <div className="w-2 h-2 bg-white rounded-full" />
+        </div>
       </motion.div>
     );
   }
@@ -827,40 +874,64 @@ export default function CommanderTransmission() {
             />
             <div className="cyber-grid-3d absolute inset-0 pointer-events-none opacity-15" />
 
-            {/* INCOMING PANEL — cyan sci-fi style */}
+            {/* INCOMING PANEL — High-end sci-fi style */}
             {phase === 'incoming' && (
               <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 20 }}
-                className="text-center"
+                transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+                className="text-center relative z-50"
+                style={{ perspective: '1000px' }}
               >
-                <div className="mx-auto max-w-sm border border-cyan-500/50 rounded-2xl p-8 bg-black/70 backdrop-blur-xl shadow-[0_0_60px_rgba(0,242,254,0.2),inset_0_0_30px_rgba(0,242,254,0.05)]">
-                  <div className="flex items-center justify-center gap-3 mb-4">
-                    <SignalHigh className="w-7 h-7 text-cyan-400" style={{ animation: 'incoming-pulse 1.2s ease-in-out infinite' }} />
-                    <span className="text-xs font-mono tracking-[5px] text-cyan-400/70 uppercase">Secure Channel</span>
+                {/* Decorative background circle */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
+                
+                <div 
+                  className="mx-auto max-w-md border-2 border-cyan-500/30 rounded-2xl p-10 bg-[#010308]/90 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,242,254,0.15),inset_0_0_40px_rgba(0,242,254,0.1)] relative overflow-hidden group"
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  {/* Scanline / Grid overlay */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(0,242,254,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,242,254,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-20" />
+                  <div className="absolute left-0 w-full h-[20%] bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent pointer-events-none" style={{ animation: 'scan-beam 3s linear infinite' }} />
+                  
+                  <div className="flex items-center justify-center gap-4 mb-6 relative z-10" style={{ transform: 'translateZ(20px)' }}>
+                    <SignalHigh className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_12px_#22d3ee]" style={{ animation: 'incoming-pulse 1s ease-in-out infinite' }} />
+                    <span className="text-sm font-mono tracking-[0.4em] text-cyan-300 uppercase font-bold drop-shadow-[0_0_8px_#22d3ee]">Secure Channel</span>
                   </div>
-                  <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent mb-6" />
-                  <h1 className="text-2xl font-mono uppercase tracking-[3px] text-cyan-300">
-                    INCOMING TRANSMISSION
-                  </h1>
-                  <p className="text-cyan-500/60 mt-2 text-xs font-mono tracking-[4px]">FROM: CMDR. THANH HUY</p>
-                  <div className="mt-5 flex justify-center gap-2">
-                    {[0.4, 0.7, 1.0].map((delay, i) => (
+                  
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent mb-8 opacity-50 relative z-10" />
+                  
+                  <div className="relative z-10" style={{ transform: 'translateZ(40px)' }}>
+                    <h1 className="text-3xl font-black font-mono uppercase tracking-[0.15em] text-white drop-shadow-[0_0_20px_#22d3ee]">
+                      INCOMING TRANSMISSION
+                    </h1>
+                    <p className="text-cyan-400/80 mt-4 text-[11px] font-mono tracking-[0.5em] font-bold">FROM: CMDR. THANH HUY</p>
+                  </div>
+                  
+                  <div className="mt-8 flex justify-center gap-3 relative z-10" style={{ transform: 'translateZ(10px)' }}>
+                    {[0.2, 0.4, 0.6].map((delay, i) => (
                       <div
                         key={i}
-                        className="w-2 h-2 rounded-full bg-cyan-400"
-                        style={{ animation: `incoming-pulse 0.8s ease-in-out ${delay}s infinite` }}
+                        className="w-3 h-1 rounded-full bg-cyan-400 shadow-[0_0_10px_#22d3ee]"
+                        style={{ animation: `incoming-pulse 1.2s ease-in-out ${delay}s infinite` }}
                       />
                     ))}
                   </div>
+                  
+                  {/* Hex decoration */}
+                  <div className="absolute bottom-3 right-5 text-[9px] font-mono text-cyan-500/30 font-bold tracking-widest pointer-events-none">SYS.OP: NORMAL</div>
+                  <div className="absolute top-3 left-5 text-[9px] font-mono text-cyan-500/30 font-bold tracking-widest pointer-events-none">ENC: AES-256</div>
                 </div>
+
                 <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(34,211,238,0.5)' }}
                   whileTap={{ scale: 0.95 }}
                   onClick={startTransmission}
-                  className="mt-8 px-10 py-4 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 font-mono text-lg rounded-xl border border-cyan-500/40 hover:border-cyan-400/70 shadow-lg shadow-cyan-500/10 tracking-[3px] transition-all"
+                  onMouseEnter={() => audioRef.current?.playHover()}
+                  className="mt-10 px-12 py-5 bg-[#010614] text-cyan-300 font-mono text-xl font-bold rounded-xl border-2 border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.2),inset_0_0_15px_rgba(34,211,238,0.1)] tracking-[0.2em] transition-all relative overflow-hidden group hover:bg-cyan-900/30"
                 >
-                  KẾT NỐI NGAY
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-400/30 to-cyan-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  <span className="relative z-10 drop-shadow-[0_0_8px_#22d3ee]">KẾT NỐI NGAY</span>
                 </motion.button>
               </motion.div>
             )}
@@ -1101,10 +1172,11 @@ export default function CommanderTransmission() {
                         </div>
 
                         {/* 3 NÚT HÀNH ĐỘNG */}
-                        <div className="border-t border-white/10 p-6 md:p-8 flex flex-wrap gap-4 relative z-50">
+                        <div className="border-t border-cyan-500/20 p-6 md:p-8 flex flex-wrap gap-4 relative z-50 bg-[#01030a]/40">
                           <motion.a
                             href="/CV_TranThanhHuy.pdf"
                             download="CV_TranThanhHuy_2026.pdf"
+                            onMouseEnter={() => audioRef.current?.playHover()}
                             onClick={(e) => {
                               e.preventDefault();
                               audioRef.current?.playDownloadSuccess();
@@ -1129,41 +1201,39 @@ export default function CommanderTransmission() {
                               link.click();
                             }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-bold py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(34,211,238,0.4)] cursor-pointer"
+                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-black py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(34,211,238,0.6)] cursor-pointer group relative overflow-hidden"
                           >
-                            <Download className="w-5 h-5" /> TẢI DOSSIER (CV)
+                            <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                            <Download className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-300" /> <span className="tracking-[0.1em]">TẢI DOSSIER (CV)</span>
                           </motion.a>
 
                           <motion.button
+                            onMouseEnter={() => audioRef.current?.playHover()}
                             onClick={() => {
                               collapseToMailbox();
                               setTimeout(() => { window.location.href = '/creative'; }, 800);
                             }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="group flex-1 min-w-[250px] flex items-center justify-between px-6 py-4 bg-[#010614] border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold rounded-2xl transition-all duration-300 shadow-[0_0_20px_rgba(0,242,254,0.1)] hover:shadow-[0_0_40px_rgba(0,242,254,0.3)] relative overflow-hidden"
+                            className="group flex-1 min-w-[250px] flex items-center justify-between px-6 py-4 bg-[#010614] border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold rounded-2xl transition-all duration-300 shadow-[0_0_20px_rgba(0,242,254,0.1)] hover:shadow-[0_0_40px_rgba(0,242,254,0.4)] relative overflow-hidden"
                           >
-                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/20 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <Globe className="w-6 h-6 text-blue-400 group-hover:rotate-180 transition-transform duration-700 ease-in-out" />
-                            <span className="tracking-[2px] uppercase relative z-10">TIẾP TỤC KHÁM PHÁ</span>
+                            <span className="tracking-[3px] uppercase relative z-10 drop-shadow-[0_0_8px_#22d3ee]">TIẾP TỤC KHÁM PHÁ</span>
                             <Rocket className="w-6 h-6 text-cyan-400 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform duration-300" />
                           </motion.button>
 
                           <motion.button
+                            onMouseEnter={() => audioRef.current?.playHover()}
                             onClick={() => {
-                              audioRef.current?.playWarp();
-                              const flash = document.createElement('div');
-                              flash.style.cssText =
-                                'position:fixed;inset:0;background:white;z-index:999999;animation:impactFlashAnim 0.6s ease-out forwards;pointer-events:none;';
-                              document.body.appendChild(flash);
-                              setPhase('collapsing');
-                              setTimeout(() => { window.location.href = '/'; }, 600);
+                              collapseToMailbox();
+                              setTimeout(() => { window.location.href = '/'; }, 800);
                             }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 border border-white/20 hover:border-white/40 text-white/70 hover:text-white font-mono py-4 rounded-2xl transition-all duration-300 bg-white/5 hover:bg-white/10 group"
+                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 border border-white/20 hover:border-red-500/60 text-white/70 hover:text-red-400 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] font-mono py-4 rounded-2xl transition-all duration-300 bg-white/5 hover:bg-red-500/10 group relative overflow-hidden"
                           >
                             <RefreshCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" /> 
-                            <span className="tracking-widest uppercase">THAY ĐỔI LỰA CHỌN</span>
+                            <span className="tracking-widest uppercase font-bold relative z-10">THAY ĐỔI LỰA CHỌN</span>
                           </motion.button>
                         </div>
                       </div>

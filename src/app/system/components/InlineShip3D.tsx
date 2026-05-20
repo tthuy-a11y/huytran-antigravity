@@ -1,88 +1,47 @@
 'use client';
 
-import React, { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Group } from 'three';
-import { Trail } from '@react-three/drei';
+import React, { useRef, useState, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { Float, Environment, ContactShadows, PresentationControls, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
-import { MathUtils } from 'three';
+import { ShipShape } from './Ship3D';
 
-export type ShipShape = 'nexus' | 'uix' | 'prmpt' | 'phys' | 'cloud' | 'shield' | string;
-
-interface Ship3DProps {
-  id: number;
-  shape: ShipShape;
+interface InlineShip3DProps {
   color: string;
-  position: [number, number, number];
-  isActive: boolean;
-  isRushing: boolean;
-  isWarping: boolean;
-  shipName: string;
-  code: string;
-  onClick: (id: number) => void;
-  onHover: (id: number, state: boolean) => void;
+  shape: ShipShape | string;
+  isHovered?: boolean;
 }
 
-export default function Ship3D({
-  id,
-  shape,
-  color,
-  position,
-  isActive,
-  isRushing,
-  isWarping,
-  onClick,
-  onHover,
-}: Ship3DProps) {
-  const groupRef = useRef<Group>(null);
-  const engineRef = useRef<THREE.PointLight>(null);
+function ShipModel({ color, shape, isHovered }: InlineShip3DProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const targetRotation = useRef<THREE.Euler>(new THREE.Euler(0.3, 0, 0));
   
-  // Deterministic offset per ship id
-  const floatOffset = useMemo(() => ((id * 2654435761) >>> 0) / 4294967296 * 100, [id]);
-
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
-    const t = state.clock.elapsedTime;
-
-    if (isRushing) {
-      groupRef.current.position.z -= 80 * delta;
-      groupRef.current.rotation.z += 8 * delta;
-      if (engineRef.current) engineRef.current.intensity = 8;
-    } else if (isActive) {
-      const targetZ = isWarping ? 15 : 10;
-      groupRef.current.position.lerp(new THREE.Vector3(0, -1, targetZ), delta * 4);
-      groupRef.current.rotation.x = MathUtils.lerp(groupRef.current.rotation.x, 0.2, delta * 3);
-      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, t * 0.5, delta * 2);
-      groupRef.current.rotation.z = MathUtils.lerp(groupRef.current.rotation.z, 0, delta * 3);
-      if (engineRef.current) engineRef.current.intensity = 4;
-    } else {
-      const targetZ = isWarping ? position[2] - 50 : position[2];
-      groupRef.current.position.lerp(
-        new THREE.Vector3(position[0], position[1] + Math.sin(t * 1.5 + floatOffset) * 0.5, targetZ),
-        delta * 2
-      );
-      groupRef.current.rotation.x = MathUtils.lerp(
-        groupRef.current.rotation.x,
-        Math.sin(t * 0.8 + floatOffset) * 0.05,
-        delta * 2
-      );
-      groupRef.current.rotation.y = MathUtils.lerp(groupRef.current.rotation.y, 0, delta * 2);
-      groupRef.current.rotation.z = MathUtils.lerp(
-        groupRef.current.rotation.z,
-        Math.sin(t + floatOffset) * 0.1,
-        delta * 2
-      );
-      if (engineRef.current) {
-        engineRef.current.intensity = isWarping ? 10 : 1.5 + Math.sin(t * 5 + floatOffset) * 0.5;
+    if (groupRef.current) {
+      if (isHovered) {
+        // Spin when hovered to show off the 3D model
+        targetRotation.current.y += delta * 2;
+        targetRotation.current.z = Math.sin(state.clock.elapsedTime * 8) * 0.1;
+        targetRotation.current.x = THREE.MathUtils.lerp(targetRotation.current.x, 0.5, delta * 5);
+      } else {
+        // Return to standard display angle
+        targetRotation.current.y = THREE.MathUtils.lerp(targetRotation.current.y, 0, delta * 3);
+        targetRotation.current.z = THREE.MathUtils.lerp(targetRotation.current.z, 0, delta * 3);
+        targetRotation.current.x = THREE.MathUtils.lerp(targetRotation.current.x, 0.3, delta * 3);
       }
+      
+      groupRef.current.rotation.x = targetRotation.current.x;
+      groupRef.current.rotation.y = targetRotation.current.y;
+      groupRef.current.rotation.z = targetRotation.current.z;
     }
   });
 
-  // Premium PBR Materials (Memoized)
+  // Premium PBR Materials (Memoized to prevent R3F crashes)
   const bodyMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#1a1c29', metalness: 0.9, roughness: 0.1, envMapIntensity: 2 }), []);
   const secondaryMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#0d0f18', metalness: 0.7, roughness: 0.4 }), []);
   const glowMat = useMemo(() => new THREE.MeshBasicMaterial({ color: color, toneMapped: false }), [color]);
-
+  
+  // Render specific geometries based on ship shape to showcase variety
   const renderGeometry = () => {
     switch(shape) {
       case 'nexus': // AI - Sleek Arrow
@@ -94,6 +53,7 @@ export default function Ship3D({
             <mesh position={[0, 0.1, -0.5]} scale={[0.5, 0.2, 1.5]} material={glowMat}>
               <boxGeometry />
             </mesh>
+            {/* Energy Core */}
             <mesh position={[0, 0, -2.5]} material={glowMat}>
               <sphereGeometry args={[0.3]} />
             </mesh>
@@ -102,13 +62,16 @@ export default function Ship3D({
       case 'uix': // WEB - Agile Delta
         return (
           <group>
+            {/* Chassis */}
             <mesh rotation={[Math.PI/2, 0, 0]} scale={[1, 1.5, 0.2]} material={bodyMat}>
               <cylinderGeometry args={[0, 1.5, 3, 3]} />
             </mesh>
+            {/* Cockpit */}
             <mesh position={[0, 0.2, 0.5]} scale={[0.4, 0.3, 1]}>
               <sphereGeometry args={[1, 16, 16]} />
               <meshStandardMaterial color="#000" metalness={1} roughness={0} />
             </mesh>
+            {/* Wing Thrusters */}
             <mesh position={[-1, 0, -1.2]} material={glowMat}>
               <boxGeometry args={[0.2, 0.2, 0.5]} />
             </mesh>
@@ -140,6 +103,7 @@ export default function Ship3D({
             <mesh position={[0, 0.6, 0.5]} scale={[1, 0.4, 1.5]} material={secondaryMat}>
               <boxGeometry />
             </mesh>
+            {/* Quantum Cores */}
             <mesh position={[-0.8, 0.2, -0.5]} material={glowMat}>
               <sphereGeometry args={[0.3]} />
             </mesh>
@@ -154,6 +118,7 @@ export default function Ship3D({
             <mesh scale={[2.5, 0.5, 3]} material={secondaryMat}>
               <boxGeometry />
             </mesh>
+            {/* Data Banks */}
             {[-1, 0, 1].map((x, i) => (
               <mesh key={i} position={[x, 0.3, 0]} scale={[0.2, 0.2, 2]} material={glowMat}>
                 <boxGeometry />
@@ -180,55 +145,64 @@ export default function Ship3D({
         );
       default:
         return (
-          <mesh material={bodyMat}>
-            <boxGeometry args={[2, 1, 3]} />
-          </mesh>
+          <group>
+            <mesh material={bodyMat}>
+              <boxGeometry args={[1, 1, 1]} />
+            </mesh>
+          </group>
         );
     }
   };
 
   return (
-    <group
-      ref={groupRef}
-      position={position}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick(id);
-      }}
-      onPointerEnter={(e) => {
-        e.stopPropagation();
-        onHover(id, true);
-      }}
-      onPointerLeave={(e) => {
-        e.stopPropagation();
-        onHover(id, false);
-      }}
-      scale={isActive ? 1.5 : 1}
-    >
-      {/* Ship detailed hull */}
+    <group ref={groupRef} scale={isHovered ? 1.2 : 1}>
       {renderGeometry()}
-
-      {/* Engine and Trail */}
-      <group position={[0, 0, -2.5]}>
-        <pointLight ref={engineRef} color={color} intensity={2} distance={20} />
-        
-        <mesh>
-          <sphereGeometry args={[isActive ? 0.6 : 0.2, 16, 16]} />
-          <meshBasicMaterial color={color} transparent opacity={isActive ? 0.8 : 0.3} />
-        </mesh>
-
-        <Trail
-          width={isWarping ? 3 : isActive ? 1.5 : 0.5}
-          length={isWarping || isRushing ? 30 : 8}
-          color={new THREE.Color(color)}
-          attenuation={(t) => t * t}
-        >
-          <mesh>
-            <sphereGeometry args={[0.1]} />
-            <meshBasicMaterial opacity={0} transparent />
-          </mesh>
-        </Trail>
-      </group>
+      {/* Engine Exhaust Glow */}
+      <mesh position={[0, 0, -2.5]}>
+        <sphereGeometry args={[isHovered ? 0.6 : 0.2, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={isHovered ? 0.8 : 0.3} />
+      </mesh>
+      
+      {/* Particles around the ship */}
+      {isHovered && (
+        <Sparkles count={50} scale={4} size={4} speed={0.4} color={color} opacity={0.8} />
+      )}
     </group>
+  );
+}
+
+export default function InlineShip3D({ color, shape }: InlineShip3DProps) {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <div 
+      className="w-full h-full absolute inset-0 z-30 transition-all duration-300"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
+      style={{ cursor: 'pointer' }}
+    >
+      <Canvas camera={{ position: [0, 3, 7], fov: 45 }} gl={{ antialias: true, alpha: true }}>
+        <ambientLight intensity={0.5} />
+        <spotLight position={[10, 10, 10]} angle={0.2} penumbra={1} intensity={2} castShadow />
+        <pointLight position={[-10, -10, -10]} intensity={1} color={color} />
+        
+        <PresentationControls 
+          global 
+          rotation={[0, 0, 0]} 
+          polar={[-0.4, 0.2]} 
+          azimuth={[-0.5, 0.5]}
+        >
+          <Float rotationIntensity={1} floatIntensity={1} speed={2}>
+            <ShipModel color={color} shape={shape} isHovered={hovered} />
+          </Float>
+        </PresentationControls>
+        
+        {/* Environment reflection for metals */}
+        <Environment preset="city" />
+        
+        {/* Soft shadow underneath */}
+        <ContactShadows position={[0, -2, 0]} opacity={hovered ? 0.8 : 0.4} scale={10} blur={2} far={4} color={color} />
+      </Canvas>
+    </div>
   );
 }
