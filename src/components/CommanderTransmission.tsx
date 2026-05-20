@@ -246,6 +246,20 @@ class TransmissionAudio {
     noise.start();
   }
 
+  playClick() {
+    if (!this.audioContext) return;
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(440, this.audioContext.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, this.audioContext.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.08, this.audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.12);
+    osc.connect(gain).connect(this.audioContext.destination);
+    osc.start();
+    osc.stop(this.audioContext.currentTime + 0.15);
+  }
+
   dispose() {
     this.stopBGM();
     this.stopSpeaking();
