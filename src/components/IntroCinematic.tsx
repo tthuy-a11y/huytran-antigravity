@@ -119,9 +119,21 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     const video = videoRef.current;
     if (!video) return;
 
+    // Reset and play video
     video.src = INTRO_CLIPS[clipIdx];
     video.load();
-    video.play().catch(() => {});
+    const playPromise = video.play();
+    
+    if (playPromise !== undefined) {
+      playPromise.catch((error) => {
+        console.warn('[IntroCinematic] Playback failed:', error);
+        // If the video fails to play (e.g. autoplay block, missing file), skip to next clip or dissolve
+        // We use a short timeout to prevent instant skipping that might look jarring
+        setTimeout(() => {
+          handleVideoEnded();
+        }, 1000);
+      });
+    }
 
     setSubtitle('');
     const text = SUBTITLES[clipIdx];
@@ -135,7 +147,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       }
     }, 48);
     return () => clearInterval(interval);
-  }, [clipIdx, phase, isTransitioning]);
+  }, [clipIdx, phase, isTransitioning, handleVideoEnded]);
 
   // Hotkeys: ESC, SPACE, ENTER
   useEffect(() => {
@@ -183,7 +195,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       `}</style>
 
       <div className="fixed inset-0 z-[99999] bg-[#010204]/95 backdrop-blur-3xl flex items-center justify-center overflow-hidden">
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
 
           {/* ===== PHASE 1: PROMPT GATE ===== */}
           {phase === 'prompt' && (
@@ -231,7 +243,13 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
 
           {/* ===== PHASE 2 & 3: VIDEO PLAYER + DISSOLVE ===== */}
           {(phase === 'playing' || phase === 'dissolving') && (
-            <div className="absolute inset-0 flex items-center justify-center p-4 md:p-8 w-full h-full">
+            <motion.div
+              key="player"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35 }}
+              className="absolute inset-0 flex items-center justify-center p-4 md:p-8 w-full h-full"
+            >
               <div
                 className={`relative w-full max-w-7xl aspect-video rounded-3xl overflow-hidden border-4 border-cyan-400/70 shadow-[0_0_130px_rgba(0,242,254,0.2)] ${
                   phase === 'dissolving' ? 'animate-dissolve' : ''
@@ -256,6 +274,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   ref={videoRef}
                   playsInline
                   preload="auto"
+                  muted
                   className="w-full h-full object-cover"
                   onEnded={handleVideoEnded}
                   onError={(e) => console.warn('[IntroCinematic] Video error:', e)}
@@ -341,7 +360,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   ))}
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
 
         </AnimatePresence>
