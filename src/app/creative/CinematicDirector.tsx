@@ -1,16 +1,11 @@
 'use client';
 
-import { useEffect, useRef, Suspense, memo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useRef, useState, Suspense } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, AdaptiveEvents, Preload, Stats, PerformanceMonitor } from '@react-three/drei';
-import { useCanvasStore } from '@/store/useCanvasStore';
 import * as THREE from 'three';
 
-import {
-  useCinematicStore,
-  CINEMATIC_DURATION,
-  BIG_BANG_TIME,
-} from '@/app/creative/lib/cinematicStore';
+import { useCinematicStore } from '@/app/creative/lib/cinematicStore';
 
 // Side-effect import: registers <plasmaSunMaterialImpl> + <coronaMaterialImpl>
 import '@/app/creative/shaders/PlasmaSunMaterial';
@@ -238,35 +233,6 @@ function AudioInit() {
 }
 
 // ============================================================
-// CINEMATIC SCENE 3D — injected into the global Canvas via useCanvasStore
-// Self-contained: reads all state from useCinematicStore directly.
-// ============================================================
-const CinematicScene3D = memo(function CinematicScene3D() {
-  const hasEnteredSystem = useCinematicStore((s) => s.hasEnteredSystem);
-  const quality = useCinematicStore((s) => s.quality);
-  const showStats =
-    process.env.NODE_ENV === 'development' &&
-    typeof window !== 'undefined' &&
-    window.location.search.includes('stats');
-
-  return (
-    <Suspense fallback={null}>
-      {!hasEnteredSystem && <MasterClock onFinished={() => {}} />}
-      {!hasEnteredSystem && <CameraRig />}
-      <SceneBackdrop />
-      {!hasEnteredSystem && <CinematicScenes />}
-      {hasEnteredSystem && <InteractiveSystem />}
-      <DynamicPostFx />
-      <Preload all />
-      <AdaptiveDpr pixelated={false} />
-      <AdaptiveEvents />
-      <PerformanceMonitor />
-      {showStats && <Stats />}
-    </Suspense>
-  );
-});
-
-// ============================================================
 // MAIN DIRECTOR COMPONENT
 // ============================================================
 export interface CinematicDirectorProps {
@@ -276,20 +242,118 @@ export interface CinematicDirectorProps {
   showStats?: boolean;
 }
 
+// ============================================================
+// BOOT SEQUENCE — pre-cinematic loading overlay (fades into Canvas)
+// ============================================================
+function BootSequence({ onReady }: { onReady: () => void }) {
+  const [step, setStep] = useState(0);
+  const lines = [
+    '> KẾT NỐI TRẠM ĐIỀU KHIỂN...',
+    '> ĐỒNG BỘ HỆ TRỤC KHÔNG-THỜI-GIAN...',
+    '> NẠP DỮ LIỆU 14.8 TỶ NĂM...',
+    '> KHỞI ĐỘNG TRÌNH CHIẾU ĐIỆN ẢNH...',
+  ];
+
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    lines.forEach((_, i) => {
+      timers.push(setTimeout(() => setStep(i + 1), 280 * (i + 1)));
+    });
+    timers.push(setTimeout(onReady, 280 * (lines.length + 1)));
+    return () => timers.forEach(clearTimeout);
+  }, [onReady]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, transition: { duration: 0.6 } }}
+      className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center font-mono text-cyan-400 pointer-events-none"
+    >
+      {/* Scanline overlay */}
+      <div
+        aria-hidden
+        className="absolute inset-0 opacity-[0.06] mix-blend-overlay pointer-events-none"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 3px)',
+        }}
+      />
+      <div className="text-xs md:text-sm tracking-[0.4em] max-w-md w-full px-6 space-y-3">
+        {lines.slice(0, step).map((l, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center justify-between"
+          >
+            <span className="opacity-90">{l}</span>
+            <span className="text-cyan-300/80">[OK]</span>
+          </motion.div>
+        ))}
+      </div>
+      <motion.div
+        className="mt-12 text-xs tracking-[0.5em] text-cyan-300/60"
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.2, repeat: Infinity }}
+      >
+        ━━━ ANTIGRAVITY OS v2.6 ━━━
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ============================================================
+// AUDIO PROMPT — appears if user hasn't interacted, prompting for audio init
+// ============================================================
+function AudioPrompt({ onEnable, onDismiss }: { onEnable: () => void; onDismiss: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/70 backdrop-blur-2xl border border-cyan-400/40 shadow-[0_0_40px_rgba(0,242,254,0.25)]"
+    >
+      <motion.div
+        animate={{ scale: [1, 1.18, 1] }}
+        transition={{ repeat: Infinity, duration: 1.1 }}
+        className="text-cyan-300"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
+      </motion.div>
+      <span className="text-cyan-100 text-sm font-mono tracking-widest">TRẢI NGHIỆM TỐT NHẤT VỚI ÂM THANH</span>
+      <button
+        onClick={onEnable}
+        className="ml-2 px-4 py-1.5 rounded-xl bg-cyan-400 text-black font-bold text-xs tracking-widest uppercase hover:bg-cyan-300 transition-colors"
+      >
+        BẬT
+      </button>
+      <button
+        onClick={onDismiss}
+        className="px-2 py-1.5 rounded-xl text-white/40 hover:text-white text-xs"
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
+    </motion.div>
+  );
+}
+
 export function CinematicDirector({
   onComplete,
   showStats = false,
 }: CinematicDirectorProps) {
+  const quality = useCinematicStore((s) => s.quality);
   const hasEnteredSystem = useCinematicStore((s) => s.hasEnteredSystem);
   const isTransitioning = useCinematicStore((s) => s.isTransitioning);
   const enterSystem = useCinematicStore((s) => s.enterSystem);
-  const setScene = useCanvasStore((s) => s.setScene);
 
-  // Inject cinematic scene into the global Canvas; eject on unmount
-  useEffect(() => {
-    setScene(CinematicScene3D, { position: [0, 0, 22], fov: 55, near: 0.1, far: 500 });
-    return () => setScene(null);
-  }, [setScene]);
+  const [bootDone, setBootDone] = useState(false);
+  const [audioPromptVisible, setAudioPromptVisible] = useState(true);
 
   useEffect(() => {
     return () => disposeAllCachedGeometries();
@@ -312,48 +376,109 @@ export function CinematicDirector({
     return unsub;
   }, [hasEnteredSystem, enterSystem, onComplete]);
 
+  const handleEnableAudio = () => {
+    audioEngine.init?.();
+    setAudioPromptVisible(false);
+  };
+
+  const showStatsOverlay =
+    showStats ||
+    (process.env.NODE_ENV === 'development' &&
+      typeof window !== 'undefined' &&
+      window.location.search.includes('stats'));
+
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
+        background: '#000000',
         overflow: 'hidden',
-        pointerEvents: 'none',
       }}
     >
       <AudioInit />
 
-      {/* 2D HTML overlay — dialogue, skip button, mute, progress */}
-      <div style={{ pointerEvents: 'auto' }}>
-        <AnimatePresence mode="wait">
-          {!hasEnteredSystem && !isTransitioning && (
-            <motion.div
-              key="cinematic-ui"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
-            >
-              <CinematicUI />
-            </motion.div>
-          )}
+      {/* ═══ Pre-cinematic boot sequence ═══ */}
+      <AnimatePresence>
+        {!bootDone && <BootSequence key="boot" onReady={() => setBootDone(true)} />}
+      </AnimatePresence>
 
-          {hasEnteredSystem && (
-            <motion.div
-              key="interactive-ui"
-              initial={{ opacity: 0, filter: "blur(12px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
-            >
-              <InteractiveUI />
-            </motion.div>
-          )}
-        </AnimatePresence>
+      {/* ═══ OWN 3D CANVAS (creative is isolated from global Canvas) ═══ */}
+      <Canvas
+        gl={{
+          antialias: quality.msaa,
+          alpha: false,
+          powerPreference: 'high-performance',
+          stencil: false,
+          depth: true,
+          preserveDrawingBuffer: false,
+        }}
+        dpr={quality.dpr}
+        camera={{ position: [0, 0, 22], fov: 55, near: 0.1, far: 500 }}
+        shadows={quality.shadows}
+        frameloop="always"
+        style={{ position: 'absolute', inset: 0, touchAction: 'none' }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.15;
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+        }}
+      >
+        <Suspense fallback={null}>
+          {!hasEnteredSystem && <MasterClock onFinished={() => {}} />}
+          {!hasEnteredSystem && <CameraRig />}
+          <SceneBackdrop />
+          {!hasEnteredSystem && <CinematicScenes />}
+          {hasEnteredSystem && <InteractiveSystem />}
+          <DynamicPostFx />
+          <Preload all />
+        </Suspense>
+        <AdaptiveDpr pixelated={false} />
+        <AdaptiveEvents />
+        <PerformanceMonitor />
+        {showStatsOverlay && <Stats />}
+      </Canvas>
 
-        <AnimatePresence>
-          {isTransitioning && <TransitionSkeleton key="skeleton" />}
-        </AnimatePresence>
-      </div>
+      {/* ═══ Audio enable prompt (autoplay policy workaround) ═══ */}
+      <AnimatePresence>
+        {bootDone && audioPromptVisible && !hasEnteredSystem && (
+          <AudioPrompt
+            key="audio-prompt"
+            onEnable={handleEnableAudio}
+            onDismiss={() => setAudioPromptVisible(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ═══ 2D overlay (dialogue, controls, progress) ═══ */}
+      <AnimatePresence mode="wait">
+        {bootDone && !hasEnteredSystem && !isTransitioning && (
+          <motion.div
+            key="cinematic-ui"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.8, ease: 'easeInOut' } }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+          >
+            <CinematicUI />
+          </motion.div>
+        )}
+
+        {hasEnteredSystem && (
+          <motion.div
+            key="interactive-ui"
+            initial={{ opacity: 0, filter: 'blur(12px)' }}
+            animate={{ opacity: 1, filter: 'blur(0px)' }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+          >
+            <InteractiveUI />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isTransitioning && <TransitionSkeleton key="skeleton" />}
+      </AnimatePresence>
     </div>
   );
 }

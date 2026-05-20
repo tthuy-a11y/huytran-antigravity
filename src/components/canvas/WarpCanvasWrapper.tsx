@@ -8,7 +8,7 @@ import { useCanvasStore } from '@/store/useCanvasStore';
 import GlobalWarpScene from './GlobalWarpScene';
 
 // Routes that mount their own R3F Canvas — disable the global one to avoid dual WebGL context
-const ROUTES_WITH_OWN_CANVAS = ['/system'];
+const ROUTES_WITH_OWN_CANVAS = ['/system', '/creative'];
 
 // =============================================================================
 // ERROR BOUNDARY — prevents R3F errors from crashing the app
