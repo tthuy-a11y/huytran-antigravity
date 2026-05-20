@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, FastForward, ShieldAlert, Terminal } from 'lucide-react';
+import { Play, FastForward, ShieldAlert, Terminal, Volume2, VolumeX } from 'lucide-react';
 
 const INTRO_CLIPS = [
   '/videos/intro/1.mp4',
@@ -27,6 +27,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const [clipIdx, setClipIdx] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [subtitle, setSubtitle] = useState('');
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const activeTimeouts = useRef<NodeJS.Timeout[]>([]);
@@ -113,27 +115,44 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     }
   }, [clipIdx, playSfx, triggerDissolve]);
 
+  // Sync mute state to video element
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.muted = isMuted;
+  }, [isMuted]);
+
+  const handleUnblock = useCallback(() => {
+    setAudioBlocked(false);
+    setIsMuted(false);
+    if (videoRef.current) videoRef.current.muted = false;
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setAudioBlocked(false);
+    setIsMuted((m) => {
+      if (videoRef.current) videoRef.current.muted = !m;
+      return !m;
+    });
+  }, []);
+
   // Play video + typewriter subtitle
   useEffect(() => {
     if (phase !== 'playing' || isTransitioning) return;
     const video = videoRef.current;
     if (!video) return;
 
-    // Reset and play video
     video.src = INTRO_CLIPS[clipIdx];
+    video.muted = isMuted;
     video.load();
-    const playPromise = video.play();
-    
-    if (playPromise !== undefined) {
-      playPromise.catch((error) => {
-        console.warn('[IntroCinematic] Playback failed:', error);
-        // If the video fails to play (e.g. autoplay block, missing file), skip to next clip or dissolve
-        // We use a short timeout to prevent instant skipping that might look jarring
-        setTimeout(() => {
-          handleVideoEnded();
-        }, 1000);
+
+    // Try with audio first; if blocked, fall back to muted
+    video.play().catch(() => {
+      video.muted = true;
+      setIsMuted(true);
+      setAudioBlocked(true);
+      video.play().catch(() => {
+        setTimeout(handleVideoEnded, 1000);
       });
-    }
+    });
 
     setSubtitle('');
     const text = SUBTITLES[clipIdx];
@@ -147,7 +166,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       }
     }, 48);
     return () => clearInterval(interval);
-  }, [clipIdx, phase, isTransitioning, handleVideoEnded]);
+  }, [clipIdx, phase, isTransitioning, isMuted, handleVideoEnded]);
 
   // Hotkeys: ESC, SPACE, ENTER
   useEffect(() => {
@@ -312,6 +331,32 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                         }`}
                       />
                     ))}
+                  </div>
+                )}
+
+                {/* Mute toggle + audio-blocked prompt */}
+                {phase === 'playing' && (
+                  <div className="absolute top-8 right-8 z-50 flex flex-col items-end gap-2">
+                    {audioBlocked && (
+                      <motion.button
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={handleUnblock}
+                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-400/60 hover:border-yellow-400 text-yellow-300 hover:text-white rounded-2xl font-mono text-xs tracking-widest backdrop-blur-xl transition-all animate-pulse"
+                      >
+                        <VolumeX className="w-4 h-4" /> BẤM ĐỂ BẬT ÂM THANH
+                      </motion.button>
+                    )}
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      whileHover={{ scale: 1.1 }}
+                      onClick={toggleMute}
+                      className="p-3 bg-black/60 backdrop-blur-xl border border-white/20 hover:border-cyan-400/60 text-white/60 hover:text-cyan-300 rounded-2xl transition-all"
+                      title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+                    >
+                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </motion.button>
                   </div>
                 )}
 
