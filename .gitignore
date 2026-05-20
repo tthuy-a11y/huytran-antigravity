@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI assistant state
+.claude/
+
+# Source asset folders (large media files — copy to public/ manually)
+Commander/
+Mở đầu/
+
+# Dev/planning files
+clean_emoji.py
+generate_sfx.py
+extract_project.js
+extracted.txt
+TongHopDuAn3D.md
+*.docx
+Vấn đề.MD

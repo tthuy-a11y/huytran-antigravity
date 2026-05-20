@@ -3,16 +3,26 @@
 import React, { useEffect, useState, useRef, useCallback, memo, useMemo } from 'react';
 import { ArrowLeft, Zap, Database, GitBranch, Cpu, Target, Activity, Waves, Lock, X, Fingerprint, Orbit, Play, TerminalSquare, Rocket, ShieldAlert, CheckCircle2, AlertTriangle, Globe } from 'lucide-react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+const DynamicFleetSystem3D = dynamic(() => import('./components/FleetSystem3D'), { ssr: false });
 
 // ============================================================================
 // 1. TYPESCRIPT INTERFACES
 // ============================================================================
 type ShipStats = [number, number, number, number];
-type ShipShape = 'sleek' | 'agile' | 'heavy' | 'command';
+type ShipShape = 'nexus' | 'uix' | 'prmpt' | 'phys' | 'cloud' | 'shield';
 interface FleetShip {
   id: number; icon: React.ElementType; code: string; title: string; hex: string; stats: ShipStats; items: string[]; link: string; shape: ShipShape; shipName: string;
 }
-const getClipPath = (s: ShipShape) => ({ sleek: 'polygon(50% 0%, 100% 80%, 80% 100%, 50% 90%, 20% 100%, 0% 80%)', agile: 'polygon(50% 10%, 90% 40%, 100% 90%, 50% 80%, 0% 90%, 10% 40%)', heavy: 'polygon(30% 0%, 70% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)', command: 'polygon(50% 0%, 100% 30%, 80% 100%, 50% 80%, 20% 100%, 0% 30%)' }[s]);
+const getClipPath = (s: ShipShape) => ({
+  nexus: 'polygon(50% 0%, 100% 30%, 85% 100%, 50% 85%, 15% 100%, 0% 30%)',
+  uix: 'polygon(50% 10%, 100% 70%, 80% 100%, 50% 80%, 20% 100%, 0% 70%)',
+  prmpt: 'polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)',
+  phys: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 50% 100%, 0% 70%, 0% 30%)',
+  cloud: 'polygon(0% 20%, 50% 0%, 100% 20%, 90% 100%, 10% 100%)',
+  shield: 'polygon(50% 0%, 90% 20%, 100% 70%, 50% 100%, 0% 70%, 10% 20%)'
+}[s]);
 
 // ============================================================================
 // 2. SYNTHETIC AUDIO ENGINE (WEB AUDIO API)
@@ -251,12 +261,12 @@ export default function ExodusGodTier() {
   });
 
   const fleet: FleetShip[] = useMemo(() => [
-    { id: 0, icon: Cpu, code: "NEXUS-01", title: "Trí Tuệ Nhân Tạo", shipName: "PHI THUYỀN AI", hex: "#00f2fe", shape: 'sleek' as ShipShape, stats: [98, 95, 92, 88], items: ["Tự động hóa toàn bộ quy trình thông minh", "Phân tích dữ liệu lớn, trích xuất thông tin tức thời", "Tối ưu 300% tốc độ xử lý công việc", "Tạo trợ lý AI từ câu lệnh tự nhiên"], link: "/ai" },
-    { id: 1, icon: Globe, code: "UIX-99", title: "Thiết Kế Web 3D", shipName: "PHI THUYỀN WEB", hex: "#b026ff", shape: 'agile' as ShipShape, stats: [90, 88, 96, 85], items: ["Thiết kế giao diện không gian 3 chiều", "Trải nghiệm người dùng đỉnh cao", "Hiệu ứng chuyển động siêu mượt mà", "Hiển thị hoàn hảo trên mọi thiết bị"], link: "/web3d" },
-    { id: 2, icon: Zap, code: "PRMPT-X", title: "Kỹ Thuật Prompt", shipName: "PHI THUYỀN PROMPT", hex: "#ff0844", shape: 'command' as ShipShape, stats: [95, 92, 88, 90], items: ["Kiến trúc sư ngôn ngữ cho AI", "Tạo hình ảnh và nội dung cực nhanh", "Tư duy chuỗi và tư duy phân nhánh", "Làm chủ câu lệnh đa phương thức"], link: "/prompt" },
-    { id: 3, icon: Rocket, code: "PHYS-42", title: "Lập Trình Vật Lý", shipName: "PHI THUYỀN VẬT LÝ", hex: "#00ff87", shape: 'heavy' as ShipShape, stats: [92, 90, 99, 95], items: ["Hoạt hình theo quy luật vật lý thực tế", "Hệ thống hạt và mô phỏng chất lỏng", "Phát hiện và xử lý va chạm", "Mô phỏng vật lý thời gian thực"], link: "/physics" },
-    { id: 4, icon: Database, code: "CLOUD-7", title: "Dữ Liệu & Đám Mây", shipName: "PHI THUYỀN DỮ LIỆU", hex: "#f5a623", shape: 'heavy' as ShipShape, stats: [85, 99, 90, 80], items: ["Kiến trúc phân tán siêu tốc độ", "Đường ống xử lý và kho dữ liệu", "Kiến trúc ứng dụng đám mây", "Bảng điều khiển phân tích thời gian thực"], link: "/data" },
-    { id: 5, icon: ShieldAlert, code: "SHIELD-X", title: "An Ninh Mạng", shipName: "PHI THUYỀN BẢO MẬT", hex: "#ff007f", shape: 'command' as ShipShape, stats: [88, 92, 85, 98], items: ["Mã hóa và bảo mật đa lớp", "Kiểm thử xâm nhập và đánh giá", "Kiến trúc không tin cậy (Zero-Trust)", "Quy trình ứng phó sự cố"], link: "/security" },
+    { id: 0, icon: Cpu, code: "NEXUS-01", title: "Trí Tuệ Nhân Tạo", shipName: "PHI THUYỀN AI", hex: "#00f2fe", shape: 'nexus' as ShipShape, stats: [98, 95, 92, 88], items: ["Tự động hóa toàn bộ quy trình thông minh", "Phân tích dữ liệu lớn, trích xuất thông tin tức thời", "Tối ưu 300% tốc độ xử lý công việc", "Tạo trợ lý AI từ câu lệnh tự nhiên"], link: "/ai" },
+    { id: 1, icon: Globe, code: "UIX-99", title: "Thiết Kế Web 3D", shipName: "PHI THUYỀN WEB", hex: "#b026ff", shape: 'uix' as ShipShape, stats: [90, 88, 96, 85], items: ["Thiết kế giao diện không gian 3 chiều", "Trải nghiệm người dùng đỉnh cao", "Hiệu ứng chuyển động siêu mượt mà", "Hiển thị hoàn hảo trên mọi thiết bị"], link: "/web3d" },
+    { id: 2, icon: Zap, code: "PRMPT-X", title: "Kỹ Thuật Prompt", shipName: "PHI THUYỀN PROMPT", hex: "#ff0844", shape: 'prmpt' as ShipShape, stats: [95, 92, 88, 90], items: ["Kiến trúc sư ngôn ngữ cho AI", "Tạo hình ảnh và nội dung cực nhanh", "Tư duy chuỗi và tư duy phân nhánh", "Làm chủ câu lệnh đa phương thức"], link: "/prompt" },
+    { id: 3, icon: Rocket, code: "PHYS-42", title: "Lập Trình Vật Lý", shipName: "PHI THUYỀN VẬT LÝ", hex: "#00ff87", shape: 'phys' as ShipShape, stats: [92, 90, 99, 95], items: ["Hoạt hình theo quy luật vật lý thực tế", "Hệ thống hạt và mô phỏng chất lỏng", "Phát hiện và xử lý va chạm", "Mô phỏng vật lý thời gian thực"], link: "/physics" },
+    { id: 4, icon: Database, code: "CLOUD-7", title: "Dữ Liệu & Đám Mây", shipName: "PHI THUYỀN DỮ LIỆU", hex: "#f5a623", shape: 'cloud' as ShipShape, stats: [85, 99, 90, 80], items: ["Kiến trúc phân tán siêu tốc độ", "Đường ống xử lý và kho dữ liệu", "Kiến trúc ứng dụng đám mây", "Bảng điều khiển phân tích thời gian thực"], link: "/data" },
+    { id: 5, icon: ShieldAlert, code: "SHIELD-X", title: "An Ninh Mạng", shipName: "PHI THUYỀN BẢO MẬT", hex: "#ff007f", shape: 'shield' as ShipShape, stats: [88, 92, 85, 98], items: ["Mã hóa và bảo mật đa lớp", "Kiểm thử xâm nhập và đánh giá", "Kiến trúc không tin cậy (Zero-Trust)", "Quy trình ứng phó sự cố"], link: "/security" },
   ], []);
 
   // --- Actions ---
@@ -489,15 +499,65 @@ export default function ExodusGodTier() {
           100% { opacity:0; }
         }
         .impact-flash { animation: impactFlashAnim .15s ease-out forwards; }
+
+        /* BACKGROUND IMAGE LAYERS */
+        .fleet-bg {
+          background: url('/images/system/space-fleet.png') center/cover no-repeat;
+          animation: parallaxDrift 30s ease-in-out infinite alternate;
+        }
+        .gate-bg {
+          background: url('/images/system/warp-gate.png') center/cover no-repeat;
+          animation: gatePulse 4s ease-in-out infinite alternate;
+        }
+        .bridge-bg {
+          background: url('/images/system/command-bridge.png') center/cover no-repeat;
+          animation: bridgeGlow 6s ease-in-out infinite alternate;
+        }
+        @keyframes parallaxDrift {
+          0%   { transform: scale(1.05) translate(-1%, -1%); }
+          50%  { transform: scale(1.08) translate(1%, 0%); }
+          100% { transform: scale(1.1) translate(-0.5%, 1%); }
+        }
+        @keyframes gatePulse {
+          0%   { opacity: 0.3; transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(0deg); }
+          50%  { opacity: 0.5; transform: scale(1.02) rotate(1deg); filter: brightness(1.3) hue-rotate(5deg); }
+          100% { opacity: 0.3; transform: scale(1) rotate(-1deg); filter: brightness(1) hue-rotate(-5deg); }
+        }
+        @keyframes bridgeGlow {
+          0%   { filter: brightness(0.8) saturate(1.2); transform: scale(1); }
+          50%  { filter: brightness(1.1) saturate(1.4); transform: scale(1.02); }
+          100% { filter: brightness(0.8) saturate(1.2); transform: scale(1); }
+        }
+        /* Floating ship card enhancement */
+        .ship-card-glow {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ship-card-glow:hover {
+          transform: scale(1.05) translateY(-8px);
+        }
       `}} />
 
       <div className="crt-overlay" />
       <FPSMonitor />
 
-      {/* CORE CANVAS */}
+      {/* CORE CANVAS — 2D Blackhole Engine */}
       <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''}`}>
         <canvas ref={canvasRef} className="absolute inset-0 block" />
       </div>
+
+      {/* 3D FLEET LAYER — Ships bay lơ lửng */}
+      {osBooted && (
+        <div className={`fixed inset-0 z-[1] pointer-events-auto ${warpSpeed ? 'warp-shake' : ''} ${activeShip !== null ? 'pointer-events-none' : ''}`}>
+          <DynamicFleetSystem3D
+            fleet={fleet.map(s => ({ id: s.id, shape: s.shape as any, hex: s.hex, shipName: s.shipName, code: s.code }))}
+            activeShip={activeShip}
+            rushingShipId={rushingShipId}
+            warpSpeed={warpSpeed}
+            onEngage={engageShip}
+            playSfx={(type) => sfx?.play(type as any)}
+          />
+        </div>
+      )}
 
       {/* IMPACT FLASH OVERLAY */}
       {impactFlash && <div className="fixed inset-0 z-[9998] bg-white impact-flash pointer-events-none" />}
@@ -505,6 +565,17 @@ export default function ExodusGodTier() {
       {/* ============================================================================ */}
       {/* LAYER 1: IDLE HUB */}
       {/* ============================================================================ */}
+
+      {/* CINEMATIC BACKGROUND IMAGES */}
+      <div className={`fixed inset-0 z-[0] pointer-events-none transition-opacity duration-1000 ${activeShip !== null || warpSpeed ? 'opacity-0' : 'opacity-100'}`}>
+        {/* Space Fleet panorama */}
+        <div className="absolute inset-0 fleet-bg opacity-40 mix-blend-screen" />
+        {/* Warp Gate at center */}
+        <div className="absolute inset-0 gate-bg mix-blend-screen" />
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 20%, rgba(1,1,3,0.9) 70%)' }} />
+      </div>
+
       <div className={`relative z-20 w-full min-h-screen flex flex-col transition-all duration-700 ease-in-out ${activeShip !== null || warpSpeed ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100 glitch-trans'}`}>
         
         <header className="p-6 md:p-12 flex justify-between items-start">
@@ -516,13 +587,31 @@ export default function ExodusGodTier() {
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full">
-          <div className="text-center mb-6 md:mb-10 px-4">
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-lg">Chọn Phi Thuyền</h2>
-            <div className="mt-3 font-mono text-cyan-400/60 text-sm tracking-widest"><Target className="w-3 h-3 inline-block animate-pulse text-red-500 mr-2" /> Nhấn vào phi thuyền để khám phá</div>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center pb-10 w-full px-4 md:px-8 mt-8">
+          
+          {/* GLASSMORPHISM STATION HUB */}
+          <div className="relative w-full max-w-[1300px] rounded-[2.5rem] border border-white/10 bg-[#040814]/40 backdrop-blur-xl p-8 md:p-14 shadow-[0_0_80px_rgba(0,242,254,0.07)] overflow-hidden">
+            {/* Tech accents for the glass frame */}
+            <div className="absolute top-0 left-0 w-32 h-1 bg-gradient-to-r from-cyan-500 to-transparent" />
+            <div className="absolute bottom-0 right-0 w-32 h-1 bg-gradient-to-l from-purple-500 to-transparent" />
+            <div className="absolute top-0 left-0 w-1 h-32 bg-gradient-to-b from-cyan-500 to-transparent" />
+            <div className="absolute bottom-0 right-0 w-1 h-32 bg-gradient-to-t from-purple-500 to-transparent" />
+            
+            {/* Grid pattern background inside frame */}
+            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 px-3 md:px-6 w-full max-w-[1200px] z-40">
+            <div className="relative z-10 text-center mb-12 md:mb-16">
+              <h2 className="text-4xl md:text-6xl font-black uppercase tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
+                TRẠM CHỈ HUY
+              </h2>
+              <div className="mt-4 flex items-center justify-center gap-3 font-mono text-cyan-400 text-sm md:text-base tracking-[0.2em]">
+                <Target className="w-4 h-4 animate-pulse text-red-500" /> 
+                <span>KÍCH HOẠT PHI THUYỀN ĐỂ KHÁM PHÁ</span>
+                <Target className="w-4 h-4 animate-pulse text-red-500" />
+              </div>
+            </div>
+
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-3 gap-6 md:gap-10 w-full mx-auto">
             {fleet.map((ship, idx) => {
               const isRushing = rushingShipId === ship.id;
               const isOtherRushing = rushingShipId !== null && rushingShipId !== ship.id;
@@ -564,12 +653,13 @@ export default function ExodusGodTier() {
                         </div>
                       </div>
                       {/* Ship Icon */}
-                      <ship.icon className="absolute bottom-4 left-1/2 -translate-x-1/2 w-5 h-5 text-white/70 z-20 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />
+                      {(() => { const ShipIcon = ship.icon as React.ComponentType<any>; return <ShipIcon className="absolute bottom-4 left-1/2 -translate-x-1/2 w-5 h-5 text-white/70 z-20 group-hover:-translate-y-1 transition-transform" strokeWidth={1.5} />; })()}
                     </div>
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
 
@@ -580,7 +670,22 @@ export default function ExodusGodTier() {
       {/* ============================================================================ */}
       {activeData && !warpSpeed && (
         <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-10 glitch-trans">
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" />
+          {/* Command Bridge Background */}
+          <div 
+            className="absolute inset-0 bridge-bg" 
+            style={{ 
+              backgroundImage: `url(${[
+                '/images/system/ship_ai_bg.png',
+                '/images/system/ship_web_bg.png',
+                '/images/system/ship_prompt_bg.png',
+                '/images/system/ship_physics_bg.png',
+                '/images/system/ship_data_bg.png',
+                '/images/system/ship_security_bg.png'
+              ][activeData.id] || '/images/system/command-bridge.png'})`
+            }} 
+          />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 opacity-20 mix-blend-color" style={{ backgroundColor: activeData.hex }} />
           
           <button onClick={abortMission} onMouseEnter={() => sfx?.play('hover')} className={`absolute top-6 left-6 md:top-10 md:left-10 cyber-clip-sm bg-cyan-950/40 border border-cyan-500/50 px-6 py-3 flex items-center gap-3 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-colors z-[100] group backdrop-blur-md ${deployState !== 'idle' ? 'hidden' : ''}`}>
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-sm tracking-[0.2em] font-bold">QUAY LẠI HẠM ĐỘI</span>

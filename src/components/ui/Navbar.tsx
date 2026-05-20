@@ -35,8 +35,8 @@ export default function Navbar() {
     return pathname === href; // sau này bạn có thể thay bằng scroll spy nếu muốn
   };
 
-  // Hide navbar entirely on the landing page and creative page
-  if (pathname === '/' || pathname === '/creative') return null;
+  // Hide navbar entirely on the landing page, creative page, and system page
+  if (pathname === '/' || pathname === '/creative' || pathname === '/system') return null;
 
   return (
     <>
