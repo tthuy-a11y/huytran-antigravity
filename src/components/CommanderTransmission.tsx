@@ -943,7 +943,7 @@ export default function CommanderTransmission() {
 
             {/* DIALOGUE + DOSSIER PANELS */}
             {(phase === 'dialogue' || phase === 'dossier' || phase === 'dossier-reopen') && (
-              <div className="max-w-7xl w-full h-full flex flex-col lg:flex-row gap-8 p-8 relative">
+              <div className="max-w-[1400px] w-full h-full flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 lg:p-6 relative">
                 {/* AVATAR — dialogue: large centered, dossier: left side */}
                 <div className={phase === 'dialogue' ? 'flex-1 flex flex-col items-center justify-center relative' : 'lg:w-[38%] flex flex-col items-center relative'}>
                   <motion.div
@@ -1052,7 +1052,7 @@ export default function CommanderTransmission() {
                         <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,242,254,0.1)_50%)]" style={{ backgroundSize: '100% 4px' }} />
                         <div className="absolute left-0 w-full h-[15%] bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent pointer-events-none" style={{ animation: 'scan-beam 4s linear infinite' }} />
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 p-10 relative z-10" style={{ transformStyle: 'preserve-3d' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 lg:gap-8 lg:p-8 relative z-10" style={{ transformStyle: 'preserve-3d' }}>
                           
                           {/* CỘT 1: IDENTITY + ẢNH CV SẠCH */}
                           <motion.div 
@@ -1061,7 +1061,7 @@ export default function CommanderTransmission() {
                             className="flex flex-col items-center text-center space-y-6"
                             style={{ transformStyle: 'preserve-3d' }}
                           >
-                            <div className="w-44 h-44 bg-white rounded-2xl overflow-hidden border-4 border-cyan-400/60 shadow-[0_0_50px_rgba(34,211,238,0.5)] hover:shadow-[0_0_80px_rgba(34,211,238,0.8)] transition-all duration-500 hover:scale-105 relative group" style={{ transform: 'translateZ(10px)' }}>
+                            <div className="w-36 h-36 lg:w-40 lg:h-40 bg-white rounded-2xl overflow-hidden border-4 border-cyan-400/60 shadow-[0_0_50px_rgba(34,211,238,0.5)] hover:shadow-[0_0_80px_rgba(34,211,238,0.8)] transition-all duration-500 hover:scale-105 relative group" style={{ transform: 'translateZ(10px)' }}>
                               <img
                                 src="/commander.png"
                                 alt="Trần Thanh Huy"
@@ -1108,7 +1108,7 @@ export default function CommanderTransmission() {
                               <Target className="text-purple-400 w-5 h-5 drop-shadow-[0_0_8px_#a855f7]" />
                               <h3 className="text-purple-300 font-mono text-base tracking-[0.3em] font-bold uppercase drop-shadow-[0_0_10px_#a855f7]">GIỚI THIỆU</h3>
                             </div>
-                            <div className="bg-purple-900/20 border border-purple-500/30 p-6 rounded-2xl shadow-[inset_0_0_30px_rgba(168,85,247,0.1)]" style={{ transform: 'translateZ(15px)' }}>
+                            <div className="bg-purple-900/20 border border-purple-500/30 p-5 rounded-2xl shadow-[inset_0_0_30px_rgba(168,85,247,0.1)]" style={{ transform: 'translateZ(15px)' }}>
                               <p className="text-white/90 leading-relaxed text-[0.95rem] mb-5">
                                 Từng đảm nhiệm vị trí{' '}
                                 <strong className="text-purple-400 drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]">Backend Intern</strong>{' '}
@@ -1124,7 +1124,7 @@ export default function CommanderTransmission() {
                               </p>
                             </div>
                             
-                            <div className="mt-8 p-5 bg-gradient-to-r from-cyan-900/40 to-purple-900/40 border-l-4 border-cyan-400 rounded-r-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]" style={{ transform: 'translateZ(35px)' }}>
+                            <div className="mt-5 p-4 bg-gradient-to-r from-cyan-900/40 to-purple-900/40 border-l-4 border-cyan-400 rounded-r-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)]" style={{ transform: 'translateZ(35px)' }}>
                               <p className="text-cyan-50 font-mono text-sm leading-relaxed tracking-wide italic">
                                 <span className="text-cyan-300 text-xl font-serif">"</span>
                                 Tôi không build website. Tôi kiến tạo không gian số có trọng lực riêng.
@@ -1132,7 +1132,7 @@ export default function CommanderTransmission() {
                               </p>
                             </div>
                             
-                            <div className="text-[0.8rem] font-mono text-cyan-400/70 mt-8 tracking-[0.2em] border border-cyan-500/20 p-3 rounded-xl bg-[#010614] text-center shadow-[inset_0_0_10px_rgba(34,211,238,0.1)]" style={{ transform: 'translateZ(10px)' }}>
+                            <div className="text-[0.8rem] font-mono text-cyan-400/70 mt-6 tracking-[0.2em] border border-cyan-500/20 p-3 rounded-xl bg-[#010614] text-center shadow-[inset_0_0_10px_rgba(34,211,238,0.1)]" style={{ transform: 'translateZ(10px)' }}>
                               📍 NINH KIỀU, CẦN THƠ &nbsp;|&nbsp; 📅 01.10.2003
                             </div>
                           </motion.div>
@@ -1162,7 +1162,7 @@ export default function CommanderTransmission() {
                               ))}
                             </div>
                             
-                            <div className="mt-10 p-6 border border-emerald-500/30 bg-emerald-900/10 rounded-2xl shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]" style={{ transform: 'translateZ(25px)' }}>
+                            <div className="mt-6 p-5 border border-emerald-500/30 bg-emerald-900/10 rounded-2xl shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]" style={{ transform: 'translateZ(25px)' }}>
                               <div className="text-[11px] font-mono text-emerald-500/80 tracking-[0.3em] mb-3 font-bold uppercase">
                                 HỌC VẤN
                               </div>
@@ -1177,7 +1177,7 @@ export default function CommanderTransmission() {
                         </div>
 
                         {/* 3 NÚT HÀNH ĐỘNG */}
-                        <div className="border-t border-cyan-500/20 p-6 md:p-8 flex flex-wrap gap-4 relative z-50 bg-[#01030a]/40">
+                        <div className="border-t border-cyan-500/20 p-5 md:p-6 flex flex-wrap gap-3 relative z-50 bg-[#01030a]/40">
                           <motion.button
                             onMouseEnter={() => audioRef.current?.playHover()}
                             disabled={isGeneratingCV}

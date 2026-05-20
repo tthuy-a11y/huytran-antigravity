@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, ChevronLeft, Zap, Orbit, ArrowLeft, X } from 'lucide-react';
+import { useCinematicStore } from '@/app/creative/lib/cinematicStore';
 
 export interface Planet {
   name: string;
@@ -27,6 +28,9 @@ export default function CreativeOverlayHUD({
   setActivePlanet,
   playSound = () => {},
 }: CreativeOverlayHUDProps) {
+
+  const focusedPlanetId = useCinematicStore((s) => s.focusedPlanetId);
+  const isAnyModalOpen = !!activePlanet || !!focusedPlanetId;
 
   // ESC key handler — đồng bộ với Web Speech & sound engine
   useEffect(() => {
@@ -69,7 +73,7 @@ export default function CreativeOverlayHUD({
 
         {/* AUTHOR PANEL — chỉ hiện khi KHÔNG có modal */}
         <AnimatePresence>
-          {!activePlanet && (
+          {!isAnyModalOpen && (
             <motion.div
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}

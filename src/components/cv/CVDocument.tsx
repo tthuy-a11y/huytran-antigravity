@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
     color: '#e94560',
-    fontFamily: 'Helvetica-Oblique',
+    fontFamily: 'Helvetica',
     textAlign: 'center',
     marginBottom: 25,
     backgroundColor: '#f8f9fa',
@@ -119,7 +119,8 @@ const styles = StyleSheet.create({
   expRole: {
     fontSize: 10,
     color: '#e94560',
-    fontFamily: 'Courier-Oblique',
+    fontFamily: 'Courier',
+    fontStyle: 'italic',
     marginBottom: 6,
   },
   bulletPoint: {

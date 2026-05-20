@@ -107,21 +107,24 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
         )}
       </AnimatePresence>
 
+      {/* Backdrop bên trái: click để đóng, gradient mờ không che planet */}
       <AnimatePresence>
         {!!focusedPlanetId && focusedPlanet && (
-          <>
-            {/* Backdrop bên trái: click để đóng, gradient mờ không che planet */}
-            <motion.div
-              key="sidebar-backdrop"
-              initial={{ opacity: 0 }}
+          <motion.div
+            key="sidebar-backdrop"
+            initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.35 }}
               className="fixed inset-0 z-[1090] pointer-events-none bg-gradient-to-l from-black/60 via-black/10 to-transparent"
-            />
+          />
+        )}
+      </AnimatePresence>
 
-            {/* RIGHT SIDEBAR — glassmorphism 480px, không che planet */}
-            <motion.aside
+      {/* RIGHT SIDEBAR — glassmorphism 480px, không che planet */}
+      <AnimatePresence>
+        {!!focusedPlanetId && focusedPlanet && (
+          <motion.aside
               key="sidebar-panel"
               initial={{ x: '100%', opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -343,7 +346,6 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
                 </motion.button>
               </div>
             </motion.aside>
-          </>
         )}
       </AnimatePresence>
     </div>

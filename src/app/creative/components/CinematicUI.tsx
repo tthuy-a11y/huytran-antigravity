@@ -182,7 +182,7 @@ function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinema
         exit: dissolveExit,
         transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as any },
       };
-    case 'large-vibrating':
+    case 'large-vibrating': {
       const climaxIntensity = cinematicTime >= 13 && cinematicTime <= 16.8 
         ? Math.max(0, Math.min(1, (cinematicTime - 13) / 3)) 
         : 0;
@@ -190,8 +190,8 @@ function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinema
         initial: { opacity: 0, scale: 0.7, color: '#ffffff', textShadow: '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff' },
         animate: { 
           opacity: 1, 
-          scale: climaxIntensity > 0 ? [1, 1 + climaxIntensity * 0.06, 1] : 1,
-          color: climaxIntensity > 0 ? ['#67e8f9', '#ff3a00', '#ffeb8a'] : '#ffffff',
+          scale: climaxIntensity > 0 ? [1, 1 + climaxIntensity * 0.06, 1] : [1, 1, 1],
+          color: climaxIntensity > 0 ? ['#67e8f9', '#ff3a00', '#ffeb8a'] : ['#ffffff', '#ffffff', '#ffffff'],
           textShadow: climaxIntensity > 0 ? `0 0 ${20 + climaxIntensity * 60}px currentColor` : '0 0 14px #ff7adf, 0 0 30px #7ad0ff, 0 0 60px #ffffff',
         },
         exit: dissolveExit,
@@ -201,6 +201,7 @@ function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinema
           color: { duration: 0.35, repeat: Infinity },
         },
       };
+    }
     case 'serif-italic':
       return {
         initial: { opacity: 0, y: 16 },

@@ -91,14 +91,11 @@ export default function CreativePage() {
             </div>
 
             {/* CreativeOverlayHUD — author panel + điều hướng + planet modal */}
-            {/* Ẩn khi InteractiveUI sidebar đang mở (focusedPlanetId !== null) */}
-            {!isAnyModalOpen && (
-              <CreativeOverlayHUD
-                activePlanet={activePlanet}
-                setActivePlanet={setActivePlanet}
-                playSound={playSound}
-              />
-            )}
+            <CreativeOverlayHUD
+              activePlanet={activePlanet}
+              setActivePlanet={setActivePlanet}
+              playSound={playSound}
+            />
           </motion.div>
         )}
       </AnimatePresence>
