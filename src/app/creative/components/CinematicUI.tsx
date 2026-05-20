@@ -67,13 +67,13 @@ const DIALOGUE: DialogueLine[] = [
     id: 'd9',
     text: 'Khởi nguyên... một vũ trụ thức tỉnh',
     start: 26.0,
-    end: 28.2,
+    end: 27.0,
     style: 'gold-scaling',
   },
   {
     id: 'd10',
     text: 'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start: 28.0,
+    start: 27.0,
     end: 30.0,
     style: 'custom-d10',
   },
@@ -207,11 +207,12 @@ function getMotionProps(style: DialogueLine['style'], deviceTier: string, cinema
         },
       };
     case 'gold-scaling':
+      // Removed letterSpacing animation — caused render lag + invisibility on weak GPUs
       return {
-        initial: { opacity: 0, scale: 0.85, letterSpacing: '-0.05em' },
-        animate: { opacity: 1, scale: 1, letterSpacing: '0.02em' },
-        exit: { opacity: 0, scale: 1.1, filter: 'blur(20px)' },
-        transition: { duration: 1.6, ease: [0.16, 1, 0.3, 1] as any },
+        initial: { opacity: 0, scale: 0.88, y: 14 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 1.08, filter: 'blur(16px)' },
+        transition: { duration: 1.2, ease: [0.16, 1, 0.3, 1] as any },
       };
     case 'massive-gold-explosive':
       return {
@@ -415,51 +416,77 @@ function DialogueLineView({
   } else if (line.style === 'custom-d10') {
     inner = (
       <div className="relative w-full h-full flex flex-col items-center justify-center">
-        {/* Phần 1: Chào mừng đến với hệ hành tinh - Hiệu ứng huyền ảo */}
+        {/* Phần 1: "Chào mừng đến với Hệ Hành Tinh" — chỉ opacity + translate (an toàn cho mọi GPU) */}
         <motion.div
           className="absolute z-10 flex flex-col items-center justify-center w-full"
-          initial={{ opacity: 0, y: '-5vh', filter: 'blur(30px)', letterSpacing: '0em' }}
-          animate={{ opacity: 1, y: '-10vh', filter: 'blur(0px)', letterSpacing: '0.05em' }}
-          transition={{ duration: 1.2, ease: 'easeOut' }}
-          style={{
-             top: '25%',
-             color: '#dcfaff',
-             textShadow: '0 0 20px rgba(0,229,255,0.8), 0 0 40px rgba(0,153,255,0.6)',
-             fontFamily: 'serif',
-          }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: 'easeOut' }}
+          style={{ top: '20%', fontFamily: 'serif' }}
         >
-          <span className="text-2xl md:text-4xl font-light italic mb-3">Chào mừng đến với</span>
-          <span className="text-4xl md:text-6xl font-bold uppercase tracking-[0.1em] text-transparent bg-clip-text bg-gradient-to-r from-cyan-100 via-cyan-300 to-cyan-100" style={{ filter: 'drop-shadow(0 0 15px rgba(0,229,255,0.8))' }}>
+          <span
+            className="text-2xl md:text-4xl font-light italic mb-3"
+            style={{ color: '#dcfaff', textShadow: '0 0 18px rgba(0,229,255,0.85), 0 0 38px rgba(0,153,255,0.55)' }}
+          >
+            Chào mừng đến với
+          </span>
+          <span
+            className="text-4xl md:text-6xl font-bold uppercase tracking-[0.1em]"
+            style={{
+              color: '#bff3ff',
+              textShadow: '0 0 14px rgba(0,229,255,0.9), 0 0 30px rgba(0,153,255,0.7), 0 0 60px rgba(0,153,255,0.4)',
+            }}
+          >
             Hệ Hành Tinh
           </span>
         </motion.div>
 
-        {/* Phần 2: TH2003 bùng sáng ở trung tâm mặt trời */}
-        <motion.div
-          className="absolute z-20 uppercase"
-          initial={{ opacity: 0, scale: 0, x: '-50%', y: '-50%', filter: 'blur(50px) brightness(4)' }}
-          animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%', filter: 'blur(0px) brightness(1)' }}
-          transition={{ 
-            duration: 1.2, 
-            delay: 0.6, 
-            ease: [0.16, 1, 0.3, 1] as any
-          }}
-          style={{
-            background: 'linear-gradient(180deg, #ffffff 0%, #fff0a0 25%, #ffb800 60%, #ff5500 100%)',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            color: 'transparent',
-            filter: 'drop-shadow(0 0 60px rgba(255,200,0,1)) drop-shadow(0 0 100px rgba(255,100,0,0.8)) drop-shadow(0 0 150px rgba(255,50,0,0.6))',
-            fontSize: 'clamp(5rem, 12vw, 12rem)',
-            fontWeight: '900',
-            lineHeight: 1,
-            top: '50%',
-            left: '50%',
-          }}
+        {/* Phần 2: TH2003 — backdrop light burst (separate DOM element) + simple gradient text.
+            Tránh chained drop-shadow heavy filters → render mượt trên mọi GPU. */}
+        <div
+          className="absolute z-20"
+          style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
         >
-          TH2003
-        </motion.div>
+          {/* Ignition light burst — radial gradient div behind text (CHEAP) */}
+          <motion.div
+            aria-hidden
+            className="absolute rounded-full pointer-events-none"
+            initial={{ opacity: 0, scale: 0.3 }}
+            animate={{ opacity: [0, 1, 0.85], scale: [0.3, 1.4, 1.15] }}
+            transition={{ duration: 1.5, delay: 0.3, ease: 'easeOut', times: [0, 0.5, 1] }}
+            style={{
+              top: '50%',
+              left: '50%',
+              width: '120%',
+              height: '120%',
+              transform: 'translate(-50%, -50%)',
+              background:
+                'radial-gradient(circle, rgba(255,240,180,0.95) 0%, rgba(255,180,40,0.55) 25%, rgba(255,80,20,0.25) 55%, transparent 75%)',
+              filter: 'blur(20px)',
+            }}
+          />
+          {/* The TH2003 text — gradient clip + ONE drop-shadow only */}
+          <motion.div
+            className="relative uppercase"
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.0, delay: 0.3, ease: [0.16, 1, 0.3, 1] as any }}
+            style={{
+              background: 'linear-gradient(180deg, #ffffff 0%, #fff0a0 25%, #ffb800 60%, #ff5500 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              color: 'transparent',
+              filter: 'drop-shadow(0 0 32px rgba(255,160,40,0.85))',
+              fontSize: 'clamp(5rem, 12vw, 12rem)',
+              fontWeight: 900,
+              lineHeight: 1,
+              willChange: 'transform, opacity',
+            }}
+          >
+            TH2003
+          </motion.div>
+        </div>
       </div>
     );
   }
