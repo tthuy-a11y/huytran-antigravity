@@ -336,27 +336,68 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
 
                 {/* Mute toggle + audio-blocked prompt */}
                 {phase === 'playing' && (
-                  <div className="absolute top-8 right-8 z-50 flex flex-col items-end gap-2">
-                    {audioBlocked && (
-                      <motion.button
-                        initial={{ opacity: 0, y: -8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        onClick={handleUnblock}
-                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 border border-yellow-400/60 hover:border-yellow-400 text-yellow-300 hover:text-white rounded-2xl font-mono text-xs tracking-widest backdrop-blur-xl transition-all animate-pulse"
-                      >
-                        <VolumeX className="w-4 h-4" /> BẤM ĐỂ BẬT ÂM THANH
-                      </motion.button>
-                    )}
+                  <div className="absolute top-6 right-6 z-50 flex flex-col items-end gap-3">
+
+                    {/* Audio blocked banner */}
+                    <AnimatePresence>
+                      {audioBlocked && (
+                        <motion.button
+                          initial={{ opacity: 0, x: 40, scale: 0.85 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          exit={{ opacity: 0, x: 40, scale: 0.85 }}
+                          transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+                          onClick={handleUnblock}
+                          className="flex items-center gap-3 px-5 py-3 rounded-2xl font-mono text-sm font-bold tracking-widest backdrop-blur-2xl border border-yellow-400/80 bg-yellow-400/10 text-yellow-300 shadow-[0_0_24px_rgba(250,204,21,0.35)] hover:shadow-[0_0_40px_rgba(250,204,21,0.6)] hover:bg-yellow-400/20 hover:text-white transition-all"
+                        >
+                          <motion.span
+                            animate={{ scale: [1, 1.25, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.1, ease: 'easeInOut' }}
+                          >
+                            <VolumeX className="w-5 h-5" />
+                          </motion.span>
+                          BẬT ÂM THANH
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Main mute toggle */}
                     <motion.button
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      whileHover={{ scale: 1.1 }}
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.4, type: 'spring', stiffness: 260, damping: 18 }}
+                      whileHover={{ scale: 1.12 }}
+                      whileTap={{ scale: 0.92 }}
                       onClick={toggleMute}
-                      className="p-3 bg-black/60 backdrop-blur-xl border border-white/20 hover:border-cyan-400/60 text-white/60 hover:text-cyan-300 rounded-2xl transition-all"
-                      title={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+                      onMouseEnter={() => playSfx('/audio/sfx/hover.mp3', 0.3)}
+                      className="relative flex items-center gap-3 pl-4 pr-5 py-3 rounded-2xl font-mono text-sm font-semibold tracking-wider backdrop-blur-2xl transition-all"
+                      style={{
+                        background: isMuted
+                          ? 'rgba(239,68,68,0.12)'
+                          : 'rgba(0,242,254,0.08)',
+                        border: isMuted
+                          ? '1.5px solid rgba(239,68,68,0.55)'
+                          : '1.5px solid rgba(0,242,254,0.45)',
+                        color: isMuted ? 'rgb(252,165,165)' : 'rgb(103,232,249)',
+                        boxShadow: isMuted
+                          ? '0 0 22px rgba(239,68,68,0.25)'
+                          : '0 0 22px rgba(0,242,254,0.2)',
+                      }}
                     >
-                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                      {/* Ripple ring khi unmuted */}
+                      {!isMuted && (
+                        <motion.span
+                          className="absolute inset-0 rounded-2xl border border-cyan-400/40"
+                          animate={{ scale: [1, 1.18], opacity: [0.6, 0] }}
+                          transition={{ repeat: Infinity, duration: 1.6, ease: 'easeOut' }}
+                        />
+                      )}
+                      {isMuted
+                        ? <VolumeX className="w-5 h-5 flex-shrink-0" />
+                        : <Volume2 className="w-5 h-5 flex-shrink-0" />
+                      }
+                      <span>{isMuted ? 'ĐÃ TẮT TIẾNG' : 'ÂM THANH BẬT'}</span>
                     </motion.button>
+
                   </div>
                 )}
 
