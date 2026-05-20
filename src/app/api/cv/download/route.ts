@@ -8,18 +8,15 @@ export async function GET() {
     // Generate the PDF stream
     const stream = await renderToStream(React.createElement(CVDocument));
 
-    // Convert NodeJS ReadableStream to Web ReadableStream
-    const readableStream = new ReadableStream({
-      async start(controller) {
-        for await (const chunk of stream) {
-          controller.enqueue(chunk);
-        }
-        controller.close();
-      }
-    });
+    // Convert stream to Buffer
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+    }
+    const pdfBuffer = Buffer.concat(chunks);
 
-    // Create the response with the PDF stream
-    const response = new NextResponse(readableStream);
+    // Create the response with the PDF Buffer
+    const response = new NextResponse(pdfBuffer);
 
     // Set headers for download
     const dateStr = new Date().toISOString().slice(0, 7).replace('-', '.'); // e.g. 2026.05
@@ -31,9 +28,14 @@ export async function GET() {
 
     return response;
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    let errorMessage = "Unknown error";
+    if (error instanceof Error) {
+      errorMessage = error.message + " | " + error.stack;
+    } else {
+      try { errorMessage = JSON.stringify(error); } catch(e) { errorMessage = String(error); }
+    }
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: 'Failed to generate PDF', details: errorMessage },
       { status: 500 }
     );
   }

@@ -54,7 +54,6 @@ const styles = StyleSheet.create({
   },
   quote: {
     fontSize: 11,
-    fontStyle: 'italic',
     color: '#e94560',
     fontFamily: 'Roboto',
     textAlign: 'center',
@@ -133,7 +132,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#e94560',
     fontFamily: 'Roboto',
-    fontStyle: 'italic',
     marginBottom: 6,
   },
   bulletPoint: {
