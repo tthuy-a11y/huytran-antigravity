@@ -44,8 +44,8 @@ next-env.d.ts
 .claude/
 
 # Source asset folders (large media files — copy to public/ manually)
-Commander/
-Mở đầu/
+/Commander/
+/Mở đầu/
 
 # Dev/planning files
 clean_emoji.py
