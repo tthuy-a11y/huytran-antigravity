@@ -118,10 +118,11 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
           <motion.div
             key="sidebar-backdrop"
             initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-              className="fixed inset-0 z-[1090] pointer-events-none bg-gradient-to-l from-black/60 via-black/10 to-transparent"
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            onClick={() => focusPlanet(null)}
+            className="fixed inset-0 z-[1090] pointer-events-auto bg-gradient-to-l from-black/60 via-black/10 to-transparent"
           />
         )}
       </AnimatePresence>
@@ -144,7 +145,7 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
             exit="exit"
             onClick={(e) => e.stopPropagation()}
             onWheel={(e) => e.stopPropagation()}
-            className="fixed top-4 right-4 bottom-4 md:top-6 md:right-6 md:bottom-6 z-[1100] w-full max-w-[calc(100%-32px)] md:w-[420px] lg:w-[460px] flex flex-col pointer-events-auto rounded-3xl border border-white/10 shadow-2xl overflow-hidden bg-black/60 backdrop-blur-3xl"
+            className="fixed top-4 right-4 bottom-28 md:top-6 md:right-6 md:bottom-32 z-[1100] w-full max-w-[calc(100%-32px)] md:w-[420px] lg:w-[460px] flex flex-col pointer-events-auto rounded-3xl border border-white/10 shadow-2xl overflow-hidden bg-black/60 backdrop-blur-3xl"
             style={{
               boxShadow: `-20px 0 80px rgba(0,0,0,0.8), inset 0 0 80px ${focusedPlanet.color}15, 0 0 0 1px ${focusedPlanet.color}33`,
             }}

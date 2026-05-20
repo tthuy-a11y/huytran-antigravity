@@ -88,7 +88,7 @@ const STYLE_CLASSES: Record<DialogueLine['style'], string> = {
   'mono-cyan-glitch':
     'font-mono text-xl md:text-3xl lg:text-4xl tracking-[0.18em] uppercase',
   'large-vibrating':
-    'font-bold text-3xl md:text-5xl lg:text-7xl tracking-tight',
+    'font-bold tracking-[-0.02em] whitespace-nowrap',
   'serif-italic':
     'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-wide',
   'gold-scaling':
@@ -111,6 +111,8 @@ const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
       '0 0 8px #26e6ff, 0 0 22px #00b8ff, 0 0 44px #0080ff',
   },
   'large-vibrating': {
+    fontSize: 'clamp(1.4rem, 3.8vw, 3.6rem)',
+    lineHeight: '1.05',
     // color and textShadow are now dynamically animated via Framer Motion
   },
   'serif-italic': {
@@ -340,9 +342,9 @@ function DynamicClimaxText({ text }: { text: string }) {
     }
     progress.set(intensity + beat);
 
-    const amp = 2 + intensity * 6;
-    x.set(Math.sin(t * 0.05) * amp + Math.cos(t * 0.03) * amp * 0.6);
-    y.set(Math.cos(t * 0.04) * (amp * 0.4) + Math.sin(t * 0.02) * (amp * 0.2));
+    const amp = 1.5 + intensity * 4;
+    x.set(Math.sin(t * 0.05) * amp + Math.cos(t * 0.03) * amp * 0.5);
+    y.set(Math.cos(t * 0.04) * (amp * 0.35) + Math.sin(t * 0.02) * (amp * 0.15));
   });
 
   return (

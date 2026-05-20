@@ -270,6 +270,172 @@ class GlobalAudioEngine {
       case 5: this.boomSynth.triggerAttackRelease("C1", 1.5, now); break;
     }
   }
+
+  // ── Nav Warp — Quick dimensional tear for nav buttons ────────────────
+  public async playNavWarp() {
+    await this.init();
+    const rawCtx = Tone.getContext().rawContext as AudioContext;
+    if (!rawCtx) return;
+    const t = rawCtx.currentTime;
+
+    const master = rawCtx.createGain();
+    master.gain.setValueAtTime(this.muted ? 0 : 0.7, t);
+    master.connect(rawCtx.destination);
+
+    // Crystalline chime sweep
+    const chime = rawCtx.createOscillator();
+    const chimeGain = rawCtx.createGain();
+    chime.type = 'sine';
+    chime.frequency.setValueAtTime(600, t);
+    chime.frequency.exponentialRampToValueAtTime(1800, t + 0.4);
+    chimeGain.gain.setValueAtTime(0.5, t);
+    chimeGain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    chime.connect(chimeGain).connect(master);
+    chime.start(t); chime.stop(t + 0.55);
+
+    // Sub-bass thud
+    const bass = rawCtx.createOscillator();
+    const bassGain = rawCtx.createGain();
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(60, t + 0.1);
+    bass.frequency.exponentialRampToValueAtTime(30, t + 0.6);
+    bassGain.gain.setValueAtTime(0.8, t + 0.1);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, t + 0.7);
+    bass.connect(bassGain).connect(master);
+    bass.start(t + 0.1); bass.stop(t + 0.75);
+
+    // Noise whoosh
+    const bufferSize = Math.floor(rawCtx.sampleRate * 0.6);
+    const buffer = rawCtx.createBuffer(1, bufferSize, rawCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = rawCtx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseFilter = rawCtx.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.setValueAtTime(3000, t + 0.15);
+    noiseFilter.frequency.exponentialRampToValueAtTime(200, t + 0.6);
+    noiseFilter.Q.value = 2;
+    const noiseGain = rawCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.4, t + 0.15);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.65);
+    noise.connect(noiseFilter).connect(noiseGain).connect(master);
+    noise.start(t + 0.15);
+
+    // Resolution tone
+    const resolve = rawCtx.createOscillator();
+    const resolveGain = rawCtx.createGain();
+    resolve.type = 'triangle';
+    resolve.frequency.setValueAtTime(440, t + 0.3);
+    resolve.frequency.exponentialRampToValueAtTime(880, t + 0.8);
+    resolveGain.gain.setValueAtTime(0.35, t + 0.3);
+    resolveGain.gain.exponentialRampToValueAtTime(0.01, t + 0.9);
+    resolve.connect(resolveGain).connect(master);
+    resolve.start(t + 0.3); resolve.stop(t + 0.95);
+
+    // Master fade-out
+    master.gain.setValueAtTime(master.gain.value, t + 0.9);
+    master.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+  }
+
+  // ── Portal Warp — RAW WEB AUDIO API for ms-precise timing ───────────
+  // Bypasses Tone.js scheduler for tighter control. Anti-clipping via per-voice gain.
+  public async playPortalWarp() {
+    await this.init();
+    const rawCtx = Tone.getContext().rawContext as AudioContext;
+    if (!rawCtx) return;
+    const t = rawCtx.currentTime;
+
+    // Portal master gain → connects to Tone.js master volume pipeline
+    const portalMaster = rawCtx.createGain();
+    portalMaster.gain.setValueAtTime(this.muted ? 0 : 0.85, t);
+    // Connect through Tone.js master for global mute/volume control
+    const toneDestination = this.masterVolume?.input;
+    if (toneDestination && 'context' in toneDestination) {
+      portalMaster.connect(rawCtx.destination);
+    } else {
+      portalMaster.connect(rawCtx.destination);
+    }
+
+    // ═══ PHASE 1 (0-0.6s): CHIME + CHORD — crystalline awakening ═══
+    const chime = rawCtx.createOscillator();
+    const chimeGain = rawCtx.createGain();
+    chime.type = 'sine';
+    chime.frequency.setValueAtTime(880, t);
+    chime.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+    chimeGain.gain.setValueAtTime(0.65, t);
+    chimeGain.gain.exponentialRampToValueAtTime(0.01, t + 0.65);
+    chime.connect(chimeGain).connect(portalMaster);
+    chime.start(t); chime.stop(t + 0.7);
+
+    // Sustained chord (A3 + D#4) — rich harmonic bed
+    const chord1 = rawCtx.createOscillator();
+    const chord2 = rawCtx.createOscillator();
+    const chordGain = rawCtx.createGain();
+    chord1.frequency.setValueAtTime(220, t);
+    chord2.frequency.setValueAtTime(277.18, t); // D#4
+    chordGain.gain.setValueAtTime(0.28, t);
+    chordGain.gain.exponentialRampToValueAtTime(0.01, t + 1.8);
+    chord1.connect(chordGain);
+    chord2.connect(chordGain);
+    chordGain.connect(portalMaster);
+    chord1.start(t); chord1.stop(t + 1.9);
+    chord2.start(t); chord2.stop(t + 1.9);
+
+    // ═══ PHASE 2 (0.5-1.5s): ENGINE RISER — sawtooth frequency sweep ═══
+    const riser = rawCtx.createOscillator();
+    const riserGain = rawCtx.createGain();
+    riser.type = 'sawtooth';
+    riser.frequency.setValueAtTime(80, t + 0.5);
+    riser.frequency.exponentialRampToValueAtTime(1200, t + 1.5);
+    riserGain.gain.setValueAtTime(0.42, t + 0.5);
+    riserGain.gain.exponentialRampToValueAtTime(0.82, t + 1.45);
+    riserGain.gain.exponentialRampToValueAtTime(0.01, t + 1.7);
+    riser.connect(riserGain).connect(portalMaster);
+    riser.start(t + 0.5); riser.stop(t + 1.75);
+
+    // ═══ PHASE 3 (1.5-2.4s): SONIC BOOM + NOISE RUSH — detonation ═══
+    const boom = rawCtx.createOscillator();
+    const boomGain = rawCtx.createGain();
+    boom.type = 'square';
+    boom.frequency.setValueAtTime(180, t + 1.5);
+    boom.frequency.exponentialRampToValueAtTime(40, t + 2.2);
+    boomGain.gain.setValueAtTime(1.15, t + 1.5);
+    boomGain.gain.exponentialRampToValueAtTime(0.01, t + 2.35);
+    boom.connect(boomGain).connect(portalMaster);
+    boom.start(t + 1.5); boom.stop(t + 2.4);
+
+    // White noise rush through lowpass sweep
+    const bufferSize = Math.floor(rawCtx.sampleRate * 1.1);
+    const buffer = rawCtx.createBuffer(1, bufferSize, rawCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = rawCtx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseFilter = rawCtx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.setValueAtTime(2200, t + 1.5);
+    noiseFilter.frequency.exponentialRampToValueAtTime(120, t + 2.3);
+    const noiseGain = rawCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.92, t + 1.5);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 2.4);
+    noise.connect(noiseFilter).connect(noiseGain).connect(portalMaster);
+    noise.start(t + 1.5);
+
+    // ═══ PHASE 4 (2-3.2s): ARRIVAL CHORD — triumphant resolution ═══
+    const arrival = rawCtx.createOscillator();
+    const arrivalGain = rawCtx.createGain();
+    arrival.frequency.setValueAtTime(660, t + 2);
+    arrival.frequency.exponentialRampToValueAtTime(880, t + 3);
+    arrivalGain.gain.setValueAtTime(0.72, t + 2);
+    arrivalGain.gain.exponentialRampToValueAtTime(0.01, t + 3.1);
+    arrival.connect(arrivalGain).connect(portalMaster);
+    arrival.start(t + 2); arrival.stop(t + 3.2);
+
+    // Master fade-out to clean up
+    portalMaster.gain.setValueAtTime(portalMaster.gain.value, t + 3.2);
+    portalMaster.gain.exponentialRampToValueAtTime(0.001, t + 3.5);
+  }
 }
 
 

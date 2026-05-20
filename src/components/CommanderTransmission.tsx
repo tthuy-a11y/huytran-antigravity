@@ -1239,7 +1239,6 @@ export default function CommanderTransmission() {
                             onMouseEnter={() => audioRef.current?.playHover()}
                             onClick={() => {
                               collapseToMailbox();
-                              setTimeout(() => { window.location.href = '/creative'; }, 800);
                             }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}

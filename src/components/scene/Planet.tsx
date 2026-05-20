@@ -250,21 +250,21 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
 
           {/* Label khi hover */}
           {(hovered || isFocused) && (
-            <Billboard position={[0, data.radius + 1.2, 0]}>
+            <Billboard position={[0, data.radius + 3.0, 0]}>
               <Text
-                fontSize={0.35}
+                fontSize={2.5}
                 color="#FFFFFF"
                 anchorX="center"
                 anchorY="middle"
-                outlineWidth={0.015}
+                outlineWidth={0.06}
                 outlineColor={data.emissiveColor}
                 material-toneMapped={false}
               >
                 {data.code}
               </Text>
               <Text
-                fontSize={0.22}
-                position={[0, -0.45, 0]}
+                fontSize={1.5}
+                position={[0, -2.2, 0]}
                 color={data.emissiveColor}
                 anchorX="center"
                 anchorY="middle"
@@ -278,68 +278,53 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
           {/* Holographic modal khi focus */}
           {isFocused && (
             <Html
-              position={[data.radius + 1.5, -4, 0]}
+              position={[data.radius + 2.5, -4, 0]}
               center
-              distanceFactor={8}
+              distanceFactor={10}
               transform
               style={{ pointerEvents: "none" }}
             >
               <div
                 style={{
                   pointerEvents: "auto",
-                  width: 320,
-                  padding: 20,
-                  background:
-                    "linear-gradient(135deg, rgba(0,15,30,0.85), rgba(10,5,40,0.85))",
-                  border: `1px solid ${data.emissiveColor}`,
-                  borderRadius: 12,
-                  backdropFilter: "blur(14px)",
-                  color: "#fff",
-                  fontFamily: "monospace",
-                  boxShadow: `0 0 40px ${data.emissiveColor}80, inset 0 0 20px ${data.emissiveColor}30`,
+                  border: `2px solid ${data.emissiveColor}`,
+                  boxShadow: `0 0 60px ${data.emissiveColor}90, inset 0 0 30px ${data.emissiveColor}50`,
                 }}
+                className="w-[320px] sm:w-[400px] md:w-[480px] p-6 md:p-8 rounded-2xl bg-gradient-to-br from-[#000f1e]/90 to-[#0a0528]/90 backdrop-blur-xl text-white font-mono animate-in fade-in zoom-in-95 duration-300"
               >
                 <div
-                  style={{
-                    fontSize: 11,
-                    letterSpacing: 2,
-                    color: data.emissiveColor,
-                    marginBottom: 4,
-                  }}
+                  style={{ color: data.emissiveColor }}
+                  className="text-xs sm:text-sm md:text-base tracking-[0.2em] mb-2 font-bold uppercase"
                 >
                   ▸ PLANET ID: {data.code}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>
+                <div 
+                  style={{ 
+                    textShadow: `0 0 20px ${data.emissiveColor}, 0 0 40px ${data.emissiveColor}` 
+                  }}
+                  className="text-2xl sm:text-3xl md:text-[38px] font-black mb-4 uppercase tracking-wider leading-tight"
+                >
                   {data.name}
                 </div>
-                <div
-                  style={{
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                    opacity: 0.85,
-                    marginBottom: 14,
-                  }}
-                >
+                <div className="text-sm sm:text-base md:text-lg leading-relaxed opacity-90 mb-6">
                   {data.description}
                 </div>
                 <div
-                  style={{
-                    borderTop: `1px solid ${data.emissiveColor}50`,
-                    paddingTop: 10,
-                  }}
+                  style={{ borderTopColor: `${data.emissiveColor}50` }}
+                  className="border-t-2 pt-4"
                 >
                   {data.stats.map((s) => (
                     <div
                       key={s.label}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 12,
-                        padding: "3px 0",
-                      }}
+                      className="flex justify-between items-center text-sm sm:text-base py-1.5 font-bold"
                     >
-                      <span style={{ opacity: 0.6 }}>{s.label}</span>
-                      <span style={{ color: data.emissiveColor }}>
+                      <span className="opacity-70 uppercase">{s.label}</span>
+                      <span 
+                        style={{ 
+                          color: data.emissiveColor, 
+                          textShadow: `0 0 10px ${data.emissiveColor}` 
+                        }}
+                      >
                         {s.value}
                       </span>
                     </div>

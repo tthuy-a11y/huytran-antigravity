@@ -3,7 +3,9 @@
 import React, { useEffect, useState, useRef, useCallback, memo, useMemo } from 'react';
 import { ArrowLeft, Zap, Database, GitBranch, Cpu, Target, Activity, Waves, Lock, X, Fingerprint, Orbit, Play, TerminalSquare, Rocket, ShieldAlert, CheckCircle2, AlertTriangle, Globe } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useFleetStore } from '@/store/useFleetStore';
 
 const DynamicFleetSystem3D = dynamic(() => import('./components/FleetSystem3D'), { ssr: false });
 
@@ -67,6 +69,12 @@ class AudioSystem {
         break;
       case 'beep':
         audioEngine.playArrival();
+        break;
+      case 'portalWarp':
+        audioEngine.playPortalWarp();
+        break;
+      case 'navWarp':
+        audioEngine.playNavWarp();
         break;
     }
   }
@@ -248,11 +256,49 @@ export default function ExodusGodTier() {
   const [impactFlash, setImpactFlash] = useState(false);
   const [screenShake, setScreenShake] = useState<'light' | 'medium' | 'heavy' | ''>('');
   const [asteroids, setAsteroids] = useState<Array<{id:number;x:number;y:number;r:number;s:number;d:number}>>([]);
+  const [portalTransitPhase, setPortalTransitPhase] = useState<'idle' | 'activate' | 'pull' | 'breach' | 'flash' | 'blackout'>('idle');
+  const [navTransitPhase, setNavTransitPhase] = useState<'idle' | 'activate' | 'warp' | 'flash' | 'blackout'>('idle');
+  const [navTransitTarget, setNavTransitTarget] = useState<string>('');
+  const router = useRouter();
+  const { setPhase: setFleetPhase } = useFleetStore();
+  const portalTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const navTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  // Pre-compute particle positions to avoid Math.random() in render (prevents jank on re-renders)
+  const portalVortexData = useMemo(() => 
+    Array.from({length: 16}, (_, i) => {
+      const angle = (i / 16) * Math.PI * 2;
+      const dist = 200 + ((i * 137.508) % 1) * 400; // Golden angle distribution, stable
+      const colors = ['#00ffff', '#fff', '#b026ff'];
+      return {
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        size: 4 + (((i * 7) % 11) / 11) * 8, // Deterministic pseudo-random
+        color: colors[i % 3],
+      };
+    }), []);
+
+  const portalStreakData = useMemo(() =>
+    Array.from({length: 12}, (_, i) => {
+      const angle = (i / 12) * Math.PI * 2;
+      const dist = 300 + (((i * 13) % 17) / 17) * 500;
+      return {
+        width: 40 + (((i * 11) % 13) / 13) * 80,
+        rotation: (angle * 180) / Math.PI,
+        sx: Math.cos(angle) * dist,
+        sy: Math.sin(angle) * dist,
+        gradient: `linear-gradient(90deg, transparent, ${i % 2 === 0 ? '#00ffff' : '#b026ff'}, white)`,
+      };
+    }), []);
   
-  // Cleanup audio on unmount to prevent sound bleed
+  // Cleanup audio + portal timers on unmount to prevent sound bleed & memory leak
   useEffect(() => {
     return () => {
       sfx?.stopAll();
+      portalTimerRefs.current.forEach(clearTimeout);
+      portalTimerRefs.current = [];
+      navTimerRefs.current.forEach(clearTimeout);
+      navTimerRefs.current = [];
     };
   }, []);
   
@@ -357,6 +403,112 @@ export default function ExodusGodTier() {
     const keyHandler = (e: KeyboardEvent) => { if (e.key === 'Escape' && activeShip !== null) abortMission(); };
     window.addEventListener('keydown', keyHandler); return () => window.removeEventListener('keydown', keyHandler);
   }, [activeShip, abortMission]);
+
+  // ── PORTAL CINEMATIC TRANSIT — 3.5s SPEC ─────────────────────────────
+  const handlePortalClick = useCallback(() => {
+    if (portalTransitPhase !== 'idle') return;
+    // Clear any previous timers
+    portalTimerRefs.current.forEach(clearTimeout);
+    portalTimerRefs.current = [];
+
+    const pushTimer = (fn: () => void, ms: number) => {
+      portalTimerRefs.current.push(setTimeout(fn, ms));
+    };
+
+    // 0ms: ACTIVATE — sound + portal grows, rings accelerate
+    sfx?.play('portalWarp');
+    setPortalTransitPhase('activate');
+    setScreenShake('light');
+    setFleetPhase('warping'); // Sync R3F canvas across pages
+
+    // 600ms: PULL — star-pull + warp speed + accretion acceleration
+    pushTimer(() => {
+      setPortalTransitPhase('pull');
+      setScreenShake('medium');
+      setWarpSpeed(true);
+      engineRef.current.targetSpeed = 800;
+      // Star-pull: accretion particles rush inward faster
+      engineRef.current.accretionParticles.forEach((p: any) => { p.spd *= 3; });
+      // Spawn shockwaves
+      engineRef.current.shockwaves.push(
+        { r: 10, color: '#00ffff', alpha: 1 },
+        { r: 30, color: '#fff', alpha: 0.6 }
+      );
+    }, 600);
+
+    // 1800ms: BREACH — dimensional tear, heavy shake, triple shockwave
+    pushTimer(() => {
+      setPortalTransitPhase('breach');
+      setScreenShake('heavy');
+      engineRef.current.targetSpeed = 1200;
+      engineRef.current.shockwaves.push(
+        { r: 5, color: '#fff', alpha: 1 },
+        { r: 80, color: '#00ffff', alpha: 0.8 },
+        { r: 150, color: '#b026ff', alpha: 0.5 }
+      );
+    }, 1800);
+
+    // 2500ms: FLASH — blinding white flash
+    pushTimer(() => {
+      setPortalTransitPhase('flash');
+      setScreenShake('');
+    }, 2500);
+
+    // 3000ms: BLACKOUT — fade to black
+    pushTimer(() => {
+      setPortalTransitPhase('blackout');
+      setWarpSpeed(false);
+      engineRef.current.targetSpeed = 0.5;
+    }, 3000);
+
+    // 3500ms: NAVIGATE + phase arrival
+    pushTimer(() => {
+      setFleetPhase('arrival');
+      router.push('/creative');
+    }, 3500);
+  }, [portalTransitPhase, router, setFleetPhase]);
+
+  // ── NAV BUTTON CINEMATIC TRANSIT ─────────────────────────────────────
+  const handleNavTransit = useCallback((href: string) => {
+    if (navTransitPhase !== 'idle') return;
+    navTimerRefs.current.forEach(clearTimeout);
+    navTimerRefs.current = [];
+    const pushTimer = (fn: () => void, ms: number) => {
+      navTimerRefs.current.push(setTimeout(fn, ms));
+    };
+
+    // 0ms: ACTIVATE — sound + visual burst
+    sfx?.play('navWarp');
+    setNavTransitPhase('activate');
+    setNavTransitTarget(href);
+    setScreenShake('light');
+
+    // 400ms: WARP — speed lines + shake
+    pushTimer(() => {
+      setNavTransitPhase('warp');
+      setScreenShake('medium');
+      setWarpSpeed(true);
+      engineRef.current.targetSpeed = 600;
+    }, 400);
+
+    // 900ms: FLASH
+    pushTimer(() => {
+      setNavTransitPhase('flash');
+      setScreenShake('');
+    }, 900);
+
+    // 1200ms: BLACKOUT
+    pushTimer(() => {
+      setNavTransitPhase('blackout');
+      setWarpSpeed(false);
+      engineRef.current.targetSpeed = 0.5;
+    }, 1200);
+
+    // 1600ms: NAVIGATE
+    pushTimer(() => {
+      router.push(href);
+    }, 1600);
+  }, [navTransitPhase, router]);
 
   // --- GOD-TIER CANVAS ENGINE (BLACKHOLE ACCRETION & WORMHOLE) ---
   useEffect(() => {
@@ -467,7 +619,7 @@ export default function ExodusGodTier() {
     animate();
     
     // Auto show gate logic
-    const t = setTimeout(() => setShowGate(true), 90000);
+    const t = setTimeout(() => setShowGate(true), 45000);
     return () => { 
       window.removeEventListener('resize', updateSize); 
       window.removeEventListener('mousemove', handleMouseMove as any); 
@@ -670,6 +822,202 @@ export default function ExodusGodTier() {
         }
         .portal-breathe { animation: breathePortal 4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite; }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           PORTAL CINEMATIC TRANSIT — 5-PHASE VISUAL SPECTACLE
+           ═══════════════════════════════════════════════════════════════════ */
+
+        /* Phase 1: ACTIVATE — portal grows + rings spin faster + energy pulses */
+        @keyframes portalActivate {
+          0%   { transform: scale(1); filter: brightness(1) saturate(1); }
+          30%  { transform: scale(1.4) rotate(5deg); filter: brightness(2) saturate(2) drop-shadow(0 0 60px cyan); }
+          60%  { transform: scale(1.8) rotate(-3deg); filter: brightness(3) saturate(3) drop-shadow(0 0 100px white); }
+          100% { transform: scale(2.5) rotate(0deg); filter: brightness(4) saturate(4) drop-shadow(0 0 150px cyan); }
+        }
+        .portal-activate {
+          animation: portalActivate 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+          will-change: transform, filter;
+        }
+
+        /* Single continuous portal scale animation: activate(0-0.6s) → grow(0.6-1.8s) → breach(1.8-2.5s) */
+        @keyframes portalFullSequence {
+          0%   { transform: scale(1); filter: brightness(1) saturate(1); }
+          17%  { transform: scale(2.5) rotate(0deg); filter: brightness(4) saturate(4) drop-shadow(0 0 150px cyan); }
+          35%  { transform: scale(5); filter: brightness(4.5) drop-shadow(0 0 180px white); }
+          51%  { transform: scale(8); filter: brightness(5) drop-shadow(0 0 200px white); }
+          60%  { transform: scale(12) rotate(10deg); filter: brightness(8) hue-rotate(90deg); }
+          71%  { transform: scale(18) rotate(-5deg); filter: brightness(10) hue-rotate(180deg); }
+          85%  { transform: scale(25); filter: brightness(12) hue-rotate(270deg); }
+          100% { transform: scale(35); filter: brightness(15) hue-rotate(360deg); opacity: 0.8; }
+        }
+        .portal-full-sequence {
+          animation: portalFullSequence 3s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+          will-change: transform, filter, opacity;
+          contain: layout style;
+        }
+        @keyframes breachGlitch {
+          0%, 100% { clip-path: inset(0); transform: translateX(0); }
+          10% { clip-path: inset(15% 0 60% 0); transform: translateX(-8px) skewX(2deg); }
+          20% { clip-path: inset(50% 0 20% 0); transform: translateX(6px) skewX(-3deg); }
+          30% { clip-path: inset(5% 0 80% 0); transform: translateX(-4px) skewX(1deg); }
+          40% { clip-path: inset(70% 0 10% 0); transform: translateX(10px) skewX(-2deg); }
+          50% { clip-path: inset(20% 0 40% 0); transform: translateX(-6px); }
+          60% { clip-path: inset(0); transform: translateX(0); }
+        }
+        .breach-glitch { animation: breachGlitch 0.8s steps(1) infinite; }
+
+        /* Chromatic aberration overlay */
+        @keyframes chromaticShift {
+          0%   { transform: translate(0, 0); }
+          25%  { transform: translate(-6px, 3px); }
+          50%  { transform: translate(4px, -2px); }
+          75%  { transform: translate(-3px, -4px); }
+          100% { transform: translate(5px, 2px); }
+        }
+        .chromatic-red {
+          position: fixed; inset: 0; z-index: 9996;
+          background: rgba(255, 0, 0, 0.12);
+          mix-blend-mode: screen;
+          animation: chromaticShift 0.15s linear infinite;
+          pointer-events: none;
+          will-change: transform;
+        }
+        .chromatic-cyan {
+          position: fixed; inset: 0; z-index: 9996;
+          background: rgba(0, 255, 255, 0.12);
+          mix-blend-mode: screen;
+          animation: chromaticShift 0.15s linear infinite reverse;
+          pointer-events: none;
+          will-change: transform;
+        }
+
+        /* Phase 4: FLASH — blinding white explosion */
+        @keyframes portalFlash {
+          0%   { opacity: 0; visibility: visible; }
+          10%  { opacity: 1; }
+          60%  { opacity: 1; }
+          100% { opacity: 0.95; }
+        }
+        .portal-flash-layer {
+          position: fixed; inset: 0; z-index: 9999;
+          background: radial-gradient(circle at 30% 30%, white, rgba(0,255,255,0.5), white);
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: opacity;
+        }
+        .portal-flash-layer.active {
+          animation: portalFlash 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          visibility: visible;
+        }
+
+        /* Phase 5: BLACKOUT — smooth fade to absolute black */
+        @keyframes portalBlackout {
+          0%   { opacity: 0; visibility: visible; }
+          100% { opacity: 1; }
+        }
+        .portal-blackout-layer {
+          position: fixed; inset: 0; z-index: 99999;
+          background: #000;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: opacity;
+        }
+        .portal-blackout-layer.active {
+          animation: portalBlackout 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          visibility: visible;
+        }
+
+        /* Chromatic layers — always mounted, hidden by default */
+        .chromatic-layer {
+          position: fixed; inset: 0; z-index: 9996;
+          mix-blend-mode: screen;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: transform;
+          transition: opacity 0.15s ease;
+        }
+        .chromatic-layer.active {
+          opacity: 1;
+          visibility: visible;
+        }
+        .chromatic-layer.red {
+          background: rgba(255, 0, 0, 0.12);
+          animation: chromaticShift 0.15s linear infinite;
+        }
+        .chromatic-layer.cyan {
+          background: rgba(0, 255, 255, 0.12);
+          animation: chromaticShift 0.15s linear infinite reverse;
+        }
+
+        /* Pull darkening overlay — always mounted */
+        .portal-darken-layer {
+          position: fixed; inset: 0; z-index: 95;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.4s ease, background 0.4s ease;
+          will-change: opacity;
+        }
+        .portal-darken-layer.pull {
+          opacity: 1;
+          visibility: visible;
+          background: radial-gradient(circle at 30% 30%, transparent 10%, rgba(0,0,0,0.4) 70%);
+        }
+        .portal-darken-layer.breach {
+          opacity: 1;
+          visibility: visible;
+          background: radial-gradient(circle at 30% 30%, transparent 10%, rgba(0,0,0,0.8) 70%);
+        }
+
+        /* Glitch overlay — always mounted */
+        .portal-glitch-layer {
+          position: fixed; inset: 0; z-index: 9997;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          background: linear-gradient(transparent 30%, rgba(0,255,255,0.05) 30.5%, transparent 31%, transparent 69%, rgba(176,38,255,0.05) 69.5%, transparent 70%);
+          background-size: 100% 4px;
+        }
+        .portal-glitch-layer.active {
+          opacity: 1;
+          visibility: visible;
+          animation: breachGlitch 0.8s steps(1) infinite;
+        }
+
+        /* Vortex particle spiral */
+        @keyframes vortexSpin {
+          0%   { transform: rotate(0deg) scale(1); opacity: 0.8; }
+          50%  { transform: rotate(360deg) scale(0.3); opacity: 1; }
+          100% { transform: rotate(720deg) scale(0); opacity: 0; }
+        }
+        .vortex-particle {
+          position: absolute;
+          border-radius: 50%;
+          animation: vortexSpin 1.2s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+          pointer-events: none;
+          will-change: transform, opacity;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+
+        /* Energy streaks rushing to center */
+        @keyframes energyStreak {
+          0%   { transform: translateX(var(--sx)) translateY(var(--sy)) scaleX(1); opacity: 0; }
+          20%  { opacity: 1; }
+          100% { transform: translateX(0) translateY(0) scaleX(3); opacity: 0; }
+        }
+        .energy-streak {
+          position: absolute;
+          height: 2px;
+          border-radius: 2px;
+          animation: energyStreak 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+          pointer-events: none;
+          will-change: transform, opacity;
+          backface-visibility: hidden;
+        }
+
         /* 3D FLOATING ANIMATIONS */
         @keyframes titleFloat {
           0%   { transform: rotateX(2deg) rotateY(-1.5deg) translateY(0px); }
@@ -719,62 +1067,341 @@ export default function ExodusGodTier() {
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
         }
+
+        /* ═══════════════════════════════════════════════════════════════════
+           NAV BUTTON — CINEMATIC 3D HOLOGRAPHIC PANELS
+           ═══════════════════════════════════════════════════════════════════ */
+        @keyframes navPanelFloat {
+          0%   { transform: translateY(0px) rotateY(0deg) rotateX(0deg); }
+          25%  { transform: translateY(-8px) rotateY(2deg) rotateX(1deg); }
+          50%  { transform: translateY(-4px) rotateY(-1deg) rotateX(-0.5deg); }
+          75%  { transform: translateY(-10px) rotateY(-2deg) rotateX(1.5deg); }
+          100% { transform: translateY(0px) rotateY(0deg) rotateX(0deg); }
+        }
+        @keyframes navOrbitalRing {
+          0%   { transform: rotateX(75deg) rotateZ(0deg); }
+          100% { transform: rotateX(75deg) rotateZ(360deg); }
+        }
+        @keyframes navOrbitalRing2 {
+          0%   { transform: rotateX(60deg) rotateZ(0deg) rotateY(30deg); }
+          100% { transform: rotateX(60deg) rotateZ(-360deg) rotateY(30deg); }
+        }
+        @keyframes navCoreRotate {
+          0%   { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes navEnergyPulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50%      { opacity: 0.8; transform: scale(1.15); }
+        }
+        @keyframes navScanline {
+          0%   { transform: translateY(-20vh); opacity: 0; }
+          10%  { opacity: 0.6; }
+          90%  { opacity: 0.6; }
+          100% { transform: translateY(20vh); opacity: 0; }
+        }
+        @keyframes navParticleOrbit {
+          0%   { transform: rotate(0deg) translateX(var(--nav-orbit-r)) rotate(0deg); opacity: 0.8; }
+          50%  { opacity: 1; }
+          100% { transform: rotate(360deg) translateX(var(--nav-orbit-r)) rotate(-360deg); opacity: 0.8; }
+        }
+        @keyframes navActivatePulse {
+          0%   { transform: scale(1); filter: brightness(1); }
+          50%  { transform: scale(1.3); filter: brightness(3); }
+          100% { transform: scale(0.8); filter: brightness(5); opacity: 0; }
+        }
+        @keyframes navWarpStretch {
+          0%   { transform: scaleX(1) scaleY(1); filter: brightness(1); }
+          100% { transform: scaleX(3) scaleY(0.3); filter: brightness(4); opacity: 0; }
+        }
+        .nav-panel-left {
+          animation: navPanelFloat 6s ease-in-out infinite;
+          transform-style: preserve-3d;
+          perspective: 800px;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          contain: layout style;
+        }
+        .nav-panel-right {
+          animation: navPanelFloat 6s ease-in-out infinite 3s;
+          transform-style: preserve-3d;
+          perspective: 800px;
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          contain: layout style;
+        }
+        .nav-panel-left:hover, .nav-panel-right:hover {
+          animation-play-state: paused;
+        }
+        .nav-activate {
+          animation: navActivatePulse 0.5s ease-out forwards !important;
+          will-change: transform, filter, opacity;
+        }
+        .nav-warp-stretch {
+          animation: navWarpStretch 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards !important;
+          will-change: transform, filter, opacity;
+        }
+
+        /* Nav orbit elements — GPU-promoted */
+        .nav-orbital-ring {
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          contain: layout style;
+        }
+        .nav-core-inner {
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+
+        /* Nav transit overlay layers */
+        .nav-flash-layer {
+          position: fixed; inset: 0; z-index: 9999;
+          background: radial-gradient(circle at 50% 50%, white, rgba(0,200,255,0.5), white);
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: opacity;
+        }
+        .nav-flash-layer.active {
+          animation: portalFlash 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          visibility: visible;
+        }
+        .nav-blackout-layer {
+          position: fixed; inset: 0; z-index: 99999;
+          background: #000;
+          pointer-events: none;
+          opacity: 0;
+          visibility: hidden;
+          will-change: opacity;
+        }
+        .nav-blackout-layer.active {
+          animation: portalBlackout 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+          visibility: visible;
+        }
       `}} />
 
       <div className="crt-overlay" />
       <FPSMonitor />
 
-      {/* FIXED SIDE NAVIGATION BUTTONS */}
+      {/* FIXED SIDE NAVIGATION BUTTONS — 3D HOLOGRAPHIC PANELS */}
       {osBooted && activeShip === null && !warpSpeed && (
         <>
-          <Link href="/" className="fixed bottom-8 left-6 md:bottom-auto md:left-6 md:top-[25%] md:-translate-y-1/2 z-[100] group flex flex-col items-center gap-2 md:gap-4 p-2 md:p-4 animate-[pulse_3s_infinite]">
-            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full border-[3px] md:border-4 border-cyan-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-cyan-300 hover:bg-cyan-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(0,240,255,0.6)] group-hover:shadow-[0_0_50px_rgba(0,240,255,1)] overflow-hidden">
-              <div className="absolute inset-0 bg-cyan-400/30 animate-[ping_2s_infinite]" />
-              <ArrowLeft className="w-6 h-6 md:w-12 md:h-12 text-cyan-200 group-hover:-translate-x-2 transition-transform relative z-10 drop-shadow-[0_0_8px_cyan]" />
-            </div>
-            <span className="font-mono text-[10px] md:text-sm tracking-widest text-cyan-200 uppercase font-bold text-center w-max opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_cyan] hidden sm:block">Vũ Trụ Gốc</span>
-          </Link>
+          {/* ══════ LEFT: VŨ TRỤ GỐC ══════ */}
+          <div
+            className={`fixed bottom-6 left-4 md:bottom-auto md:left-6 md:top-[25%] md:-translate-y-1/2 z-[100] nav-panel-left cursor-pointer ${navTransitPhase === 'activate' && navTransitTarget === '/' ? 'nav-activate' : ''} ${navTransitPhase === 'warp' && navTransitTarget === '/' ? 'nav-warp-stretch' : ''}`}
+            onClick={() => handleNavTransit('/')}
+            onMouseEnter={() => sfx?.play('hover')}
+          >
+            <div className="group relative flex flex-col items-center gap-3">
+              {/* Outer orbital system */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36" style={{ transformStyle: 'preserve-3d' }}>
+                {/* Orbital ring 1 */}
+                <div className="absolute inset-[-12px] md:inset-[-18px] rounded-full border border-cyan-400/30 nav-orbital-ring" style={{ animation: 'navOrbitalRing 8s linear infinite' }} />
+                {/* Orbital ring 2 */}
+                <div className="absolute inset-[-20px] md:inset-[-28px] rounded-full border border-cyan-300/15 border-dashed nav-orbital-ring" style={{ animation: 'navOrbitalRing2 12s linear infinite' }} />
+                {/* Orbiting particle dots */}
+                {[0, 1, 2].map(i => (
+                  <div key={`orb-l-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 nav-orbital-ring" style={{ '--nav-orbit-r': `${48 + i * 16}px`, animation: `navParticleOrbit ${5 + i * 2}s linear infinite ${i * 0.8}s` } as React.CSSProperties}>
+                    <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${i === 0 ? 'bg-cyan-300' : i === 1 ? 'bg-white' : 'bg-blue-400'} shadow-[0_0_8px_currentColor]`} />
+                  </div>
+                ))}
 
-          <Link href="/creative" className="fixed bottom-8 right-6 md:bottom-auto md:right-6 md:top-[25%] md:-translate-y-1/2 z-[100] group flex flex-col items-center gap-2 md:gap-4 p-2 md:p-4 animate-[pulse_3s_infinite]">
-            <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 md:w-28 md:h-28 rounded-full border-[3px] md:border-4 border-purple-400/80 bg-[#02050f]/60 backdrop-blur-md hover:scale-110 hover:border-purple-300 hover:bg-purple-800/60 transition-all duration-300 shadow-[0_0_30px_rgba(168,85,247,0.6)] group-hover:shadow-[0_0_50px_rgba(168,85,247,1)] overflow-hidden">
-              <div className="absolute inset-0 bg-purple-400/30 animate-[ping_2s_infinite]" />
-              <Orbit className="w-6 h-6 md:w-12 md:h-12 text-purple-200 group-hover:rotate-180 transition-transform duration-700 relative z-10 drop-shadow-[0_0_8px_purple]" />
+                {/* Energy pulse rings */}
+                <div className="absolute inset-0 rounded-full border-2 border-cyan-400/20 nav-orbital-ring" style={{ animation: 'navEnergyPulse 3s ease-in-out infinite' }} />
+                <div className="absolute inset-1 rounded-full border border-cyan-300/10 nav-orbital-ring" style={{ animation: 'navEnergyPulse 3s ease-in-out infinite 1s' }} />
+
+                {/* Main core container */}
+                <div className="absolute inset-0 rounded-full overflow-hidden border-2 md:border-[3px] border-cyan-400/70 bg-[#020810]/90 group-hover:border-cyan-200 group-hover:bg-cyan-950/60 transition-all duration-500 shadow-[0_0_40px_rgba(0,240,255,0.4),inset_0_0_30px_rgba(0,240,255,0.1)] group-hover:shadow-[0_0_80px_rgba(0,240,255,0.8),inset_0_0_50px_rgba(0,240,255,0.2)]">
+                  {/* Conic gradient swirl */}
+                  <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(0,240,255,0.15),transparent,rgba(0,200,255,0.1),transparent)] mix-blend-screen nav-core-inner" style={{ animation: 'navCoreRotate 6s linear infinite' }} />
+                  {/* Radial glow */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,240,255,0.2)_0%,transparent_60%)] animate-pulse" />
+                  {/* Scanline */}
+                  <div className="absolute left-0 right-0 h-[1px] top-0 pointer-events-none bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent nav-core-inner" style={{ animation: 'navScanline 3s linear infinite' }} />
+                  
+                  {/* Icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative">
+                      <ArrowLeft className="w-7 h-7 md:w-12 md:h-12 text-cyan-200 group-hover:text-white group-hover:-translate-x-3 transition-all duration-500 drop-shadow-[0_0_15px_rgba(0,240,255,0.8)]" />
+                      {/* Icon glow trail */}
+                      <ArrowLeft className="absolute inset-0 w-7 h-7 md:w-12 md:h-12 text-cyan-400/30 blur-[6px] group-hover:-translate-x-3 transition-all duration-500" />
+                    </div>
+                  </div>
+
+                  {/* Inner bright center point */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 md:w-3 md:h-3 bg-cyan-200 rounded-full shadow-[0_0_20px_rgba(0,240,255,0.8)] opacity-60 animate-pulse" />
+                </div>
+
+                {/* 3D depth shadow under the sphere */}
+                <div className="absolute -bottom-2 md:-bottom-3 left-[10%] right-[10%] h-3 md:h-4 bg-cyan-500/10 rounded-full blur-lg" />
+              </div>
+
+              {/* Label with holographic style */}
+              <div className="relative hidden sm:flex flex-col items-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="w-4 h-[1px] bg-gradient-to-r from-transparent to-cyan-400/60" />
+                  <div className="w-1 h-1 rounded-full bg-cyan-400 shadow-[0_0_4px_cyan] animate-pulse" />
+                  <div className="w-4 h-[1px] bg-gradient-to-l from-transparent to-cyan-400/60" />
+                </div>
+                <span className="font-mono text-[10px] md:text-xs tracking-[0.25em] text-cyan-200/90 uppercase font-black drop-shadow-[0_0_12px_rgba(0,240,255,0.6)] group-hover:text-white group-hover:drop-shadow-[0_0_20px_rgba(0,240,255,1)] transition-all duration-300">Vũ Trụ Gốc</span>
+                <span className="font-mono text-[7px] md:text-[8px] tracking-[0.3em] text-cyan-400/40 uppercase mt-0.5">ORIGIN UNIVERSE</span>
+              </div>
             </div>
-            <span className="font-mono text-[10px] md:text-sm tracking-widest text-purple-200 uppercase font-bold text-center w-max opacity-80 group-hover:opacity-100 transition-opacity drop-shadow-[0_0_10px_purple] hidden sm:block">Hệ Hành Tinh</span>
-          </Link>
+          </div>
+
+          {/* ══════ RIGHT: HỆ HÀNH TINH ══════ */}
+          <div
+            className={`fixed bottom-6 right-4 md:bottom-auto md:right-6 md:top-[25%] md:-translate-y-1/2 z-[100] nav-panel-right cursor-pointer ${navTransitPhase === 'activate' && navTransitTarget === '/creative' ? 'nav-activate' : ''} ${navTransitPhase === 'warp' && navTransitTarget === '/creative' ? 'nav-warp-stretch' : ''}`}
+            onClick={() => handleNavTransit('/creative')}
+            onMouseEnter={() => sfx?.play('hover')}
+          >
+            <div className="group relative flex flex-col items-center gap-3">
+              {/* Outer orbital system */}
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36" style={{ transformStyle: 'preserve-3d' }}>
+                {/* Orbital ring 1 */}
+                <div className="absolute inset-[-12px] md:inset-[-18px] rounded-full border border-purple-400/30 nav-orbital-ring" style={{ animation: 'navOrbitalRing 8s linear infinite reverse' }} />
+                {/* Orbital ring 2 */}
+                <div className="absolute inset-[-20px] md:inset-[-28px] rounded-full border border-purple-300/15 border-dashed nav-orbital-ring" style={{ animation: 'navOrbitalRing2 12s linear infinite reverse' }} />
+                {/* Orbiting particle dots */}
+                {[0, 1, 2].map(i => (
+                  <div key={`orb-r-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 nav-orbital-ring" style={{ '--nav-orbit-r': `${48 + i * 16}px`, animation: `navParticleOrbit ${5 + i * 2}s linear infinite reverse ${i * 0.8}s` } as React.CSSProperties}>
+                    <div className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${i === 0 ? 'bg-purple-300' : i === 1 ? 'bg-white' : 'bg-fuchsia-400'} shadow-[0_0_8px_currentColor]`} />
+                  </div>
+                ))}
+
+                {/* Energy pulse rings */}
+                <div className="absolute inset-0 rounded-full border-2 border-purple-400/20 nav-orbital-ring" style={{ animation: 'navEnergyPulse 3s ease-in-out infinite 0.5s' }} />
+                <div className="absolute inset-1 rounded-full border border-purple-300/10 nav-orbital-ring" style={{ animation: 'navEnergyPulse 3s ease-in-out infinite 1.5s' }} />
+
+                {/* Main core container */}
+                <div className="absolute inset-0 rounded-full overflow-hidden border-2 md:border-[3px] border-purple-400/70 bg-[#0a0215]/90 group-hover:border-purple-200 group-hover:bg-purple-950/60 transition-all duration-500 shadow-[0_0_40px_rgba(168,85,247,0.4),inset_0_0_30px_rgba(168,85,247,0.1)] group-hover:shadow-[0_0_80px_rgba(168,85,247,0.8),inset_0_0_50px_rgba(168,85,247,0.2)]">
+                  {/* Conic gradient swirl */}
+                  <div className="absolute inset-0 bg-[conic-gradient(from_180deg,transparent,rgba(168,85,247,0.15),transparent,rgba(200,100,255,0.1),transparent)] mix-blend-screen nav-core-inner" style={{ animation: 'navCoreRotate 6s linear infinite reverse' }} />
+                  {/* Radial glow */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.2)_0%,transparent_60%)] animate-pulse" />
+                  {/* Scanline */}
+                  <div className="absolute left-0 right-0 h-[1px] top-0 pointer-events-none bg-gradient-to-r from-transparent via-purple-300/50 to-transparent nav-core-inner" style={{ animation: 'navScanline 3s linear infinite 1.5s' }} />
+                  
+                  {/* Icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="relative">
+                      <Orbit className="w-7 h-7 md:w-12 md:h-12 text-purple-200 group-hover:text-white group-hover:rotate-[360deg] transition-all duration-700 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)]" />
+                      {/* Icon glow trail */}
+                      <Orbit className="absolute inset-0 w-7 h-7 md:w-12 md:h-12 text-purple-400/30 blur-[6px] group-hover:rotate-[360deg] transition-all duration-700" />
+                    </div>
+                  </div>
+
+                  {/* Inner bright center point */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 md:w-3 md:h-3 bg-purple-200 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.8)] opacity-60 animate-pulse" />
+                </div>
+
+                {/* 3D depth shadow under the sphere */}
+                <div className="absolute -bottom-2 md:-bottom-3 left-[10%] right-[10%] h-3 md:h-4 bg-purple-500/10 rounded-full blur-lg" />
+              </div>
+
+              {/* Label with holographic style */}
+              <div className="relative hidden sm:flex flex-col items-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="w-4 h-[1px] bg-gradient-to-r from-transparent to-purple-400/60" />
+                  <div className="w-1 h-1 rounded-full bg-purple-400 shadow-[0_0_4px_purple] animate-pulse" />
+                  <div className="w-4 h-[1px] bg-gradient-to-l from-transparent to-purple-400/60" />
+                </div>
+                <span className="font-mono text-[10px] md:text-xs tracking-[0.25em] text-purple-200/90 uppercase font-black drop-shadow-[0_0_12px_rgba(168,85,247,0.6)] group-hover:text-white group-hover:drop-shadow-[0_0_20px_rgba(168,85,247,1)] transition-all duration-300">Hệ Hành Tinh</span>
+                <span className="font-mono text-[7px] md:text-[8px] tracking-[0.3em] text-purple-400/40 uppercase mt-0.5">PLANET SYSTEM</span>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
-      {/* SPACE PORTAL (Lựa chọn 1) */}
-      {showGate && activeShip === null && !warpSpeed && (
-        <div className="fixed top-[10%] md:top-[15%] left-1/2 -translate-x-1/2 md:left-[8%] md:translate-x-0 z-[90] pointer-events-none flex items-center justify-center scale-50 md:scale-100 origin-top md:origin-center mt-12 md:mt-0">
-          <div className="portal-enter">
-            <div className="portal-breathe">
-              <Link href="/creative" className="pointer-events-auto group relative flex items-center justify-center hover:scale-110 transition-transform duration-700">
+      {/* SPACE PORTAL (Lựa chọn 1) — CINEMATIC TRANSIT */}
+      {showGate && activeShip === null && (
+        <div className={`fixed top-[10%] md:top-[15%] left-1/2 -translate-x-1/2 md:left-[8%] md:translate-x-0 z-[90] pointer-events-none flex items-center justify-center scale-50 md:scale-100 origin-top md:origin-center mt-12 md:mt-0 ${portalTransitPhase !== 'idle' ? 'portal-full-sequence' : ''}`} style={{ contain: 'layout' }}>
+          <div className={`${portalTransitPhase === 'idle' ? 'portal-enter' : ''}`}>
+            <div className={`${portalTransitPhase === 'idle' ? 'portal-breathe' : ''}`}>
+              <button onClick={handlePortalClick} className={`pointer-events-auto group relative flex items-center justify-center hover:scale-110 transition-transform duration-700 bg-transparent border-none cursor-pointer ${portalTransitPhase !== 'idle' ? 'pointer-events-none' : ''}`}>
                 {/* Outer blinding rings */}
-                <div className="absolute w-[250px] h-[250px] md:w-[320px] md:h-[320px] rounded-full border-[6px] border-transparent border-t-cyan-300 border-b-cyan-300 animate-[spin_4s_linear_infinite] shadow-[0_0_50px_rgba(0,255,255,0.8)]" />
-                <div className="absolute w-[280px] h-[280px] md:w-[360px] md:h-[360px] rounded-full border-[4px] border-transparent border-l-yellow-300 border-r-white animate-[spin_6s_linear_infinite_reverse] shadow-[0_0_50px_rgba(255,255,255,0.8)]" />
-                <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border-[2px] border-white/50 animate-[ping_3s_infinite]" />
+                <div className={`absolute w-[250px] h-[250px] md:w-[320px] md:h-[320px] rounded-full border-[6px] border-transparent border-t-cyan-300 border-b-cyan-300 shadow-[0_0_50px_rgba(0,255,255,0.8)] ${portalTransitPhase !== 'idle' ? 'animate-[spin_0.3s_linear_infinite]' : 'animate-[spin_4s_linear_infinite]'}`} />
+                <div className={`absolute w-[280px] h-[280px] md:w-[360px] md:h-[360px] rounded-full border-[4px] border-transparent border-l-yellow-300 border-r-white shadow-[0_0_50px_rgba(255,255,255,0.8)] ${portalTransitPhase !== 'idle' ? 'animate-[spin_0.2s_linear_infinite_reverse]' : 'animate-[spin_6s_linear_infinite_reverse]'}`} />
+                <div className={`absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border-[2px] border-white/50 ${portalTransitPhase !== 'idle' ? 'animate-[ping_0.5s_infinite]' : 'animate-[ping_3s_infinite]'}`} />
+                
+                {/* Extra energy rings during transit */}
+                {portalTransitPhase !== 'idle' && (
+                  <>
+                    <div className="absolute w-[340px] h-[340px] md:w-[440px] md:h-[440px] rounded-full border-[3px] border-transparent border-t-purple-400 border-b-blue-400 animate-[spin_0.4s_linear_infinite] shadow-[0_0_80px_rgba(168,85,247,0.6)]" />
+                    <div className="absolute w-[380px] h-[380px] md:w-[500px] md:h-[500px] rounded-full border-[2px] border-transparent border-l-cyan-200 border-r-purple-200 animate-[spin_0.25s_linear_infinite_reverse] shadow-[0_0_60px_rgba(0,255,255,0.4)]" />
+                  </>
+                )}
                 
                 {/* Bright Core */}
-                <div className="w-[200px] h-[200px] md:w-[260px] md:h-[260px] rounded-full flex items-center justify-center relative overflow-hidden shadow-[0_0_120px_rgba(0,255,255,1)] group-hover:shadow-[0_0_200px_rgba(255,255,255,1)] transition-all duration-700 border-4 border-cyan-200 bg-cyan-900/30 backdrop-blur-sm">
+                <div className={`w-[200px] h-[200px] md:w-[260px] md:h-[260px] rounded-full flex items-center justify-center relative overflow-hidden border-4 border-cyan-200 bg-cyan-900/30 ${portalTransitPhase === 'idle' ? 'backdrop-blur-sm transition-shadow duration-700' : ''} ${portalTransitPhase !== 'idle' ? 'shadow-[0_0_200px_rgba(255,255,255,1),0_0_300px_rgba(0,255,255,0.8)]' : 'shadow-[0_0_120px_rgba(0,255,255,1)] group-hover:shadow-[0_0_200px_rgba(255,255,255,1)]'}`}>
                   {/* Event horizon swirl - super bright */}
-                  <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.8),rgba(0,255,255,0.8),transparent)] animate-[spin_1.5s_linear_infinite] mix-blend-screen" />
+                  <div className={`absolute inset-0 bg-[conic-gradient(from_0deg,transparent,rgba(255,255,255,0.8),rgba(0,255,255,0.8),transparent)] mix-blend-screen ${portalTransitPhase !== 'idle' ? 'animate-[spin_0.2s_linear_infinite]' : 'animate-[spin_1.5s_linear_infinite]'}`} />
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,white_10%,rgba(0,240,255,0.8)_40%,transparent_80%)] opacity-80 animate-pulse" />
                   
                   {/* Blinding Center */}
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full shadow-[0_0_80px_white,0_0_120px_cyan,0_0_150px_yellow] animate-[ping_1.5s_infinite]" />
+                  <div className={`bg-white rounded-full ${portalTransitPhase !== 'idle' ? 'w-24 h-24 md:w-32 md:h-32 shadow-[0_0_120px_white,0_0_180px_cyan,0_0_250px_yellow] animate-[ping_0.4s_infinite]' : 'w-16 h-16 md:w-20 md:h-20 shadow-[0_0_80px_white,0_0_120px_cyan,0_0_150px_yellow] animate-[ping_1.5s_infinite]'}`} />
                   
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none pt-[110px] md:pt-[140px]">
                      <span className="font-mono text-[10px] md:text-xs tracking-[0.4em] font-black text-black bg-cyan-300/90 px-3 py-1 rounded mb-1 shadow-[0_0_15px_cyan]">CỔNG DỊCH CHUYỂN</span>
                      <span className="font-sans text-xl md:text-2xl font-black tracking-widest text-white uppercase drop-shadow-[0_0_10px_black]" style={{ textShadow: '0 0 15px black, 0 0 30px black' }}>Hệ Hành Tinh</span>
                   </div>
                 </div>
-              </Link>
+              </button>
             </div>
           </div>
+
+          {/* Vortex particles during transit — pre-computed positions, no box-shadow for GPU perf */}
+          {(portalTransitPhase === 'pull' || portalTransitPhase === 'breach') && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {portalVortexData.map((p, i) => (
+                <div key={i} className="vortex-particle" style={{
+                  width: `${p.size}px`,
+                  height: `${p.size}px`,
+                  left: `calc(50% + ${p.x}px)`,
+                  top: `calc(50% + ${p.y}px)`,
+                  background: p.color,
+                  animationDelay: `${i * 0.06}s`,
+                }} />
+              ))}
+            </div>
+          )}
+
+          {/* Energy streaks rushing to center — pre-computed, reduced count */}
+          {portalTransitPhase === 'breach' && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              {portalStreakData.map((s, i) => (
+                <div key={`streak-${i}`} className="energy-streak" style={{
+                  width: `${s.width}px`,
+                  left: '50%',
+                  top: '50%',
+                  background: s.gradient,
+                  transform: `rotate(${s.rotation}deg)`,
+                  '--sx': `${s.sx}px`,
+                  '--sy': `${s.sy}px`,
+                  animationDelay: `${i * 0.04}s`,
+                } as React.CSSProperties} />
+              ))}
+            </div>
+          )}
         </div>
       )}
+
+      {/* ═══ PORTAL TRANSIT OVERLAY EFFECTS — ALWAYS MOUNTED, CLASS-TOGGLED ═══ */}
+      <div className={`chromatic-layer red ${portalTransitPhase === 'breach' ? 'active' : ''}`} />
+      <div className={`chromatic-layer cyan ${portalTransitPhase === 'breach' ? 'active' : ''}`} />
+      <div className={`portal-darken-layer ${portalTransitPhase === 'pull' ? 'pull' : ''} ${portalTransitPhase === 'breach' ? 'breach' : ''}`} />
+      <div className={`portal-glitch-layer ${portalTransitPhase === 'breach' ? 'active' : ''}`} />
+      <div className={`portal-flash-layer ${portalTransitPhase === 'flash' ? 'active' : ''}`} />
+      <div className={`portal-blackout-layer ${portalTransitPhase === 'blackout' ? 'active' : ''}`} />
+
+      {/* ═══ NAV TRANSIT OVERLAY EFFECTS — ALWAYS MOUNTED, CLASS-TOGGLED ═══ */}
+      <div className={`nav-flash-layer ${navTransitPhase === 'flash' ? 'active' : ''}`} />
+      <div className={`nav-blackout-layer ${navTransitPhase === 'blackout' ? 'active' : ''}`} />
 
       {/* CORE CANVAS — 2D Blackhole Engine */}
       <div className={`fixed inset-0 z-0 pointer-events-none ${warpSpeed ? 'warp-shake' : ''} ${screenShake ? `shake-${screenShake}` : ''}`}>
