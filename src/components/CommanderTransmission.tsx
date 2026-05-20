@@ -24,6 +24,8 @@ import {
   Cpu,
   Box,
   Database,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
@@ -31,7 +33,8 @@ import { usePathname } from 'next/navigation';
 // CONSTANTS
 // =============================================================================
 const COMMANDER_KEY = 'commander_progress_v3';
-const MOBILE_TRIGGER_MS = 180_000; // 3 phút cho mobile
+const MOBILE_TRIGGER_MS = 180_000; // 3 phút cho mobile auto-trigger
+const MOBILE_BUTTON_DELAY_MS = 30_000; // 30 giây thì hiện nút "Gặp Commander" trên mobile
 const MOBILE_SESSION_KEY = 'commander_mobile_session_v3';
 
 /**
@@ -299,72 +302,107 @@ class TransmissionAudio {
 }
 
 // =============================================================================
-// HOLOGRAPHIC AVATAR (MEMOIZED)
+// HOLOGRAPHIC AVATAR (MEMOIZED + FORWARDREF)
 // =============================================================================
-const HolographicAvatar = memo(({ isActive, videoSrc, onEnded }: { isActive: boolean; videoSrc: string; onEnded?: () => void }) => {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+export interface HolographicAvatarHandle {
+  play: () => Promise<void>;
+  pause: () => void;
+  setSrc: (src: string) => void;
+  setMuted: (muted: boolean) => void;
+  isMuted: () => boolean;
+  getVideo: () => HTMLVideoElement | null;
+}
 
-  React.useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (isActive) {
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
-  }, [isActive]);
+interface HolographicAvatarProps {
+  isActive: boolean;
+  onEnded?: () => void;
+}
 
-  React.useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.src = videoSrc;
-    if (isActive) {
-      video.play().catch(() => {});
-    }
-  }, [videoSrc, isActive]);
+const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, HolographicAvatarProps>(
+  ({ isActive, onEnded }, ref) => {
+    const videoRef = React.useRef<HTMLVideoElement>(null);
 
-  return (
-    <div className="absolute inset-0 rounded-3xl overflow-hidden border-2 border-cyan-500/40 shadow-[0_0_40px_rgba(0,242,254,0.3),inset_0_0_30px_rgba(0,242,254,0.2)] bg-[#010614]">
-      {/* Scan beam — subtle */}
-      <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-3xl">
-        <div
-          className="absolute left-0 right-0 h-24 bg-gradient-to-b from-transparent via-cyan-400/8 to-transparent"
-          style={{ animation: 'scan-beam 3s linear infinite' }}
-        />
-      </div>
+    React.useImperativeHandle(ref, () => ({
+      play: () => {
+        const video = videoRef.current;
+        if (!video) return Promise.resolve();
+        // IMPORTANT: must be called synchronously inside a user gesture
+        // so the browser keeps the "user activation" flag for unmuted playback.
+        const p = video.play();
+        return p instanceof Promise ? p.catch(() => {}) : Promise.resolve();
+      },
+      pause: () => {
+        videoRef.current?.pause();
+      },
+      setSrc: (src: string) => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.src && video.src.endsWith(src)) return;
+        video.src = src;
+        video.load();
+      },
+      setMuted: (muted: boolean) => {
+        const video = videoRef.current;
+        if (!video) return;
+        video.muted = muted;
+      },
+      isMuted: () => videoRef.current?.muted ?? true,
+      getVideo: () => videoRef.current,
+    }), []);
 
-      {/* VIDEO — NATURAL COLORS + ORIGINAL AUDIO */}
-      <video
-        ref={videoRef}
-        playsInline
-        className="absolute inset-0 w-full h-full object-cover object-top z-[1]"
-        onEnded={onEnded}
-      />
+    // Pause when going inactive (e.g. → dossier). Do NOT auto-play when becoming active —
+    // play() must be called synchronously from a user gesture in the parent.
+    React.useEffect(() => {
+      if (!isActive) {
+        videoRef.current?.pause();
+      }
+    }, [isActive]);
 
-      {/* Subtle scanlines */}
-      <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,242,254,0.04)_3px,rgba(0,242,254,0.04)_4px)] pointer-events-none z-10" />
-
-      {/* Vignette */}
-      <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.5)] pointer-events-none z-30 rounded-3xl" />
-
-      {/* Audio waveform */}
-      {isActive && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-end justify-center gap-1 h-6 z-40">
-          {WAVEFORM_BARS.map((bar, i) => (
-            <div
-              key={i}
-              className="w-1.5 bg-cyan-400 rounded-t shadow-[0_0_10px_#00f2fe]"
-              style={{
-                height: `${bar.peak}%`,
-                animation: `audio-wave ${bar.duration}s ease-in-out ${bar.delay}s infinite alternate`,
-              }}
-            />
-          ))}
+    return (
+      <div className="absolute inset-0 rounded-3xl overflow-hidden border-2 border-cyan-500/40 shadow-[0_0_40px_rgba(0,242,254,0.3),inset_0_0_30px_rgba(0,242,254,0.2)] bg-[#010614]">
+        {/* Scan beam — subtle */}
+        <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden rounded-3xl">
+          <div
+            className="absolute left-0 right-0 h-24 bg-gradient-to-b from-transparent via-cyan-400/8 to-transparent"
+            style={{ animation: 'scan-beam 3s linear infinite' }}
+          />
         </div>
-      )}
-    </div>
-  );
-});
+
+        {/* VIDEO — NATURAL COLORS + ORIGINAL AUDIO. Pre-mounted from `incoming` phase
+            so play() can be called synchronously inside the user's click handler. */}
+        <video
+          ref={videoRef}
+          playsInline
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover object-top z-[1]"
+          onEnded={onEnded}
+        />
+
+        {/* Subtle scanlines */}
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,242,254,0.04)_3px,rgba(0,242,254,0.04)_4px)] pointer-events-none z-10" />
+
+        {/* Vignette */}
+        <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(0,0,0,0.5)] pointer-events-none z-30 rounded-3xl" />
+
+        {/* Audio waveform */}
+        {isActive && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-end justify-center gap-1 h-6 z-40">
+            {WAVEFORM_BARS.map((bar, i) => (
+              <div
+                key={i}
+                className="w-1.5 bg-cyan-400 rounded-t shadow-[0_0_10px_#00f2fe]"
+                style={{
+                  height: `${bar.peak}%`,
+                  animation: `audio-wave ${bar.duration}s ease-in-out ${bar.delay}s infinite alternate`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+));
 HolographicAvatar.displayName = 'HolographicAvatar';
 
 // =============================================================================
@@ -524,6 +562,8 @@ const ProjectSummaryContent = () => {
 export default function CommanderTransmission() {
   const pathname = usePathname();
   const [phase, setPhase] = useState<TransmissionPhase>('idle');
+  const [showMobileBtn, setShowMobileBtn] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [currentLineState, setCurrentLineState] = useState(0);
   const currentLineRef = useRef(0);
@@ -550,8 +590,13 @@ export default function CommanderTransmission() {
 
   const [transmissionCompleted, setTransmissionCompleted] = useState(false);
   const [isGeneratingCV, setIsGeneratingCV] = useState(false);
+  // Video mute state — mirrors the <video> element. Auto-mute fallback flips this
+  // to true if the browser blocks unmuted playback (e.g. iOS Low Power Mode),
+  // and the floating "BẬT ÂM THANH" button lets the user un-mute later.
+  const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef<TransmissionAudio | null>(null);
+  const avatarRef = useRef<HolographicAvatarHandle | null>(null);
   const typewriterTimeout = useRef<NodeJS.Timeout | null>(null);
   const autoNextTimeout = useRef<NodeJS.Timeout | null>(null);
   const nextLineRef = useRef<() => void>(() => {});
@@ -686,9 +731,57 @@ export default function CommanderTransmission() {
 
   const startTransmission = () => {
     audioRef.current?.init();
+    // CRITICAL: setSrc + play() must run synchronously inside this click handler.
+    // Mobile browsers (esp. iOS Safari) only honor unmuted playback when play()
+    // is invoked during user activation — any await/setState before this kills it.
+    const avatar = avatarRef.current;
+    const video = avatar?.getVideo();
+    if (avatar && video) {
+      avatar.setSrc(VIDEO_CLIPS[0]);
+      // Try unmuted first (best UX). If the browser rejects (Low Power Mode,
+      // strict autoplay policy), fall back to muted so the video at least plays —
+      // user can then click the floating speaker button to unmute, which is itself
+      // a fresh user gesture and will always succeed.
+      video.muted = false;
+      setIsMuted(false);
+      const p = video.play();
+      if (p instanceof Promise) {
+        p.catch(() => {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch(() => {});
+        });
+      }
+    }
     setPhase('dialogue');
     setCurrentVideoIdx(0);
   };
+
+  // Switch to next clip via the imperative handle so we control timing precisely.
+  // The first clip is started synchronously in startTransmission(); subsequent
+  // clips inherit the user-activation flag granted by that initial click, so
+  // play() here is allowed even though it's called from an effect.
+  useEffect(() => {
+    if (phase !== 'dialogue') return;
+    const avatar = avatarRef.current;
+    if (!avatar) return;
+    avatar.setSrc(VIDEO_CLIPS[currentVideoIdx]);
+    avatar.play();
+  }, [phase, currentVideoIdx]);
+
+  // User-triggered mute toggle. Called from the floating button, so it's always
+  // a fresh user gesture — unmuted playback is guaranteed to be allowed here.
+  const toggleMute = useCallback(() => {
+    const avatar = avatarRef.current;
+    if (!avatar) return;
+    const next = !isMuted;
+    avatar.setMuted(next);
+    setIsMuted(next);
+    // Re-issue play() in case the video was paused (some browsers pause on
+    // muted→unmuted transitions during low-power conditions).
+    avatar.play();
+    audioRef.current?.playClick();
+  }, [isMuted]);
 
   // Video auto-advance: when current clip ends, play next or go to dossier
   const handleVideoEnded = useCallback(() => {
@@ -747,6 +840,24 @@ export default function CommanderTransmission() {
       if (typewriterTimeout.current) clearTimeout(typewriterTimeout.current);
       if (autoNextTimeout.current) clearTimeout(autoNextTimeout.current);
     };
+  }, []);
+
+  // Detect mobile + show "Gặp Commander" button after delay
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mobile = isMobileDevice();
+    setIsMobile(mobile);
+    if (!mobile) return;
+    // Don't show button if already played/completed
+    try {
+      const played = localStorage.getItem(`${COMMANDER_KEY}_played`) === 'true';
+      const completed = localStorage.getItem(`${COMMANDER_KEY}_completed`) === 'true';
+      if (played || completed) return;
+    } catch { /* ignore */ }
+    const timer = setTimeout(() => {
+      setShowMobileBtn(true);
+    }, MOBILE_BUTTON_DELAY_MS);
+    return () => clearTimeout(timer);
   }, []);
 
   // Init + trigger polling
@@ -858,7 +969,7 @@ export default function CommanderTransmission() {
         whileHover={{ scale: 1.15, rotate: 5 }}
         whileTap={{ scale: 0.9 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
-        className="fixed bottom-8 right-8 z-[99999] w-20 h-20 rounded-2xl bg-[#010614]/80 backdrop-blur-xl border border-cyan-500/50 flex items-center justify-center cursor-pointer shadow-[0_0_30px_rgba(34,211,238,0.3),inset_0_0_20px_rgba(34,211,238,0.2)] group"
+        className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-[99999] w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#010614]/80 backdrop-blur-xl border border-cyan-500/50 flex items-center justify-center cursor-pointer shadow-[0_0_30px_rgba(34,211,238,0.3),inset_0_0_20px_rgba(34,211,238,0.2)] group"
         onClick={() => {
           setTransmissionCompleted(false);
           setPhase('dossier-reopen');
@@ -869,12 +980,12 @@ export default function CommanderTransmission() {
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity" />
         <div className="absolute inset-[-2px] rounded-2xl bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 opacity-70 group-hover:opacity-100 blur-[2px]" style={{ backgroundSize: '200% 200%', animation: 'border-rotate 3s linear infinite' }} />
         <div className="relative z-10 flex flex-col items-center justify-center w-full h-full bg-[#010308] rounded-2xl">
-          <Mail className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_10px_#22d3ee] group-hover:scale-110 transition-transform duration-300" />
-          <span className="text-[9px] font-mono font-bold text-cyan-300 mt-1 tracking-widest">DOSSIER</span>
+          <Mail className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-400 drop-shadow-[0_0_10px_#22d3ee] group-hover:scale-110 transition-transform duration-300" />
+          <span className="text-[8px] sm:text-[9px] font-mono font-bold text-cyan-300 mt-1 tracking-widest">DOSSIER</span>
         </div>
         
         {/* Pulsing notification dot */}
-        <div className="absolute -top-2 -right-2 w-5 h-5 bg-cyan-400 rounded-full flex items-center justify-center shadow-[0_0_15px_#22d3ee]">
+        <div className="absolute -top-2 -right-2 w-4 h-4 sm:w-5 sm:h-5 bg-cyan-400 rounded-full flex items-center justify-center shadow-[0_0_15px_#22d3ee]">
           <span className="absolute w-full h-full bg-cyan-400 rounded-full animate-ping opacity-75" />
           <div className="w-2 h-2 bg-white rounded-full" />
         </div>
@@ -898,6 +1009,41 @@ export default function CommanderTransmission() {
           [DEV] TRIGGER COMMANDER
         </button>
       )}
+
+      {/* Mobile "Gặp Commander" floating button — appears after 30s on mobile */}
+      <AnimatePresence>
+        {phase === 'idle' && showMobileBtn && isMobile && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0, y: 60 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0, opacity: 0, y: 60 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+            onClick={() => {
+              localStorage.setItem(`${COMMANDER_KEY}_played`, 'true');
+              setShowMobileBtn(false);
+              setPhase('incoming');
+            }}
+            className="fixed bottom-6 right-4 z-[99999] flex items-center gap-3 px-5 py-4 rounded-2xl bg-[#010614]/90 backdrop-blur-xl border-2 border-cyan-400/60 shadow-[0_0_40px_rgba(34,211,238,0.3),inset_0_0_20px_rgba(34,211,238,0.15)] active:scale-95 transition-transform"
+          >
+            {/* Glow background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/15 via-purple-500/15 to-cyan-500/15 rounded-2xl" />
+            <div className="absolute inset-[-1px] rounded-2xl bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 opacity-60 blur-[1px]" style={{ backgroundSize: '200% 200%', animation: 'border-rotate 3s linear infinite' }} />
+            
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="relative">
+                <SignalHigh className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_#22d3ee]" style={{ animation: 'incoming-pulse 1.2s ease-in-out infinite' }} />
+                {/* Pulsing dot */}
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full animate-ping" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-400 rounded-full" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-cyan-300 font-bold text-sm tracking-wider drop-shadow-[0_0_6px_#22d3ee]">GẶP COMMANDER</span>
+                <span className="text-cyan-500/70 text-[10px] font-mono tracking-widest">TÍN HIỆU MỚI</span>
+              </div>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {(phase === 'incoming' || phase === 'dialogue' || phase === 'dossier' || phase === 'dossier-reopen' || phase === 'collapsing') && (
@@ -931,7 +1077,7 @@ export default function CommanderTransmission() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[80px] pointer-events-none" />
                 
                 <div 
-                  className="mx-auto max-w-md border-2 border-cyan-500/30 rounded-2xl p-10 bg-[#010308]/90 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,242,254,0.15),inset_0_0_40px_rgba(0,242,254,0.1)] relative overflow-hidden group"
+                  className="mx-auto max-w-[90vw] sm:max-w-md border-2 border-cyan-500/30 rounded-2xl p-6 sm:p-10 bg-[#010308]/90 backdrop-blur-3xl shadow-[0_0_80px_rgba(0,242,254,0.15),inset_0_0_40px_rgba(0,242,254,0.1)] relative overflow-hidden group"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   {/* Scanline / Grid overlay */}
@@ -946,7 +1092,7 @@ export default function CommanderTransmission() {
                   <div className="w-full h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent mb-8 opacity-50 relative z-10" />
                   
                   <div className="relative z-10" style={{ transform: 'translateZ(40px)' }}>
-                    <h1 className="text-3xl font-black font-mono uppercase tracking-[0.15em] text-white drop-shadow-[0_0_20px_#22d3ee]">
+                    <h1 className="text-xl sm:text-3xl font-black font-mono uppercase tracking-[0.1em] sm:tracking-[0.15em] text-white drop-shadow-[0_0_20px_#22d3ee]">
                       INCOMING TRANSMISSION
                     </h1>
                     <p className="text-cyan-400/80 mt-4 text-[11px] font-mono tracking-[0.5em] font-bold">FROM: CMDR. THANH HUY</p>
@@ -972,7 +1118,7 @@ export default function CommanderTransmission() {
                   whileTap={{ scale: 0.95 }}
                   onClick={startTransmission}
                   onMouseEnter={() => audioRef.current?.playHover()}
-                  className="mt-10 px-12 py-5 bg-[#010614] text-cyan-300 font-mono text-xl font-bold rounded-xl border-2 border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.2),inset_0_0_15px_rgba(34,211,238,0.1)] tracking-[0.2em] transition-all relative overflow-hidden group hover:bg-cyan-900/30"
+                  className="mt-8 sm:mt-10 px-8 sm:px-12 py-4 sm:py-5 bg-[#010614] text-cyan-300 font-mono text-base sm:text-xl font-bold rounded-xl border-2 border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.2),inset_0_0_15px_rgba(34,211,238,0.1)] tracking-[0.15em] sm:tracking-[0.2em] transition-all relative overflow-hidden group hover:bg-cyan-900/30 active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-400/30 to-cyan-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
                   <span className="relative z-10 drop-shadow-[0_0_8px_#22d3ee]">KẾT NỐI NGAY</span>
@@ -980,13 +1126,22 @@ export default function CommanderTransmission() {
               </motion.div>
             )}
 
-            {/* DIALOGUE + DOSSIER PANELS */}
-            {(phase === 'dialogue' || phase === 'dossier' || phase === 'dossier-reopen') && (
-              <div className="max-w-[1400px] w-full h-full flex flex-col lg:flex-row gap-6 lg:gap-8 p-4 lg:p-6 relative">
+            {/* DIALOGUE + DOSSIER PANELS
+                NOTE: also rendered (invisible) during `incoming` so the <video>
+                element is pre-mounted. This lets startTransmission()'s
+                synchronous play() call satisfy iOS Safari's user-activation rule. */}
+            {(phase === 'incoming' || phase === 'dialogue' || phase === 'dossier' || phase === 'dossier-reopen') && (
+              <div
+                className={`max-w-[1400px] w-full h-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 p-3 sm:p-4 lg:p-6 relative overflow-y-auto ${
+                  phase === 'incoming' ? 'opacity-0 pointer-events-none absolute' : ''
+                }`}
+                style={{ scrollbarWidth: 'thin', scrollbarColor: '#22d3ee40 transparent' }}
+                aria-hidden={phase === 'incoming'}
+              >
                 {/* AVATAR — dialogue: large centered, dossier: left side */}
-                <div className={phase === 'dialogue' ? 'flex-1 flex flex-col items-center justify-center relative' : 'lg:w-[38%] flex flex-col items-center relative'}>
+                <div className={phase === 'dialogue' || phase === 'incoming' ? 'flex-1 flex flex-col items-center justify-center relative' : 'lg:w-[38%] flex flex-col items-center relative'}>
                   <motion.div
-                    className={`hologram-container relative cursor-grab active:cursor-grabbing ${phase === 'dialogue' ? 'w-[340px] h-[440px] lg:w-[420px] lg:h-[520px]' : 'w-80 h-80 lg:w-96 lg:h-96'}`}
+                    className={`hologram-container relative cursor-grab active:cursor-grabbing ${phase === 'dialogue' || phase === 'incoming' ? 'w-[240px] h-[320px] sm:w-[340px] sm:h-[440px] lg:w-[420px] lg:h-[520px]' : 'w-48 h-48 sm:w-80 sm:h-80 lg:w-96 lg:h-96'}`}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
                     style={{ rotateX: springRotateX, rotateY: springRotateY, transformStyle: 'preserve-3d' }}
@@ -997,8 +1152,8 @@ export default function CommanderTransmission() {
                     />
                     <div className="absolute inset-0" style={{ transform: 'translateZ(0px)' }}>
                       <HolographicAvatar
+                        ref={avatarRef}
                         isActive={phase === 'dialogue'}
-                        videoSrc={VIDEO_CLIPS[phase === 'dialogue' ? currentVideoIdx : 2]}
                         onEnded={phase === 'dialogue' ? handleVideoEnded : undefined}
                       />
                     </div>
@@ -1018,7 +1173,7 @@ export default function CommanderTransmission() {
                       ))}
                     </div>
                   </motion.div>
-                  <div className="mt-6 font-mono text-2xl text-cyan-400 tracking-[8px] uppercase px-10 py-3 bg-black/60 border border-cyan-400/40 rounded-3xl shadow-[0_0_30px_#00f2fe30]">
+                  <div className="mt-4 sm:mt-6 font-mono text-base sm:text-2xl text-cyan-400 tracking-[4px] sm:tracking-[8px] uppercase px-6 sm:px-10 py-2 sm:py-3 bg-black/60 border border-cyan-400/40 rounded-3xl shadow-[0_0_30px_#00f2fe30]">
                     CMDR. THANH HUY
                   </div>
 
@@ -1047,9 +1202,9 @@ export default function CommanderTransmission() {
                     </div>
                   </motion.button>
 
-                  {/* Dialogue: video progress + skip button */}
+                  {/* Dialogue: video progress + skip button + mute toggle */}
                   {phase === 'dialogue' && (
-                    <div className="mt-6 flex flex-col items-center gap-4">
+                    <div className="mt-4 sm:mt-6 flex flex-col items-center gap-3 sm:gap-4">
                       {/* Video progress dots */}
                       <div className="flex items-center gap-3">
                         {VIDEO_CLIPS.map((_, i) => (
@@ -1063,9 +1218,45 @@ export default function CommanderTransmission() {
                           />
                         ))}
                       </div>
-                      <p className="text-cyan-400/60 text-xs font-mono tracking-widest mt-2">
+                      <p className="text-cyan-400/60 text-xs font-mono tracking-widest">
                         Đang phát {currentVideoIdx + 1}/{VIDEO_CLIPS.length}
                       </p>
+                      <div className="flex items-center gap-3">
+                        {/* Mute toggle — pulses when muted to draw attention */}
+                        <motion.button
+                          onClick={toggleMute}
+                          whileTap={{ scale: 0.92 }}
+                          aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+                          className={`relative px-4 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-mono font-bold tracking-widest rounded-xl transition-all active:scale-95 ${
+                            isMuted
+                              ? 'text-cyan-50 bg-cyan-500/20 border-2 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)]'
+                              : 'text-cyan-400/80 bg-cyan-900/20 border border-cyan-500/40 hover:border-cyan-400/70 hover:text-cyan-300'
+                          }`}
+                        >
+                          {isMuted ? (
+                            <>
+                              <span
+                                className="absolute inset-0 rounded-xl border-2 border-cyan-400/60 pointer-events-none"
+                                style={{ animation: 'incoming-pulse 1.4s ease-in-out infinite' }}
+                              />
+                              <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
+                              <span className="relative z-10">BẬT ÂM THANH</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span>ÂM THANH</span>
+                            </>
+                          )}
+                        </motion.button>
+                        {/* Skip button — especially important for mobile */}
+                        <button
+                          onClick={skipToDossier}
+                          className="px-6 py-2.5 text-cyan-400/70 hover:text-cyan-300 active:text-cyan-200 text-xs sm:text-sm font-mono tracking-widest border border-cyan-500/30 hover:border-cyan-400/60 rounded-xl transition-all bg-cyan-900/10 hover:bg-cyan-900/30 active:scale-95"
+                        >
+                          BỎ QUA ›
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1091,7 +1282,7 @@ export default function CommanderTransmission() {
                         <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,242,254,0.1)_50%)]" style={{ backgroundSize: '100% 4px' }} />
                         <div className="absolute left-0 w-full h-[15%] bg-gradient-to-b from-transparent via-cyan-400/10 to-transparent pointer-events-none" style={{ animation: 'scan-beam 4s linear infinite' }} />
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 lg:gap-8 lg:p-8 relative z-10" style={{ transformStyle: 'preserve-3d' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 sm:gap-6 sm:p-6 lg:gap-8 lg:p-8 relative z-10" style={{ transformStyle: 'preserve-3d' }}>
                           
                           {/* CỘT 1: IDENTITY + ẢNH CV SẠCH */}
                           <motion.div 
@@ -1216,7 +1407,7 @@ export default function CommanderTransmission() {
                         </div>
 
                         {/* 3 NÚT HÀNH ĐỘNG */}
-                        <div className="border-t border-cyan-500/20 p-5 md:p-6 flex flex-wrap gap-3 relative z-50 bg-[#01030a]/40">
+                        <div className="border-t border-cyan-500/20 p-3 sm:p-5 md:p-6 flex flex-col sm:flex-row flex-wrap gap-3 relative z-50 bg-[#01030a]/40">
                           <motion.button
                             onMouseEnter={() => audioRef.current?.playHover()}
                             disabled={isGeneratingCV}
@@ -1261,7 +1452,7 @@ export default function CommanderTransmission() {
                               }
                             }}
                             whileTap={{ scale: 0.95 }}
-                            className="touch-safe min-h-[52px] mobile-glow flex-1 min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-black py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(34,211,238,0.6)] cursor-pointer group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="touch-safe min-h-[48px] sm:min-h-[52px] mobile-glow w-full sm:flex-1 sm:min-w-[200px] flex items-center justify-center gap-3 bg-gradient-to-r from-cyan-400 to-purple-500 text-black font-black py-3 sm:py-4 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(34,211,238,0.6)] cursor-pointer group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                           >
                             <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
                             {isGeneratingCV ? (
@@ -1281,7 +1472,7 @@ export default function CommanderTransmission() {
                             }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="group flex-1 min-w-[250px] flex items-center justify-between px-6 py-4 bg-[#010614] border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold rounded-2xl transition-all duration-300 shadow-[0_0_20px_rgba(0,242,254,0.1)] hover:shadow-[0_0_40px_rgba(0,242,254,0.4)] relative overflow-hidden"
+                            className="group w-full sm:flex-1 sm:min-w-[250px] flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-[#010614] border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold rounded-2xl transition-all duration-300 shadow-[0_0_20px_rgba(0,242,254,0.1)] hover:shadow-[0_0_40px_rgba(0,242,254,0.4)] relative overflow-hidden text-sm sm:text-base"
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/20 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <Globe className="w-6 h-6 text-blue-400 group-hover:rotate-180 transition-transform duration-700 ease-in-out" />
@@ -1296,7 +1487,7 @@ export default function CommanderTransmission() {
                               setTimeout(() => { window.location.href = '/'; }, 800);
                             }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 min-w-[200px] flex items-center justify-center gap-3 border border-white/20 hover:border-red-500/60 text-white/70 hover:text-red-400 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] font-mono py-4 rounded-2xl transition-all duration-300 bg-white/5 hover:bg-red-500/10 group relative overflow-hidden"
+                            className="w-full sm:flex-1 sm:min-w-[200px] flex items-center justify-center gap-3 border border-white/20 hover:border-red-500/60 text-white/70 hover:text-red-400 hover:shadow-[0_0_30px_rgba(239,68,68,0.4)] font-mono py-3 sm:py-4 rounded-2xl transition-all duration-300 bg-white/5 hover:bg-red-500/10 group relative overflow-hidden text-sm sm:text-base"
                           >
                             <RefreshCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" /> 
                             <span className="tracking-widest uppercase font-bold relative z-10">THAY ĐỔI LỰA CHỌN</span>

@@ -68,10 +68,19 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
   return (
     <div className="fixed inset-0 z-20 pointer-events-none select-none text-white font-sans">
       {/* Top Branding */}
-      <div className="absolute top-8 left-8 flex items-center gap-4 pointer-events-auto">
-        <div className="font-bold text-xl tracking-[0.2em]">THANH HUY</div>
-        <div className="h-[1px] w-12 bg-white/30" />
-        <div className="font-light tracking-[0.3em] text-white/50 text-sm">2003</div>
+      <div className="absolute top-8 left-8 flex flex-col gap-4 pointer-events-auto max-w-[280px] md:max-w-[340px]">
+        <div className="flex items-center gap-4">
+          <div className="font-bold text-xl tracking-[0.2em]">THANH HUY</div>
+          <div className="h-[1px] w-12 bg-white/30" />
+          <div className="font-light tracking-[0.3em] text-white/50 text-sm">2003</div>
+        </div>
+        
+        {/* Intro Text */}
+        <div className="border-l-2 border-orange-500 pl-3 md:pl-4 text-xs sm:text-sm text-gray-300 leading-relaxed font-light">
+          &quot;Frontend Developer Intern khám phá điểm giao giữa thiết kế, công nghệ và AI.
+          Mỗi hành tinh đại diện cho một mảnh ghép trong vũ trụ kỹ năng —{' '}
+          <span className="text-cyan-400 italic">hover &amp; click để khám phá.</span>&quot;
+        </div>
       </div>
 
       {/* Top Right Controls */}

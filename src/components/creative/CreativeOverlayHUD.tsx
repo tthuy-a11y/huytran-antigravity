@@ -71,37 +71,7 @@ export default function CreativeOverlayHUD({
         {/* Chỗ dành cho Logo (bên trái) */}
         <div className="pointer-events-auto w-10 md:w-12 flex-shrink-0" />
 
-        {/* AUTHOR PANEL — chỉ hiện khi KHÔNG có modal */}
-        <AnimatePresence>
-          {!isAnyModalOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 60 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="pointer-events-auto w-full max-w-[280px] md:max-w-sm bg-black/70 backdrop-blur-3xl border border-orange-400/30 p-3 sm:p-4 md:p-6 rounded-3xl shadow-[0_0_40px_rgba(249,115,22,0.3)]"
-            >
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tighter">TRẦN THANH HUY</h2>
-              <p className="text-cyan-400 text-[10px] sm:text-xs font-mono tracking-[2px] mb-3 md:mb-4">[CREATOR-2003]</p>
 
-              <div className="border-l-2 border-orange-500 pl-3 md:pl-4 text-xs sm:text-sm text-gray-300 leading-relaxed">
-                &quot;Frontend Developer Intern khám phá điểm giao giữa thiết kế, công nghệ và AI.
-                Mỗi hành tinh đại diện cho một mảnh ghép trong vũ trụ kỹ năng —{' '}
-                <span className="text-cyan-400 italic">hover &amp; click để khám phá.</span>&quot;
-              </div>
-
-              <Link
-                href="/"
-                onClick={() => playSound('click')}
-                className="mt-8 flex w-full py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-black font-bold tracking-widest rounded-2xl items-center justify-center gap-3 transition-all active:scale-95 shadow-[0_0_20px_rgba(249,115,22,0.4)] group"
-              >
-                <ArrowLeft className="w-5 h-5 group-active:-translate-x-1 transition-transform" />
-                RỜI KHỎI HỆ HÀNH TINH
-                <Orbit className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ===== CENTRAL MODAL — PLANET DETAIL ===== */}
