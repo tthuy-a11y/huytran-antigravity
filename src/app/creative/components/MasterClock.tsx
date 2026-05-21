@@ -6,46 +6,59 @@ import { useCinematicStore, BIG_BANG_TIME, CINEMATIC_DURATION } from '@/app/crea
 import { audioEngine } from '@/app/creative/lib/audioEngine';
 
 // ============================================================
-// MASTER CLOCK
-// Increments Zustand `time` from 0 → 30s while `isPlaying`.
-// Lives inside Canvas so it ticks on the WebGL render loop.
+// MASTER CLOCK — 42s front-loaded timeline
+// Big Bang at 9.5s. Audio cues fire once per threshold crossing.
 // ============================================================
-export function MasterClock({
-  onFinished,
-}: {
-  onFinished?: () => void;
-}) {
+export function MasterClock({ onFinished }: { onFinished?: () => void }) {
   const finishedFiredRef = useRef(false);
 
   useFrame((_, delta) => {
     const state = useCinematicStore.getState();
     if (!state.isPlaying) return;
 
-    // Clamp delta to avoid massive jumps after tab blur / debugging pauses
-    const dt = Math.min(delta, 1 / 30);
-
-    const next = state.time + dt;
+    const dt   = Math.min(delta, 1 / 30);
+    const prev = state.time;
+    const next = prev + dt;
     state.setTime(next);
 
-    // Audio Choreography Timeline
-    const playAt = (timeTrigger: number, cueId: any, options?: any) => {
-      if (next >= timeTrigger && state.time < timeTrigger) {
-        audioEngine.playCue(cueId, options);
-      }
+    // One-shot cue helper — fires exactly once per threshold crossing
+    const cue = (trigger: number, id: any, opts?: any) => {
+      if (next >= trigger && prev < trigger) audioEngine.playCue(id, opts);
     };
 
-    playAt(0.2, 'data-beep', { volume: 0.4 });
-    playAt(6.5, 'warp-jump', { volume: 0.6 });
-    playAt(9.0, 'laser', { volume: 0.5 });
-    playAt(13.5, 'glass-shatter', { volume: 0.7 });
-    playAt(15.5, 'meteor-impact', { volume: 0.8 });
-    playAt(BIG_BANG_TIME, 'big-bang', { volume: 1.0 });
-    playAt(BIG_BANG_TIME, 'shockwave', { volume: 1.0 });
-    playAt(22.5, 'planet-discover', { volume: 0.6 });
-    // Synced with "Chào mừng đến với Hệ Hành Tinh" (27.0s)
-    playAt(27.0, 'data-beep', { volume: 0.5 });
-    // Synced with "TH2003" explosion (27.0s + 0.6s delay)
-    playAt(27.6, 'shockwave', { volume: 0.4, rate: 1.5 });
+    // ── Boot / Creation ─────────────────────────────────────────
+    cue(0.25, 'data-beep',      { volume: 0.45 });
+    cue(1.20, 'data-beep',      { volume: 0.35, rate: 1.4 });
+    cue(3.50, 'planet-discover',{ volume: 0.5  });
+
+    // ── Technology ──────────────────────────────────────────────
+    cue(5.10, 'warp-jump',      { volume: 0.65 });
+    cue(6.80, 'laser',          { volume: 0.55 });
+    cue(8.00, 'glass-shatter',  { volume: 0.75 });
+
+    // ── Pre-bang buildup ─────────────────────────────────────────
+    cue(8.80, 'meteor-impact',  { volume: 0.85 });
+    cue(9.20, 'glass-shatter',  { volume: 0.90, rate: 0.8 });
+
+    // ── BIG BANG 9.5s ────────────────────────────────────────────
+    cue(BIG_BANG_TIME,      'big-bang',       { volume: 1.0  });
+    cue(BIG_BANG_TIME,      'shockwave',      { volume: 1.0  });
+    cue(BIG_BANG_TIME + 0.1,'glass-shatter',  { volume: 0.85, rate: 1.3 });
+
+    // ── Post-bang debris / pillars ───────────────────────────────
+    cue(11.5, 'meteor-impact',  { volume: 0.60 });
+    cue(14.0, 'planet-discover',{ volume: 0.65 });
+    cue(17.0, 'planet-discover',{ volume: 0.70 });
+    cue(20.0, 'planet-discover',{ volume: 0.60 });
+
+    // ── Awakening ────────────────────────────────────────────────
+    cue(22.5, 'planet-discover',{ volume: 0.55 });
+    cue(27.0, 'data-beep',      { volume: 0.50 });
+
+    // ── Climax outro ─────────────────────────────────────────────
+    cue(35.0, 'warp-jump',      { volume: 0.80 });
+    cue(38.5, 'laser',          { volume: 0.70, rate: 0.9 });
+    cue(41.0, 'shockwave',      { volume: 1.0,  rate: 1.6 });
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {
       finishedFiredRef.current = true;

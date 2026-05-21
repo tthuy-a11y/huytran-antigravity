@@ -36,10 +36,10 @@ export function bloomIntensityAt(t: number): number {
   const bangContribution = bang * 3.5;
 
   const buildup =
-    t < 13.0
+    t < 7.5
       ? 0
       : t < BIG_BANG_TIME
-      ? Math.pow((t - 13.0) / (BIG_BANG_TIME - 13.0), 1.8) * 0.85
+      ? Math.pow((t - 7.5) / (BIG_BANG_TIME - 7.5), 1.8) * 0.85
       : 0;
 
   const decay =
@@ -48,9 +48,9 @@ export function bloomIntensityAt(t: number): number {
       : 0;
 
   let baseline: number;
-  if (t < 7.0) {
-    baseline = 0.55 + smoothstep(2.0, 7.0, t) * 0.4;
-  } else if (t < 13.0) {
+  if (t < 5.0) {
+    baseline = 0.55 + smoothstep(2.0, 5.0, t) * 0.4;
+  } else if (t < 7.5) {
     baseline = 0.95;
   } else if (t < BIG_BANG_TIME) {
     baseline = 0.95;
@@ -65,11 +65,11 @@ export function bloomIntensityAt(t: number): number {
 
 export function chromaticAt(t: number): number {
   let v = 0;
-  if (t >= 7.0 && t < 13.0) {
+  if (t >= 5.0 && t < 7.5) {
     v = 0.0008 + 0.0004 * Math.sin(t * 6.0);
   }
-  if (t >= 13.0 && t < BIG_BANG_TIME) {
-    v = THREE.MathUtils.lerp(0.001, 0.006, smoothstep(13.0, BIG_BANG_TIME, t));
+  if (t >= 7.5 && t < BIG_BANG_TIME) {
+    v = THREE.MathUtils.lerp(0.001, 0.006, smoothstep(7.5, BIG_BANG_TIME, t));
   }
   const bangSigma = 0.35;
   const bang = Math.exp(
@@ -85,9 +85,9 @@ export function chromaticAt(t: number): number {
 
 export function noiseAt(t: number): number {
   let v = 0.05;
-  if (t >= 7.0 && t < 13.0) v = 0.12;
-  if (t >= 13.0 && t < BIG_BANG_TIME) {
-    v = THREE.MathUtils.lerp(0.12, 0.35, smoothstep(13.0, BIG_BANG_TIME, t));
+  if (t >= 5.0 && t < 7.5) v = 0.12;
+  if (t >= 7.5 && t < BIG_BANG_TIME) {
+    v = THREE.MathUtils.lerp(0.12, 0.35, smoothstep(7.5, BIG_BANG_TIME, t));
   }
   const bangSigma = 0.4;
   const bang = Math.exp(
@@ -104,10 +104,10 @@ export function noiseAt(t: number): number {
 }
 
 export function vignetteAt(t: number): number {
-  if (t < 7.0) return THREE.MathUtils.lerp(0.85, 0.55, smoothstep(0, 7.0, t));
-  if (t < 13.0) return 0.4;
+  if (t < 5.0) return THREE.MathUtils.lerp(0.85, 0.55, smoothstep(0, 5.0, t));
+  if (t < 7.5) return 0.4;
   if (t < BIG_BANG_TIME) {
-    return THREE.MathUtils.lerp(0.4, 0.15, smoothstep(13.0, BIG_BANG_TIME, t));
+    return THREE.MathUtils.lerp(0.4, 0.15, smoothstep(7.5, BIG_BANG_TIME, t));
   }
   const bangSigma = 0.3;
   const bang = Math.exp(

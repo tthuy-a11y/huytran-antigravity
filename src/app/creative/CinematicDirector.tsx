@@ -52,11 +52,11 @@ function SceneBackdrop() {
   useFrame(() => {
     const t = useCinematicStore.getState().time;
     // Scene-tinted fog
-    if (t < 7) targetFog.current.setStyle('#0a0218');         // purple void
-    else if (t < 13) targetFog.current.setStyle('#02101e');   // tech cyan
-    else if (t < 16.5) targetFog.current.setStyle('#1a0508'); // convergence red
-    else if (t < 20) targetFog.current.setStyle('#180a02');   // hot debris
-    else targetFog.current.setStyle('#100802');               // warm awakening
+    if (t < 5) targetFog.current.setStyle('#0a0218');          // creation — purple void
+    else if (t < 9.5) targetFog.current.setStyle('#02101e');  // technology — tech cyan
+    else if (t < 16) targetFog.current.setStyle('#1a0508');   // convergence — impact red
+    else if (t < 22) targetFog.current.setStyle('#180a02');   // hot debris
+    else targetFog.current.setStyle('#100802');               // awakening — warm amber
 
     currentFog.current.lerp(targetFog.current, 0.04);
     if (scene.fog && (scene.fog as THREE.FogExp2).color) {
@@ -415,7 +415,7 @@ export function CinematicDirector({
           preserveDrawingBuffer: false,
         }}
         dpr={quality.dpr}
-        camera={{ position: [0, 0, 22], fov: 55, near: 0.1, far: 500 }}
+        camera={{ position: [0, 0, 14], fov: 60, near: 0.1, far: 500 }}
         shadows={quality.shadows}
         frameloop="always"
         style={{ position: 'absolute', inset: 0, touchAction: 'none' }}
