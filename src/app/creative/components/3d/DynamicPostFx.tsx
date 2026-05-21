@@ -49,7 +49,9 @@ export function bloomIntensityAt(t: number): number {
 
   let baseline: number;
   if (t < 5.0) {
-    baseline = 0.55 + smoothstep(2.0, 5.0, t) * 0.4;
+    // Intense bloom flare during warp approach (peaks at 2s, fades by 4.5s)
+    const warpFlare = THREE.MathUtils.lerp(0.0, 1.8, smoothstep(0.5, 2.0, t)) * (1 - smoothstep(3.0, 4.5, t));
+    baseline = 0.55 + warpFlare + smoothstep(2.0, 5.0, t) * 0.4;
   } else if (t < 7.5) {
     baseline = 0.95;
   } else if (t < BIG_BANG_TIME) {
@@ -65,6 +67,12 @@ export function bloomIntensityAt(t: number): number {
 
 export function chromaticAt(t: number): number {
   let v = 0;
+  
+  // Warp speed RGB shift (peaks at 1.5s when speed is highest, decays by 3.5s)
+  if (t > 0.0 && t < 4.0) {
+    v += THREE.MathUtils.lerp(0.0, 0.018, smoothstep(0.5, 1.5, t)) * (1 - smoothstep(1.5, 3.5, t));
+  }
+
   if (t >= 5.0 && t < 7.5) {
     v = 0.0008 + 0.0004 * Math.sin(t * 6.0);
   }
