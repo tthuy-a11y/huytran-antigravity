@@ -117,7 +117,6 @@ function OrbitCometTrail({
 // ============================================================
 function InteractivePlanetNode({ data, index }: { data: PlanetData; index: number }) {
   const groupRef = useRef<THREE.Group>(null);
-  const asteroidRef = useRef<any>(null);
   const [hovered, setHovered] = useState(false);
   
   const focusPlanet = useCinematicStore((s) => s.focusPlanet);
@@ -127,22 +126,138 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
   const isHighlighted = hovered || isFocused;
 
   useCursor(hovered);
-  useSafeDispose([groupRef.current, asteroidRef.current]);
+  useSafeDispose([groupRef.current]);
 
   // Initial phase distribution
   const initialPhase = (index / PLANETS.length) * Math.PI * 2;
 
+  // Procedural planet material with noise
+  const planetMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(data.color),
+      emissive: new THREE.Color(data.emissiveColor),
+      emissiveIntensity: 0.15,
+      roughness: 0.55,
+      metalness: 0.35,
+    });
+
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uNoiseScale = { value: 2.5 };
+      (mat as any).userData.shader = shader;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <common>",
+        /* glsl */ `
+          #include <common>
+          varying vec3 vWorldPos;
+          varying vec3 vLocalPos;
+        `
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        /* glsl */ `
+          #include <begin_vertex>
+          vLocalPos = position;
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <common>",
+        /* glsl */ `
+          #include <common>
+          uniform float uTime;
+          uniform float uNoiseScale;
+          varying vec3 vWorldPos;
+          varying vec3 vLocalPos;
+
+          float hash(vec3 p){p=fract(p*vec3(443.8975,397.2973,491.1871));p+=dot(p,p.yxz+19.19);return fract((p.x+p.y)*p.z);}
+          float noise(vec3 p){
+            vec3 i=floor(p); vec3 f=fract(p);
+            f=f*f*(3.0-2.0*f);
+            float n=mix(
+              mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),
+                  mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+              mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),
+                  mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+            return n;
+          }
+          float fbm(vec3 p){
+            float v=0.0; float a=0.5;
+            for(int i=0;i<5;i++){v+=a*noise(p); p*=2.0; a*=0.5;}
+            return v;
+          }
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        /* glsl */ `
+          #include <emissivemap_fragment>
+          float n = fbm(vLocalPos * uNoiseScale);
+          float bands = fbm(vLocalPos * uNoiseScale * 3.0 + uTime * 0.05);
+          float pattern = smoothstep(0.3, 0.7, n * 0.7 + bands * 0.3);
+
+          vec3 darkSurface = diffuseColor.rgb * 0.35;
+          vec3 brightSurface = diffuseColor.rgb * 1.15;
+          diffuseColor.rgb = mix(darkSurface, brightSurface, pattern);
+
+          totalEmissiveRadiance += diffuseColor.rgb * 0.08 * (1.0 - pattern);
+        `
+      );
+    };
+
+    return mat;
+  }, [data.color, data.emissiveColor]);
+
+  // Atmosphere fresnel shader
+  const atmosphereMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: new THREE.Color(data.emissiveColor) },
+          uPower: { value: 2.5 },
+          uIntensity: { value: 1.0 },
+        },
+        transparent: true,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        vertexShader: /* glsl */ `
+          varying vec3 vNormal;
+          void main(){
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          uniform float uPower;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          void main(){
+            float f = pow(1.0 - abs(dot(vNormal, vec3(0.0,0.0,1.0))), uPower);
+            gl_FragColor = vec4(uColor * f * uIntensity, f);
+          }
+        `,
+      }),
+    [data.emissiveColor]
+  );
+
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     
-    // Smoothly orbit around the Sun
-    // Use state.clock.elapsedTime because cinematic time freezes after cinematic ends
     const t = state.clock.elapsedTime;
-    const angle = initialPhase + t * data.orbitSpeed * 1.5;
     
+    // Update shaders
+    const shader = (planetMaterial as any).userData.shader;
+    if (shader) shader.uniforms.uTime.value = t;
+
+    const angle = initialPhase + t * data.orbitSpeed * 1.5;
     const x = Math.cos(angle) * data.orbitRadius;
     const z = Math.sin(angle) * data.orbitRadius;
-    const y = Math.sin(angle * 1.5) * 1.2; // slight vertical wobble
+    const y = Math.sin(angle * 1.5) * 1.2;
 
     groupRef.current.position.set(x, y, z);
     
@@ -150,18 +265,28 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
     groupRef.current.rotation.y += delta * data.spinSpeed * 2.0;
     groupRef.current.rotation.x += delta * data.spinSpeed * 0.6;
 
-    // Pulse scale when hovered or focused; dim/shrink khi planet khác focus
     const targetScale = isFocused ? 1.25 : hovered ? 1.18 : isAnotherFocused ? 0.85 : 1.0;
     groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
 
-    // Emissive pulse (if PrimalAsteroid exposes material - we just use the glow halo below instead)
+    // Emissive boost on hover
+    planetMaterial.emissiveIntensity = THREE.MathUtils.lerp(
+      planetMaterial.emissiveIntensity,
+      hovered || isFocused ? 0.85 : 0.15,
+      0.08
+    );
+
+    // Atmosphere intensity
+    atmosphereMaterial.uniforms.uIntensity.value = THREE.MathUtils.lerp(
+      atmosphereMaterial.uniforms.uIntensity.value,
+      hovered || isFocused ? 2.2 : 1.0,
+      0.08
+    );
   });
 
   const handlePointerOver = (e: any) => {
     e.stopPropagation();
     setHovered(true);
     audioEngine.playSfx('hover', { volume: 0.2 });
-    // Spatial beep nhẹ — huyền bí, gắn vào planet (random pitch trong asset rate)
     audioEngine.playCue('data-beep', { volume: 0.18, rate: 0.85 + Math.random() * 0.5 });
   };
 
@@ -176,44 +301,42 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
     audioEngine.playSfx('click', { volume: 0.6 });
   };
 
+  const currentRadius = data.radius * 2.2;
+
   return (
     <group ref={groupRef}>
       <group>
-        <PrimalAsteroid
-          ref={asteroidRef}
-          id={data.id}
-          tint="cyan" // fallback tint
-          driftDir={[0, 0, 0]}
-          orbitRadius={0} // Orbit logic is handled locally above
-          orbitPhase={0}
-          orbitSpeed={0}
-          scale={data.radius * 2}
-          seed={index * 10}
-          customColors={{ base: '#050a14', emissive: data.color }}
-        />
+        <mesh
+          material={planetMaterial}
+          castShadow
+          receiveShadow
+        >
+          <sphereGeometry args={[currentRadius, 64, 64]} />
+        </mesh>
         
-        {/* Glow halo when hovered or focused */}
-        {(hovered || isFocused) && (
-          <mesh scale={data.radius * 2.5}>
-            <sphereGeometry args={[1, 32, 32]} />
-            <meshBasicMaterial 
-              color={data.emissiveColor} 
-              transparent 
-              opacity={isFocused ? 0.2 : 0.1} 
-              blending={THREE.AdditiveBlending} 
-              depthWrite={false} 
-            />
-          </mesh>
-        )}
+        {/* Atmosphere / Glow */}
+        <mesh scale={1.18}>
+          <sphereGeometry args={[currentRadius, 32, 32]} />
+          <primitive object={atmosphereMaterial} attach="material" />
+        </mesh>
         
-        {/* Vòng quỹ đạo trang trí */}
-        <PlanetRings radius={data.radius} color={data.emissiveColor || data.color} />
+        {/* Glow Halo (Additive blending) */}
+        <mesh scale={1.3}>
+          <sphereGeometry args={[currentRadius, 32, 32]} />
+          <meshBasicMaterial
+            color={data.emissiveColor}
+            transparent
+            opacity={isFocused ? 0.35 : hovered ? 0.25 : 0.15}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
       </group>
       
       {/* TEXT HÀNH TINH — nâng cấp z-index, hiển thị description */}
       {(hovered || isFocused) && (
         <Html
-          position={[0, data.radius * 2 + 1.5, 0]}
+          position={[0, currentRadius * 1.5 + 1.5, 0]}
           distanceFactor={7}
           center
           zIndexRange={[9999, 0]}
@@ -251,7 +374,7 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
         onPointerOut={handlePointerOut}
         onClick={handleClick}
       >
-        <sphereGeometry args={[data.radius * 2.5, 32, 32]} />
+        <sphereGeometry args={[currentRadius * 1.5, 32, 32]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
     </group>
@@ -440,16 +563,16 @@ export function InteractiveSystem() {
 
       {/* Background Decor: Stars & Nebula Dust */}
       <group position={[0, -10, 0]}>
-        <Stars radius={60} depth={50} count={6000} factor={5} saturation={1} fade speed={1.5} />
-        <Sparkles count={3000} scale={120} size={2.5} speed={0.3} opacity={0.15} color="#00e5ff" />
-        <Sparkles count={2000} scale={100} size={4} speed={0.1} opacity={0.1} color="#ff3366" />
+        <Stars radius={60} depth={50} count={6000} factor={4} saturation={1} fade speed={1.5} />
+        <Sparkles count={3000} scale={120} size={2.5} speed={0.3} opacity={0.08} color="#00e5ff" />
+        <Sparkles count={2000} scale={100} size={4} speed={0.1} opacity={0.05} color="#ff3366" />
       </group>
 
       {/* Supplemental lighting for interactive mode */}
-      <ambientLight intensity={0.28} color="#a0d8ff" />
+      <ambientLight intensity={0.15} color="#a0d8ff" />
       <pointLight
         position={[15, 12, 20]}
-        intensity={0.7}
+        intensity={0.4}
         color="#fff8e0"
         distance={80}
       />

@@ -140,10 +140,10 @@ export function CameraRig() {
     let eased = smootherstep(0, 1, k);
 
     // Dynamic easing for the initial warp jump (t <= 3.5s)
-    // power1.5 provides the perfect acceleration curve to pass through z=85 at t=1.8 
-    // seamlessly, avoiding the stutter caused by multiple disjoint keyframes.
+    // expo.out provides an extreme initial velocity dropoff (Warp Jump feel)
+    // passing through z=85 seamlessly without disjoint keyframes.
     if (b.t <= 3.5 && k > 0) {
-      eased = 1 - Math.pow(1 - k, 1.5); 
+      eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k); 
     }
 
     // 1. Keyframe interpolation

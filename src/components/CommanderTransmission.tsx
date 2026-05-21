@@ -307,7 +307,7 @@ class TransmissionAudio {
 export interface HolographicAvatarHandle {
   play: () => Promise<void>;
   pause: () => void;
-  setSrc: (src: string) => void;
+  setVideoIndex: (idx: number) => void;
   setMuted: (muted: boolean) => void;
   isMuted: () => boolean;
   getVideo: () => HTMLVideoElement | null;
@@ -316,45 +316,43 @@ export interface HolographicAvatarHandle {
 interface HolographicAvatarProps {
   isActive: boolean;
   onEnded?: () => void;
+  videos: string[];
 }
 
 const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, HolographicAvatarProps>(
-  ({ isActive, onEnded }, ref) => {
-    const videoRef = React.useRef<HTMLVideoElement>(null);
+  ({ isActive, onEnded, videos }, ref) => {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const activeIndexRef = useRef(0);
+    const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
     React.useImperativeHandle(ref, () => ({
       play: () => {
-        const video = videoRef.current;
+        const video = videoRefs.current[activeIndexRef.current];
         if (!video) return Promise.resolve();
-        // IMPORTANT: must be called synchronously inside a user gesture
-        // so the browser keeps the "user activation" flag for unmuted playback.
         const p = video.play();
         return p instanceof Promise ? p.catch(() => {}) : Promise.resolve();
       },
       pause: () => {
-        videoRef.current?.pause();
+        videoRefs.current[activeIndexRef.current]?.pause();
       },
-      setSrc: (src: string) => {
-        const video = videoRef.current;
-        if (!video) return;
-        if (video.src && video.src.endsWith(src)) return;
-        video.src = src;
-        video.load();
+      setVideoIndex: (idx: number) => {
+        // Pause current
+        videoRefs.current[activeIndexRef.current]?.pause();
+        activeIndexRef.current = idx;
+        setActiveIndex(idx);
+        // We do NOT play automatically here; parent calls play()
       },
       setMuted: (muted: boolean) => {
-        const video = videoRef.current;
-        if (!video) return;
-        video.muted = muted;
+        videoRefs.current.forEach(v => { if (v) v.muted = muted; });
       },
-      isMuted: () => videoRef.current?.muted ?? true,
-      getVideo: () => videoRef.current,
+      isMuted: () => videoRefs.current[activeIndexRef.current]?.muted ?? true,
+      getVideo: () => videoRefs.current[activeIndexRef.current],
     }), []);
 
-    // Pause when going inactive (e.g. → dossier). Do NOT auto-play when becoming active —
-    // play() must be called synchronously from a user gesture in the parent.
+    // Pause when going inactive
     React.useEffect(() => {
       if (!isActive) {
-        videoRef.current?.pause();
+        videoRefs.current.forEach(v => v?.pause());
       }
     }, [isActive]);
 
@@ -368,15 +366,20 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
           />
         </div>
 
-        {/* VIDEO — NATURAL COLORS + ORIGINAL AUDIO. Pre-mounted from `incoming` phase
-            so play() can be called synchronously inside the user's click handler. */}
-        <video
-          ref={videoRef}
-          playsInline
-          preload="auto"
-          className="absolute inset-0 w-full h-full object-cover object-top z-[1]"
-          onEnded={onEnded}
-        />
+        {/* VIDEOS */}
+        {videos.map((src, idx) => (
+          <video
+            key={src}
+            ref={el => { videoRefs.current[idx] = el; }}
+            src={src}
+            playsInline
+            preload="auto"
+            className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${idx === activeIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            onEnded={() => {
+              if (idx === activeIndex && onEnded) onEnded();
+            }}
+          />
+        ))}
 
         {/* Subtle scanlines */}
         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,242,254,0.04)_3px,rgba(0,242,254,0.04)_4px)] pointer-events-none z-10" />
@@ -737,7 +740,7 @@ export default function CommanderTransmission() {
     const avatar = avatarRef.current;
     const video = avatar?.getVideo();
     if (avatar && video) {
-      avatar.setSrc(VIDEO_CLIPS[0]);
+      avatar.setVideoIndex(0);
       // Try unmuted first (best UX). If the browser rejects (Low Power Mode,
       // strict autoplay policy), fall back to muted so the video at least plays —
       // user can then click the floating speaker button to unmute, which is itself
@@ -765,7 +768,7 @@ export default function CommanderTransmission() {
     if (phase !== 'dialogue') return;
     const avatar = avatarRef.current;
     if (!avatar) return;
-    avatar.setSrc(VIDEO_CLIPS[currentVideoIdx]);
+    avatar.setVideoIndex(currentVideoIdx);
     avatar.play();
   }, [phase, currentVideoIdx]);
 
@@ -1155,6 +1158,7 @@ export default function CommanderTransmission() {
                         ref={avatarRef}
                         isActive={phase === 'dialogue'}
                         onEnded={phase === 'dialogue' ? handleVideoEnded : undefined}
+                        videos={VIDEO_CLIPS}
                       />
                     </div>
                     <div
@@ -1202,7 +1206,7 @@ export default function CommanderTransmission() {
                     </div>
                   </motion.button>
 
-                  {/* Dialogue: video progress + skip button + mute toggle */}
+                  {/* Dialogue: video progress + skip button */}
                   {phase === 'dialogue' && (
                     <div className="mt-4 sm:mt-6 flex flex-col items-center gap-3 sm:gap-4">
                       {/* Video progress dots */}
@@ -1222,37 +1226,10 @@ export default function CommanderTransmission() {
                         Đang phát {currentVideoIdx + 1}/{VIDEO_CLIPS.length}
                       </p>
                       <div className="flex items-center gap-3">
-                        {/* Mute toggle — pulses when muted to draw attention */}
-                        <motion.button
-                          onClick={toggleMute}
-                          whileTap={{ scale: 0.92 }}
-                          aria-label={isMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
-                          className={`relative px-4 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-mono font-bold tracking-widest rounded-xl transition-all active:scale-95 ${
-                            isMuted
-                              ? 'text-cyan-50 bg-cyan-500/20 border-2 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.6)]'
-                              : 'text-cyan-400/80 bg-cyan-900/20 border border-cyan-500/40 hover:border-cyan-400/70 hover:text-cyan-300'
-                          }`}
-                        >
-                          {isMuted ? (
-                            <>
-                              <span
-                                className="absolute inset-0 rounded-xl border-2 border-cyan-400/60 pointer-events-none"
-                                style={{ animation: 'incoming-pulse 1.4s ease-in-out infinite' }}
-                              />
-                              <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
-                              <span className="relative z-10">BẬT ÂM THANH</span>
-                            </>
-                          ) : (
-                            <>
-                              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />
-                              <span>ÂM THANH</span>
-                            </>
-                          )}
-                        </motion.button>
-                        {/* Skip button — especially important for mobile */}
+                        {/* Skip button — Dimmed to be less noticeable */}
                         <button
                           onClick={skipToDossier}
-                          className="px-6 py-2.5 text-cyan-400/70 hover:text-cyan-300 active:text-cyan-200 text-xs sm:text-sm font-mono tracking-widest border border-cyan-500/30 hover:border-cyan-400/60 rounded-xl transition-all bg-cyan-900/10 hover:bg-cyan-900/30 active:scale-95"
+                          className="px-6 py-2.5 text-cyan-400/30 hover:text-cyan-300 active:text-cyan-200 text-xs sm:text-sm font-mono tracking-widest border border-cyan-500/10 hover:border-cyan-400/60 rounded-xl transition-all bg-transparent hover:bg-cyan-900/30 active:scale-95 opacity-50 hover:opacity-100"
                         >
                           BỎ QUA ›
                         </button>

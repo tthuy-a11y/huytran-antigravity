@@ -26,11 +26,28 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
       if (next >= trigger && prev < trigger) audioEngine.playCue(id, opts);
     };
 
-    // ── Boot / Creation ─────────────────────────────────────────
-    cue(0.10, 'warp-jump',      { volume: 0.85 });
-    cue(0.40, 'data-beep',      { volume: 0.45, rate: 2.0 });
-    cue(1.50, 'data-beep',      { volume: 0.35, rate: 1.8 });
-    cue(3.50, 'planet-discover',{ volume: 0.5  });
+    // ── Boot / Creation (5-Layer Audio Timeline) ──────────────────
+    // Layer 1 (Cosmic Ambient) is continuously playing via background mix.
+    // Layer 2: Warp Jump
+    cue(0.10, 'warp-jump',       { volume: 0.85 });
+    
+    // Layer 3: Digital Data Pulse
+    cue(0.40, 'data-beep',       { volume: 0.65, rate: 2.0 });
+    
+    // Layer 4: Rising Energy Synth
+    cue(1.00, 'planet-discover', { volume: 0.55, rate: 0.8 });
+    
+    // Layer 3 (repeated): Data Pulse
+    cue(1.50, 'data-beep',       { volume: 0.70, rate: 2.3 });
+    
+    // Layer 5: Particle Whoosh (layered light streaks)
+    cue(2.80, 'laser',           { volume: 0.40, rate: 1.8 });
+    cue(2.90, 'laser',           { volume: 0.40, rate: 1.9 });
+    cue(3.00, 'laser',           { volume: 0.40, rate: 2.0 });
+    
+    // Layer 2 + 5: Warp Impact + Creation Burst (arrival at z=22)
+    cue(3.50, 'shockwave',       { volume: 0.90 });
+    cue(3.50, 'glass-shatter',   { volume: 0.60, rate: 0.7 });
 
     // ── Technology ──────────────────────────────────────────────
     cue(5.10, 'warp-jump',      { volume: 0.65 });

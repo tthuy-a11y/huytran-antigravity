@@ -618,6 +618,107 @@ function AmbientSparkles() {
 }
 
 // ============================================================
+// 5. WARP SPEED LINES — Streaks of light simulating hyperspace
+// ============================================================
+function WarpSpeedLines() {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const linesRef = useRef<THREE.LineSegments>(null);
+
+  const { geometry, uniforms } = useMemo(() => {
+    const count = 120;
+    const positions = new Float32Array(count * 2 * 3);
+    const alphas = new Float32Array(count * 2);
+    
+    for (let i = 0; i < count; i++) {
+      // Random position in a cylinder around the camera path
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 3 + Math.random() * 12; 
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      
+      const zOffset = Math.random() * 200;
+      const length = 8 + Math.random() * 20; // long streaks
+      
+      // Start point (tail)
+      positions[i * 6 + 0] = x;
+      positions[i * 6 + 1] = y;
+      positions[i * 6 + 2] = zOffset;
+      alphas[i * 2 + 0] = 0.0; 
+      
+      // End point (head)
+      positions[i * 6 + 3] = x;
+      positions[i * 6 + 4] = y;
+      positions[i * 6 + 5] = zOffset + length;
+      alphas[i * 2 + 1] = 1.0; 
+    }
+    
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
+    
+    return {
+      geometry: geo,
+      uniforms: {
+        uTime: { value: 0 },
+        uIntensity: { value: 0 },
+      }
+    };
+  }, []);
+
+  useSafeDispose([linesRef.current, matRef.current, geometry]);
+
+  const vertexShader = /* glsl */ `
+    attribute float aAlpha;
+    varying float vAlpha;
+    uniform float uTime;
+    void main() {
+      vec3 pos = position;
+      // Fly towards camera incredibly fast
+      pos.z -= uTime * 250.0; 
+      // Wrap around seamlessly
+      pos.z = mod(pos.z, 200.0) - 50.0;
+      
+      vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+      gl_Position = projectionMatrix * mvPos;
+      
+      vAlpha = aAlpha;
+    }
+  `;
+
+  const fragmentShader = /* glsl */ `
+    varying float vAlpha;
+    uniform float uIntensity;
+    void main() {
+      // Cyan/White hyper-lines
+      gl_FragColor = vec4(0.8, 0.95, 1.0, vAlpha * uIntensity);
+    }
+  `;
+
+  useFrame((_, delta) => {
+    const t = useCinematicStore.getState().time;
+    uniforms.uTime.value += delta;
+    
+    // Intensity peaks during the first 2 seconds of warp, fades out right before arrival at 3.5s
+    const intensity = smoothstep(0.0, 0.4, t) * (1.0 - smoothstep(2.5, 3.5, t));
+    uniforms.uIntensity.value = intensity * 0.45;
+  });
+
+  return (
+    <lineSegments ref={linesRef} geometry={geometry} frustumCulled={false}>
+      <shaderMaterial 
+        ref={matRef}
+        uniforms={uniforms}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </lineSegments>
+  );
+}
+
+// ============================================================
 // SCENE ROOT
 // ============================================================
 export function CreationNebula() {
@@ -638,6 +739,7 @@ export function CreationNebula() {
       <EnergySeed />
       <VolumetricNebula />
       <AmbientSparkles />
+      <WarpSpeedLines />
 
       {/* Three orbiting silk ribbons at varied tilts */}
       <SilkRibbon
