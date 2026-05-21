@@ -28,23 +28,24 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     };
 
     // ═══════════════════════════════════════════════════════════
-    // CREATION 0 → 4.5s  (deep warp zoom — from distant star to sun)
+    // DEEP ZOOM FLYTHROUGH 0 → 5.5s (distant star → planet flyby → cosmic dust)
     // ═══════════════════════════════════════════════════════════
-    cue(0.10, 'warp-jump',       { volume: 0.65, rate: 0.85 }); // Deep rumble as zoom initiates
-    cue(0.90, 'shockwave',       { volume: 0.45, rate: 0.50 }); // Rushing whoosh through space
-    cue(1.80, 'planet-discover', { volume: 0.35, rate: 1.20 }); // Slicing through outer orbits
-    cue(2.80, 'planet-discover', { volume: 0.55, rate: 0.85 }); // Passing inner glowing planets
-    cue(3.60, 'data-beep',       { volume: 0.35, rate: 1.50 }); // Sun arrival / Tech grid prep
+    cue(0.05, 'warp-jump',       { volume: 0.70, rate: 0.70 }); // Deep bass rumble — warp initiating
+    cue(0.50, 'shockwave',       { volume: 0.50, rate: 0.40 }); // Space rushing sound — acceleration
+    cue(1.50, 'data-beep',       { volume: 0.25, rate: 2.00 }); // High-speed data flicker
+    cue(2.00, 'planet-discover', { volume: 0.35, rate: 1.30 }); // Galaxy becoming visible
+    cue(2.80, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Outer planet encounter
+    cue(3.80, 'planet-discover', { volume: 0.60, rate: 0.75 }); // Planet flyby — close encounter
+    cue(4.00, 'shockwave',       { volume: 0.35, rate: 0.40 }); // Cosmic dust — distant rumble
+    cue(4.80, 'data-beep',       { volume: 0.30, rate: 1.80 }); // TechGrid signal approaching
 
     // ═══════════════════════════════════════════════════════════
-    // TECHNOLOGY 4 → 8s  (fast holographic sweep — tense rising)
+    // TECHNOLOGY 5.5 → 8s  (holographic grid sweep — tense rising)
     // ═══════════════════════════════════════════════════════════
-    cue(4.05, 'warp-jump',       { volume: 0.55, rate: 1.2 });  // slide into tech
-    cue(4.50, 'laser',           { volume: 0.55, rate: 1.0 });  // grid scan
-    cue(5.10, 'data-beep',       { volume: 0.50, rate: 1.6 });
-    cue(5.65, 'glass-shatter',   { volume: 0.55, rate: 1.15 }); // alert
-    cue(6.20, 'laser',           { volume: 0.55, rate: 1.05 }); // sweep
-    cue(6.70, 'data-beep',       { volume: 0.48, rate: 1.8 });
+    cue(5.60, 'warp-jump',       { volume: 0.55, rate: 1.2 });  // Slide into tech
+    cue(6.00, 'laser',           { volume: 0.55, rate: 1.0 });  // Grid scan
+    cue(6.50, 'data-beep',       { volume: 0.50, rate: 1.6 });
+    cue(6.80, 'glass-shatter',   { volume: 0.55, rate: 1.15 }); // Alert
 
     // ── Pre-bang buildup (7.0 → 8.0) ───────────────────────────
     cue(7.05, 'meteor-impact',   { volume: 0.75 });

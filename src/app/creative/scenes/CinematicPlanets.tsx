@@ -71,7 +71,7 @@ function CinematicPlanetNode({ data, index, globalOpacity }: CinematicPlanetNode
   const { camera } = useThree();
   const elapsedRef = useRef(0);
 
-  const displayRadius = data.radius * 2.2;
+  const displayRadius = data.radius * 2.8;
 
   const atmosphereMaterial = useMemo(
     () => makeAtmosphereMaterial(new THREE.Color(data.emissiveColor)),
@@ -90,7 +90,7 @@ function CinematicPlanetNode({ data, index, globalOpacity }: CinematicPlanetNode
     if (!g) return;
 
     // Accumulate elapsed for orbit animation
-    if (t >= 0 && t <= 5.5) {
+    if (t >= 0 && t <= 6.5) {
       elapsedRef.current += delta;
     }
 
@@ -111,7 +111,7 @@ function CinematicPlanetNode({ data, index, globalOpacity }: CinematicPlanetNode
     // --- Proximity glow: boost when camera is within 15 units ---
     g.getWorldPosition(_pos);
     const distToCam = camera.position.distanceTo(_pos);
-    const proximityFactor = smoothstep(15, 3, distToCam); // 0 at 15+, 1 at ≤3
+    const proximityFactor = smoothstep(25, 5, distToCam); // 0 at 25+, 1 at ≤5
 
     if (mat) {
       mat.emissiveIntensity = THREE.MathUtils.lerp(0.5, 2.5, proximityFactor) * globalOpacity;
@@ -287,15 +287,15 @@ export default function CinematicPlanets() {
     const t = useCinematicStore.getState().time;
     // Visibility control
     if (groupRef.current) {
-      groupRef.current.visible = t >= -0.1 && t <= 5.5;
+      groupRef.current.visible = t >= -0.1 && t <= 6.5;
     }
   });
 
   // We read time reactively for JSX-level decisions
   const t = useCinematicStore((s) => s.time);
-  // BootSequence covers 0-1.85s, so fade-in is instant. Fade-out from 4.0 → 5.5
-  const opacity = fadeWindow(t, 0, 5.5, 0.05, 1.5);
-  const isVisible = t >= -0.1 && t <= 5.5;
+  // Extended fade-out: 2 seconds for smooth transition to cosmic dust / TechGrid
+  const opacity = fadeWindow(t, 0, 6.5, 0.05, 2.0);
+  const isVisible = t >= -0.1 && t <= 6.5;
 
   return (
     <group ref={groupRef} visible={isVisible}>

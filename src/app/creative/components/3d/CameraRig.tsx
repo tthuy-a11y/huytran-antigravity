@@ -18,19 +18,30 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── PLANETARY FLYTHROUGH 0 → 4.5s (deep zoom from a distant star) ───────────
-  // Planet orbits: 9, 12, 15, 19, 23, 28
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,   5.0, 180), target: new THREE.Vector3(0, 0,  0), fov:  15, roll:  0.00 }, // Far away, small dot
-  { t: 0.8,  pos: new THREE.Vector3( 18.0,  12.0,  75), target: new THREE.Vector3(0, 0,  0), fov:  40, roll:  0.45 }, // Rapid approach, banking right
-  { t: 1.8,  pos: new THREE.Vector3(-14.0,   6.0,  35), target: new THREE.Vector3(0,-1, -5), fov:  55, roll: -0.25 }, // Slicing through outer orbits
-  { t: 2.8,  pos: new THREE.Vector3( 10.0,   3.0,  18), target: new THREE.Vector3(-2, 0, -2), fov:  58, roll:  0.18 }, // Inner planets
-  { t: 3.6,  pos: new THREE.Vector3( -5.0,   2.0,  10), target: new THREE.Vector3(1,  0, -1), fov:  54, roll: -0.08 }, // Reaching the sun
-  { t: 4.2,  pos: new THREE.Vector3( -2.0,   1.5,   7), target: new THREE.Vector3(0,  0, -4), fov:  56, roll:  0.05 }, // Smooth handoff to TechGrid
+  // ── PHASE 1: DISTANT STAR 0s — tiny dot, telescope lens ──────────────────
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,   2.0, 350), target: new THREE.Vector3(0, 0,  0), fov:   8, roll:  0.00 },
 
-  // ── TECHNOLOGY 4.5 → 8s ────────────────────────────────────────
-  { t: 5.2,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0, -4), fov:  56, roll:  0.22 },
-  { t: 6.2,  pos: new THREE.Vector3( -3.0,  2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
-  { t: 7.1,  pos: new THREE.Vector3(  4.0,  1.5,   6), target: new THREE.Vector3(0, 0, -6), fov:  68, roll:  0.12 },
+  // ── PHASE 2: ACCELERATING 0.5s — dot triples, stars appear ─────────────
+  { t: 0.5,  pos: new THREE.Vector3(  3.0,   4.0, 200), target: new THREE.Vector3(0, 0,  0), fov:  15, roll:  0.12 },
+
+  // ── PHASE 3: GALAXY RUSH 1.5s — FOV opens wide, warp feeling ──────────
+  { t: 1.5,  pos: new THREE.Vector3( -8.0,   8.0,  80), target: new THREE.Vector3(0, 0, -5), fov:  45, roll:  0.35 },
+
+  // ── PHASE 4: OUTER PLANETS 2.8s — slicing through R=28/23 orbits ───────
+  { t: 2.8,  pos: new THREE.Vector3( 15.0,   4.0,  30), target: new THREE.Vector3(-3, 0, -8), fov:  55, roll: -0.25 },
+
+  // ── PHASE 5: PLANET FLYBY 3.8s — banking sideways past inner planets ───
+  { t: 3.8,  pos: new THREE.Vector3(-12.0,   2.0,  12), target: new THREE.Vector3(5,  0, -3), fov:  58, roll:  0.30 },
+
+  // ── PHASE 6: COSMIC DUST 4.5s — decelerating into nebula haze ──────────
+  { t: 4.5,  pos: new THREE.Vector3( -3.0,   1.5,   8), target: new THREE.Vector3(0,  0, -5), fov:  52, roll:  0.05 },
+
+  // ── HANDOFF TO TECHGRID 5.5s ───────────────────────────────────────────
+  { t: 5.5,  pos: new THREE.Vector3( -5.0,   1.5,  14), target: new THREE.Vector3(0, 0, -6), fov:  56, roll:  0.18 },
+
+  // ── TECHNOLOGY 5.5 → 8s ────────────────────────────────────────────────
+  { t: 6.5,  pos: new THREE.Vector3( -3.0,   2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
+  { t: 7.1,  pos: new THREE.Vector3(  4.0,   1.5,   6), target: new THREE.Vector3(0, 0, -6), fov:  68, roll:  0.12 },
 
   // ── PRE-BANG / BANG 7.5 → 8 ──────────────────────────────────
   { t: 7.6,  pos: new THREE.Vector3(  0.0,  0.5,   8), target: new THREE.Vector3(0, 0,  0), fov:  82, roll:  0.05 },
@@ -137,11 +148,13 @@ export function CameraRig() {
     const { a, b, k } = findSegment(t);
     let eased = smootherstep(0, 1, k);
 
-    // Dynamic easing for the initial warp jump (t <= 4.2s)
-    // expo.out provides an extreme initial velocity dropoff (Warp Jump feel)
-    // passing through z=180 -> z=7 seamlessly without disjoint keyframes.
-    if (b.t <= 4.2 && k > 0) {
-      eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k); 
+    // Dynamic easing for the deep zoom flythrough (t <= 5.5s)
+    // Phase 1-3 (t<=1.5): expo.out — extreme deceleration from warp speed
+    // Phase 4-6 (t<=5.5): smootherstep — cinematic, controlled approach
+    if (b.t <= 1.5 && k > 0) {
+      eased = k === 1 ? 1 : 1 - Math.pow(2, -12 * k); // Even stronger expo for z=350→80
+    } else if (b.t <= 5.5 && k > 0) {
+      eased = k === 1 ? 1 : 1 - Math.pow(2, -8 * k);  // Slightly softer for planet flyby
     }
 
     // 1. Keyframe interpolation

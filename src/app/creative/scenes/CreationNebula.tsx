@@ -20,8 +20,8 @@ import { NOISE_GLSL } from '@/app/creative/shaders/PlasmaSunMaterial';
 // ============================================================
 const SCENE_START = 0.0;
 const SCENE_FADE_IN_END = 0.9;
-const SCENE_FADE_OUT_START = 3.6;
-const SCENE_END = 4.8;
+const SCENE_FADE_OUT_START = 4.5;
+const SCENE_END = 6.0;
 
 // ============================================================
 // 1. ENERGY SEED — small glowing sphere that blooms into the nebula
@@ -122,8 +122,8 @@ function EnergySeed() {
       smoothstep(SCENE_START, 0.8, t) * (1 - smoothstep(3.2, 4.5, t));
 
     uniforms.uGrowth.value = growth;
-    // Dimmed to 40% so CinematicPlanets are the visual focus
-    uniforms.uOpacity.value = opacity * 0.4;
+    // Dimmed to 20% so CinematicPlanets are the visual focus
+    uniforms.uOpacity.value = opacity * 0.2;
 
     // Scale grows from 0.6 → 3.5 as it dissolves into nebula
     const scale = THREE.MathUtils.lerp(0.6, 3.5, growth);
@@ -326,11 +326,13 @@ function VolumetricNebula() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Reveal: cross-fade window — dimmed to 35% so CinematicPlanets shine through
-    const reveal =
+    // Reveal: cross-fade window — 35% base, boosted to 65% during cosmic dust phase (3.5-5.5s)
+    const baseReveal =
       smoothstep(SCENE_START, SCENE_FADE_IN_END + 1.0, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
-    uniforms.uReveal.value = reveal * 0.35;
+    // Cosmic dust boost: ramps up from 3.5s, peaks at 4.5s, then fades with the scene
+    const dustBoost = smoothstep(3.5, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
+    uniforms.uReveal.value = baseReveal * THREE.MathUtils.lerp(0.35, 0.65, dustBoost);
 
     // Spread: 0.15 → 1.0 over 1.2s to 3.8s (the "bloom outward" motion — compressed)
     uniforms.uSpread.value = THREE.MathUtils.lerp(
@@ -700,9 +702,8 @@ function WarpSpeedLines() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Warp lines: full intensity from t=0 (boot fade reveals them mid-warp),
-    // taper to 0 by t=4.0
-    const intensity = 1.0 - smoothstep(3.0, 4.0, t);
+    // Warp lines: full intensity from t=0, extended taper to 5.5s for cosmic dust feel
+    const intensity = 1.0 - smoothstep(4.0, 5.5, t);
     uniforms.uIntensity.value = intensity * 0.95;
   });
 
