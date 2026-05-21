@@ -641,7 +641,7 @@ function WarpSpeedLines() {
       const y = Math.sin(angle) * radius;
 
       const zOffset = Math.random() * 220;
-      const length = 12 + Math.random() * 28;       // longer streaks
+      const length = 20 + Math.random() * 60;       // much longer streaks for hyper-speed
       
       // Start point (tail)
       positions[i * 6 + 0] = x;
@@ -678,7 +678,7 @@ function WarpSpeedLines() {
     void main() {
       vec3 pos = position;
       // Fly towards camera incredibly fast (positive Z direction)
-      pos.z += uTime * 250.0; 
+      pos.z += uTime * 450.0; 
       // Wrap around seamlessly over the camera's travel path (-50 to 250)
       pos.z = mod(pos.z, 300.0) - 50.0;
       

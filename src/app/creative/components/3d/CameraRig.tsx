@@ -163,11 +163,27 @@ export function CameraRig() {
     const targetFov  = a.fov  + (b.fov  - a.fov)  * eased;
     const targetRoll = a.roll + (b.roll - a.roll) * eased;
 
-    // 2. Mouse parallax (dampened near big bang)
+    // 2. Mouse parallax & interactive camera panning
     const shakeAmt = shakeEnvelope(t);
-    const parallax = 0.55 * (1 - shakeAmt * 0.8);
-    tmpPos.current.x += mouse.current.x * parallax;
-    tmpPos.current.y += mouse.current.y * parallax * 0.7;
+    // Base parallax reduced near big bang
+    const baseParallax = 1.0 * (1 - shakeAmt * 0.8);
+    
+    // Dynamic parallax: stronger when far away (deep space), tighter when close
+    const depthScale = Math.max(1, tmpPos.current.z * 0.05); 
+    const parallaxX = mouse.current.x * baseParallax * depthScale;
+    const parallaxY = mouse.current.y * baseParallax * depthScale * 0.7;
+
+    // Apply positional shift
+    tmpPos.current.x += parallaxX;
+    tmpPos.current.y += parallaxY;
+
+    // Apply look-target panning (camera "looks" slightly towards the mouse)
+    tmpTarget.current.x += mouse.current.x * 2.0;
+    tmpTarget.current.y += mouse.current.y * 1.5;
+
+    // Interactive banking: tilt the camera slightly when moving mouse horizontally
+    // This gives a strong "flying a spaceship" feeling
+    const targetRollWithMouse = targetRoll - mouse.current.x * 0.15;
 
     // 3. Multi-octave shake (strongest at bang)
     if (shakeAmt > 0.001) {
@@ -187,7 +203,7 @@ export function CameraRig() {
     curPos.current.lerp(tmpPos.current, alpha);
     curTarget.current.lerp(tmpTarget.current, alpha);
     curFov.current  = THREE.MathUtils.lerp(curFov.current,  targetFov,  alpha);
-    curRoll.current = THREE.MathUtils.lerp(curRoll.current, targetRoll, alpha);
+    curRoll.current = THREE.MathUtils.lerp(curRoll.current, targetRollWithMouse, alpha);
 
     // 5. Apply camera
     camera.position.copy(curPos.current);
