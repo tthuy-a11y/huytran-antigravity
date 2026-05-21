@@ -13,9 +13,30 @@ const CinematicDirector = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-screen w-screen bg-black flex items-center justify-center">
-        <div className="text-cyan-400 font-mono tracking-[4px] text-sm animate-pulse">
-          INITIALIZING UNIVERSE...
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'radial-gradient(ellipse at center, #0a0218 0%, #000004 70%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          overflow: 'hidden',
+          fontFamily: 'ui-monospace, "Cascadia Code", "Source Code Pro", monospace',
+          color: '#26e6ff',
+        }}
+      >
+        <div className="cl-scanline" style={{ top: '15%' }} />
+        <div className="cl-scanline" style={{ top: '60%', animationDelay: '1.2s' }} />
+
+        <div className="cl-ring" />
+        <div className="cl-label" style={{ marginTop: 28 }}>
+          ĐANG KẾT NỐI HỆ HÀNH TINH<span className="cl-dots" />
+        </div>
+        <div style={{ marginTop: 12, fontSize: 10, opacity: 0.4, letterSpacing: '0.5em' }}>
+          ━━━ ANTIGRAVITY OS v2.6 ━━━
         </div>
       </div>
     ),
@@ -50,7 +71,7 @@ export default function CreativePage() {
   }, [flightPhase, currentShip]);
 
   return (
-    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+    <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden", background: "#000004" }}>
       {/* 3D Cinematic Sequence */}
       <CinematicDirector />
 

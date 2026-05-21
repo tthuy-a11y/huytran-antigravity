@@ -17,10 +17,10 @@ type DialogueLine = {
 const DIALOGUE: DialogueLine[] = [
   // CREATION — warm up, word-stagger float
   { id:'d1', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:1.8, end:6.2, style:'neon-pink-italic' },
+    start:0.2, end:3.5, style:'neon-pink-italic' },
   // TECHNOLOGY — mono glitch slide-in
   { id:'d2', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
-    start:6.8, end:10.2, style:'mono-cyan-glitch' },
+    start:4.0, end:8.0, style:'mono-cyan-glitch' },
   // CONVERGENCE — vibrating climax text (peak at 9.5s bang)
   { id:'d3', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
     start:8.5, end:10.8, style:'large-vibrating' },

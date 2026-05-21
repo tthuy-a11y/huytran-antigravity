@@ -27,8 +27,9 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     };
 
     // ── Boot / Creation ─────────────────────────────────────────
-    cue(0.25, 'data-beep',      { volume: 0.45 });
-    cue(1.20, 'data-beep',      { volume: 0.35, rate: 1.4 });
+    cue(0.10, 'warp-jump',      { volume: 0.85 });
+    cue(0.40, 'data-beep',      { volume: 0.45, rate: 2.0 });
+    cue(1.50, 'data-beep',      { volume: 0.35, rate: 1.8 });
     cue(3.50, 'planet-discover',{ volume: 0.5  });
 
     // ── Technology ──────────────────────────────────────────────

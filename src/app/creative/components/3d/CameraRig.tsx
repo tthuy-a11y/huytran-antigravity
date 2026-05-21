@@ -19,10 +19,12 @@ interface CameraKey {
 
 const KEYS: CameraKey[] = [
   // ── BOOT / CREATION 0 → 5s ──────────────────────────────────
-  // Start close for drama; fast pull-back as nebula blooms
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,  0.0,  14), target: new THREE.Vector3(0, 0, 0), fov: 60,  roll:  0.00 },
-  { t: 1.8,  pos: new THREE.Vector3(  0.4,  0.3,  18), target: new THREE.Vector3(0, 0, 0), fov: 54,  roll:  0.08 },
-  { t: 4.0,  pos: new THREE.Vector3( -1.2,  0.6,  22), target: new THREE.Vector3(0, 0, 0), fov: 50,  roll: -0.06 },
+  // Warp jump from deep space into the nebula
+  // (Removed intermediate t=1.8 keyframe. A continuous 1.5-power easing will
+  // naturally pass through z=82, fov=50, roll=0.10 at t=1.8 without any stutter)
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,  0.0, 200), target: new THREE.Vector3(0, 0, 0), fov: 30,  roll:  0.40 },
+  { t: 3.5,  pos: new THREE.Vector3( -1.2,  0.6,  22), target: new THREE.Vector3(0, 0, 0), fov: 60,  roll: -0.06 },
+  { t: 4.0,  pos: new THREE.Vector3( -1.8,  0.8,  20), target: new THREE.Vector3(0, 0, -1), fov: 58,  roll:  0.00 },
 
   // ── TECHNOLOGY 5 → 9.5s ─────────────────────────────────────
   // Sweep sideways across tech grid — aggressive roll
@@ -135,7 +137,14 @@ export function CameraRig() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     const { a, b, k } = findSegment(t);
-    const eased = smootherstep(0, 1, k);
+    let eased = smootherstep(0, 1, k);
+
+    // Dynamic easing for the initial warp jump (t <= 3.5s)
+    // power1.5 provides the perfect acceleration curve to pass through z=85 at t=1.8 
+    // seamlessly, avoiding the stutter caused by multiple disjoint keyframes.
+    if (b.t <= 3.5 && k > 0) {
+      eased = 1 - Math.pow(1 - k, 1.5); 
+    }
 
     // 1. Keyframe interpolation
     tmpPos.current.lerpVectors(a.pos, b.pos, eased);

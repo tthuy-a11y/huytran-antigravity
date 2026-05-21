@@ -242,68 +242,7 @@ export interface CinematicDirectorProps {
   showStats?: boolean;
 }
 
-// ============================================================
-// BOOT SEQUENCE — pre-cinematic loading overlay (fades into Canvas)
-// ============================================================
-function BootSequence({ onReady }: { onReady: () => void }) {
-  const [step, setStep] = useState(0);
-  // Rút gọn: 3 dòng × 120ms = 360ms + 100ms buffer ≈ 460ms total
-  // (trước: 4 dòng × 280ms = 1400ms)
-  const lines = [
-    '> KẾT NỐI HỆ TRỤC KHÔNG-THỜI-GIAN',
-    '> NẠP DỮ LIỆU 14.8 TỶ NĂM',
-    '> KHỞI ĐỘNG ĐIỆN ẢNH',
-  ];
-
-  useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
-    lines.forEach((_, i) => {
-      timers.push(setTimeout(() => setStep(i + 1), 120 * (i + 1)));
-    });
-    timers.push(setTimeout(onReady, 120 * lines.length + 100));
-    return () => timers.forEach(clearTimeout);
-  }, [onReady]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeOut' } }}
-      className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center font-mono text-cyan-400 pointer-events-none"
-    >
-      {/* Scanline overlay */}
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-[0.06] mix-blend-overlay pointer-events-none"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(0deg, rgba(255,255,255,0.5) 0px, rgba(255,255,255,0.5) 1px, transparent 1px, transparent 3px)',
-        }}
-      />
-      <div className="text-xs md:text-sm tracking-[0.4em] max-w-md w-full px-6 space-y-3">
-        {lines.slice(0, step).map((l, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center justify-between"
-          >
-            <span className="opacity-90">{l}</span>
-            <span className="text-cyan-300/80">[OK]</span>
-          </motion.div>
-        ))}
-      </div>
-      <motion.div
-        className="mt-12 text-xs tracking-[0.5em] text-cyan-300/60"
-        animate={{ opacity: [0.4, 1, 0.4] }}
-        transition={{ duration: 1.2, repeat: Infinity }}
-      >
-        ━━━ ANTIGRAVITY OS v2.6 ━━━
-      </motion.div>
-    </motion.div>
-  );
-}
-
+// BootSequence removed: The user requested the cinematic intro to run immediately without artificial delay.
 // ============================================================
 // AUDIO PROMPT — appears if user hasn't interacted, prompting for audio init
 // ============================================================
@@ -353,7 +292,6 @@ export function CinematicDirector({
   const isTransitioning = useCinematicStore((s) => s.isTransitioning);
   const enterSystem = useCinematicStore((s) => s.enterSystem);
 
-  const [bootDone, setBootDone] = useState(false);
   const [audioPromptVisible, setAudioPromptVisible] = useState(true);
 
   useEffect(() => {
@@ -389,20 +327,18 @@ export function CinematicDirector({
       window.location.search.includes('stats'));
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1.5, ease: "easeOut" }}
       style={{
         position: 'fixed',
         inset: 0,
-        background: '#000000',
+        background: '#000004',
         overflow: 'hidden',
       }}
     >
       <AudioInit />
-
-      {/* ═══ Pre-cinematic boot sequence ═══ */}
-      <AnimatePresence>
-        {!bootDone && <BootSequence key="boot" onReady={() => setBootDone(true)} />}
-      </AnimatePresence>
 
       {/* ═══ OWN 3D CANVAS (creative is isolated from global Canvas) ═══ */}
       <Canvas
@@ -442,7 +378,7 @@ export function CinematicDirector({
 
       {/* ═══ Audio enable prompt (autoplay policy workaround) ═══ */}
       <AnimatePresence>
-        {bootDone && audioPromptVisible && !hasEnteredSystem && (
+        {audioPromptVisible && !hasEnteredSystem && (
           <AudioPrompt
             key="audio-prompt"
             onEnable={handleEnableAudio}
@@ -453,7 +389,7 @@ export function CinematicDirector({
 
       {/* ═══ 2D overlay (dialogue, controls, progress) ═══ */}
       <AnimatePresence mode="wait">
-        {bootDone && !hasEnteredSystem && !isTransitioning && (
+        {!hasEnteredSystem && !isTransitioning && (
           <motion.div
             key="cinematic-ui"
             initial={{ opacity: 0 }}
@@ -481,7 +417,7 @@ export function CinematicDirector({
       <AnimatePresence>
         {isTransitioning && <TransitionSkeleton key="skeleton" />}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
