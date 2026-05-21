@@ -18,18 +18,18 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── PLANETARY FLYTHROUGH 0 → 3.5s (spiral approach through the solar system) ─
-  // Planet orbits: 9, 12, 15, 19, 23, 28 — camera must start outside R=28 then spiral IN
-  { t: 0.0,  pos: new THREE.Vector3( 12.0,  8.0,  65), target: new THREE.Vector3(0, 0,  0), fov:  35, roll:  0.40 },
-  { t: 0.6,  pos: new THREE.Vector3(-15.0,  5.0,  32), target: new THREE.Vector3(0, 0, -5), fov:  50, roll: -0.22 },
-  { t: 1.2,  pos: new THREE.Vector3( 10.0,  4.0,  20), target: new THREE.Vector3(-2, 0, -3), fov:  55, roll:  0.15 },
-  { t: 2.0,  pos: new THREE.Vector3( -8.0,  2.5,  12), target: new THREE.Vector3(2, 0, -1), fov:  54, roll: -0.08 },
-  { t: 3.0,  pos: new THREE.Vector3( -3.0,  1.5,   8), target: new THREE.Vector3(0, 0, -2), fov:  52, roll:  0.00 },
-  { t: 3.5,  pos: new THREE.Vector3( -2.0,  1.0,   7), target: new THREE.Vector3(0, 0, -3), fov:  50, roll:  0.00 },
+  // ── PLANETARY FLYTHROUGH 0 → 4.5s (deep zoom from a distant star) ───────────
+  // Planet orbits: 9, 12, 15, 19, 23, 28
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,   5.0, 180), target: new THREE.Vector3(0, 0,  0), fov:  15, roll:  0.00 }, // Far away, small dot
+  { t: 0.8,  pos: new THREE.Vector3( 18.0,  12.0,  75), target: new THREE.Vector3(0, 0,  0), fov:  40, roll:  0.45 }, // Rapid approach, banking right
+  { t: 1.8,  pos: new THREE.Vector3(-14.0,   6.0,  35), target: new THREE.Vector3(0,-1, -5), fov:  55, roll: -0.25 }, // Slicing through outer orbits
+  { t: 2.8,  pos: new THREE.Vector3( 10.0,   3.0,  18), target: new THREE.Vector3(-2, 0, -2), fov:  58, roll:  0.18 }, // Inner planets
+  { t: 3.6,  pos: new THREE.Vector3( -5.0,   2.0,  10), target: new THREE.Vector3(1,  0, -1), fov:  54, roll: -0.08 }, // Reaching the sun
+  { t: 4.2,  pos: new THREE.Vector3( -2.0,   1.5,   7), target: new THREE.Vector3(0,  0, -4), fov:  56, roll:  0.05 }, // Smooth handoff to TechGrid
 
-  // ── TECHNOLOGY 4 → 8s ────────────────────────────────────────
-  { t: 4.0,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0, -4), fov:  56, roll:  0.22 },
-  { t: 5.8,  pos: new THREE.Vector3( -3.0,  2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
+  // ── TECHNOLOGY 4.5 → 8s ────────────────────────────────────────
+  { t: 5.2,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0, -4), fov:  56, roll:  0.22 },
+  { t: 6.2,  pos: new THREE.Vector3( -3.0,  2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
   { t: 7.1,  pos: new THREE.Vector3(  4.0,  1.5,   6), target: new THREE.Vector3(0, 0, -6), fov:  68, roll:  0.12 },
 
   // ── PRE-BANG / BANG 7.5 → 8 ──────────────────────────────────
@@ -137,10 +137,10 @@ export function CameraRig() {
     const { a, b, k } = findSegment(t);
     let eased = smootherstep(0, 1, k);
 
-    // Dynamic easing for the initial warp jump (t <= 3.5s)
+    // Dynamic easing for the initial warp jump (t <= 4.2s)
     // expo.out provides an extreme initial velocity dropoff (Warp Jump feel)
-    // passing through z=85 seamlessly without disjoint keyframes.
-    if (b.t <= 3.5 && k > 0) {
+    // passing through z=180 -> z=7 seamlessly without disjoint keyframes.
+    if (b.t <= 4.2 && k > 0) {
       eased = k === 1 ? 1 : 1 - Math.pow(2, -10 * k); 
     }
 
