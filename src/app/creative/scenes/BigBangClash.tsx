@@ -20,13 +20,13 @@ import {
 } from '@/app/creative/components/3d/PlanetNode';
 
 // ============================================================
-// TIMELINE (42s / Big Bang @ 9.5s)
+// TIMELINE — 31s compressed, Big Bang @ 8.0s
 // ============================================================
-const CONVERGENCE_START = 6.5;   // asteroids visible / rushing in
-const BANG              = BIG_BANG_TIME;   // 9.5
-const PRIMAL_REVEAL     = 11.0;  // 3 primal asteroids emerge
-const AWAKENING_START   = 22.0;  // Sun blazes, debris clearing
-const SCENE_END         = 42.0;
+const CONVERGENCE_START = 5.5;   // asteroids visible / rushing in
+const BANG              = BIG_BANG_TIME;   // 8.0
+const PRIMAL_REVEAL     = 9.0;   // 3 primal asteroids emerge (post-bang)
+const AWAKENING_START   = 17.0;  // Sun blazes, debris clearing
+const SCENE_END         = 31.0;
 
 // Module-scope scratch vectors (zero GC in useFrame hot paths)
 const S = {
@@ -163,7 +163,7 @@ function ExplosionDebris() {
     const mesh = meshRef.current;
     if (!mesh) return;
     const elapsed = t - BANG;
-    const active  = elapsed >= -0.01 && elapsed <= 8.5;
+    const active  = elapsed >= -0.01 && elapsed <= 6.5;
     if (!active) { if (mesh.visible) mesh.visible = false; return; }
     if (!mesh.visible) mesh.visible = true;
 
@@ -347,13 +347,13 @@ function WhiteFlash() {
 const PRIMAL_CONFIG = [
   { id:'asteroid-1', tint:'gold'  as PrimalTint, driftDir:[-0.9, 0.35,-0.25] as [number,number,number],
     orbitRadius:8,  orbitPhase:Math.PI*0.15, orbitSpeed:0.18, scale:0.9, seed:13,
-    labelStart:14.0, labelText:'Một kỷ nguyên mới',  labelColor:'#ffc857' },
+    labelStart:11.0, labelText:'Một kỷ nguyên mới',  labelColor:'#ffc857' },
   { id:'asteroid-2', tint:'pink'  as PrimalTint, driftDir:[0.85,-0.20, 0.40] as [number,number,number],
     orbitRadius:10.5,orbitPhase:Math.PI*0.85, orbitSpeed:0.14, scale:1.1, seed:27,
-    labelStart:16.5, labelText:'Một thời đại mới',   labelColor:'#ff5aa8' },
+    labelStart:13.0, labelText:'Một thời đại mới',   labelColor:'#ff5aa8' },
   { id:'asteroid-3', tint:'cyan'  as PrimalTint, driftDir:[0.15, 0.70,-0.85] as [number,number,number],
     orbitRadius:13,  orbitPhase:Math.PI*1.55, orbitSpeed:0.11, scale:1.0, seed:41,
-    labelStart:19.5, labelText:'Một vũ trụ mới',     labelColor:'#3ae8ff' },
+    labelStart:15.0, labelText:'Một vũ trụ mới',     labelColor:'#3ae8ff' },
 ] as const;
 
 function PrimalLabel({ text, color, fade }: { text:string; color:string; fade:number }) {
@@ -431,7 +431,7 @@ function PrimalWithFollower({ cfg }: { cfg: typeof PRIMAL_CONFIG[number] }) {
 }
 
 // ============================================================
-// 6. SUN REVEAL — emerges from dust at 20.5s
+// 6. SUN REVEAL — emerges from dust at 16.5s (start of awakening phase)
 // ============================================================
 function SunReveal() {
   const groupRef  = useRef<THREE.Group>(null);
@@ -442,13 +442,13 @@ function SunReveal() {
   useFrame(() => {
     const t = useCinematicStore.getState().time;
     if (!groupRef.current) return;
-    const vis = t >= 20.0;
+    const vis = t >= 16.5;
     if (groupRef.current.visible !== vis) groupRef.current.visible = vis;
     if (!vis) return;
 
-    const r = smootherstep(21.0, 26.0, t);
+    const r = smootherstep(17.0, 20.0, t);
     revealRef.current = r;
-    const sc = THREE.MathUtils.lerp(0.82, 1.0, smootherstep(21.0, 28.0, t));
+    const sc = THREE.MathUtils.lerp(0.82, 1.0, smootherstep(17.0, 22.0, t));
     groupRef.current.scale.setScalar(sc);
 
     const bucket = Math.floor(r * 80);
@@ -499,14 +499,14 @@ function DustCloud() {
     const t    = useCinematicStore.getState().time;
     const mesh = meshRef.current; if (!mesh) return;
     const elapsed = t - BANG;
-    const active  = elapsed >= 0 && elapsed <= 13;
+    const active  = elapsed >= 0 && elapsed <= 9;
     if (!active) { if (mesh.visible) mesh.visible = false; return; }
     if (!mesh.visible) mesh.visible = true;
-    mat.opacity = 0.7 * smoothstep(0, 0.5, elapsed) * (1 - smoothstep(9, 13, elapsed));
+    mat.opacity = 0.7 * smoothstep(0, 0.4, elapsed) * (1 - smoothstep(6, 9, elapsed));
     for (let i=0; i<cfg.count; i++) {
       const i3 = i*3, dist = cfg.speeds[i] * elapsed * 1.5;
       S.pos.set(cfg.dirs[i3]*dist, cfg.dirs[i3+1]*dist, cfg.dirs[i3+2]*dist);
-      const s = cfg.sizes[i] * (1 - smoothstep(7, 12, elapsed)*0.6);
+      const s = cfg.sizes[i] * (1 - smoothstep(5, 8, elapsed)*0.6);
       S.scale.setScalar(s);
       S.euler.set(elapsed*(0.3+i*0.01), elapsed*0.4, 0);
       TUMBLE_QUAT.setFromEuler(S.euler);

@@ -14,14 +14,14 @@ import {
 import { NOISE_GLSL } from '@/app/creative/shaders/PlasmaSunMaterial';
 
 // ============================================================
-// SCENE LIFETIME
-// Visible:  0s (fade in) → 7.2s (cross-dissolve to tech)
-// Peak:     ~2.5s–5s (compressed 15%)
+// SCENE LIFETIME — 31s timeline, creation phase 0→4s
+// Visible: 0s (fade in) → 4.8s (cross-dissolve to tech)
+// Peak:    ~1.5s–3s (compressed)
 // ============================================================
 const SCENE_START = 0.0;
-const SCENE_FADE_IN_END = 1.3;
-const SCENE_FADE_OUT_START = 5.95;
-const SCENE_END = 7.2;
+const SCENE_FADE_IN_END = 0.9;
+const SCENE_FADE_OUT_START = 3.6;
+const SCENE_END = 4.8;
 
 // ============================================================
 // 1. ENERGY SEED — small glowing sphere that blooms into the nebula
@@ -113,13 +113,13 @@ function EnergySeed() {
 
     uniforms.uTime.value += delta;
 
-    // Growth & opacity ramps
-    // Pre-bloom (0–2s): seed visible, growing
-    // 2–5s: blooms outward (grows scale + fades core)
-    // 5s+: dissolved into nebula
-    const growth = smoothstep(1.5, 5.0, t);
+    // Growth & opacity ramps (31s timeline: creation 0→4s)
+    // Pre-bloom (0–1.2s): seed visible, growing
+    // 1.2–3.5s: blooms outward (grows scale + fades core)
+    // 3.5s+: dissolved into nebula
+    const growth = smoothstep(1.0, 3.5, t);
     const opacity =
-      smoothstep(SCENE_START, 1.2, t) * (1 - smoothstep(4.5, 5.5, t));
+      smoothstep(SCENE_START, 0.8, t) * (1 - smoothstep(3.2, 4.5, t));
 
     uniforms.uGrowth.value = growth;
     uniforms.uOpacity.value = opacity;
@@ -331,11 +331,11 @@ function VolumetricNebula() {
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
     uniforms.uReveal.value = reveal;
 
-    // Spread: 0.15 → 1.0 over 2s to 5s (the "bloom outward" motion)
+    // Spread: 0.15 → 1.0 over 1.2s to 3.8s (the "bloom outward" motion — compressed)
     uniforms.uSpread.value = THREE.MathUtils.lerp(
       0.15,
       1.0,
-      smoothstep(2.0, 5.5, t)
+      smoothstep(1.2, 3.8, t)
     );
 
     // Slow rotation
@@ -462,7 +462,7 @@ function SilkRibbon({
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
     uniforms.uOpacity.value =
-      fadeWindow(t, 2.8, SCENE_END, 1.5, 1.0) * 0.85;
+      fadeWindow(t, 1.5, SCENE_END, 1.0, 0.8) * 0.85;
 
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * speed * 0.3;
@@ -545,8 +545,8 @@ function AmbientSparkles() {
       vec3 pos = position;
       
       // Move from far (z = -10) to near and past the camera (z = 35)
-      // Camera is between z=22 and z=9, so z=35 goes way past the camera
-      float speed = 0.4;
+      // Boosted speed for the fast warp arrival — stars rush in 2.5× faster
+      float speed = 1.0;
       float travel = fract(pos.z + uTime * speed);
       float zPos = -10.0 + travel * 45.0; 
       pos.z = zPos;
@@ -596,10 +596,10 @@ function AmbientSparkles() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    // Fade in/out with the scene
+    // Fade in/out with the scene (31s timeline)
     uniforms.uReveal.value =
-      smoothstep(0.0, 1.5, t) *
-      (1 - smoothstep(5.95, 7.2, t)); // Scaled timings by 0.85 approx
+      smoothstep(0.0, 0.8, t) *
+      (1 - smoothstep(3.6, 4.8, t));
   });
 
   return (
@@ -699,10 +699,10 @@ function WarpSpeedLines() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Warp lines: at full intensity from t=0 (boot fade reveals them mid-warp),
-    // taper to 0 by t=3.4 as camera settles into the nebula
-    const intensity = 1.0 - smoothstep(2.0, 3.4, t);
-    uniforms.uIntensity.value = intensity * 0.85;
+    // Warp lines: full intensity from t=0 (boot fade reveals them mid-warp),
+    // taper to 0 by t=2.5 — camera arrives at z=22 by t=2.0 then settles
+    const intensity = 1.0 - smoothstep(1.5, 2.5, t);
+    uniforms.uIntensity.value = intensity * 0.95;
   });
 
   return (

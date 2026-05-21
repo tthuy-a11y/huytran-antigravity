@@ -5,8 +5,8 @@ import { motion, AnimatePresence, useAnimationFrame, useMotionValue, useTransfor
 import { useCinematicStore, CINEMATIC_DURATION } from '@/app/creative/lib/cinematicStore';
 
 // ============================================================
-// DIALOGUE TABLE — 42s timeline (text 100% nguyên văn gốc)
-// Primal asteroid labels (14s/16.5s/19.5s) = 3D Html in BigBangClash
+// DIALOGUE TABLE — 31s compressed timeline (text 100% nguyên văn gốc)
+// Primal asteroid labels (11s/13s/15s) = 3D Html in BigBangClash
 // ============================================================
 type DialogueLine = {
   id: string; text: string; start: number; end: number;
@@ -15,26 +15,26 @@ type DialogueLine = {
 };
 
 const DIALOGUE: DialogueLine[] = [
-  // CREATION — warm up, word-stagger float (delayed until camera settles from warp arrival)
+  // CREATION 0-4s — text xuất hiện sớm trong lúc camera đang lao về
   { id:'d1', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:1.8, end:4.5, style:'neon-pink-italic' },
-  // TECHNOLOGY — mono glitch slide-in
+    start:0.6, end:3.8, style:'neon-pink-italic' },
+  // TECHNOLOGY 4-8s — smooth slide entry, gentle glitch
   { id:'d2', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
-    start:4.0, end:8.0, style:'mono-cyan-glitch' },
-  // CONVERGENCE — vibrating climax text (peak at 9.5s bang)
+    start:4.2, end:7.5, style:'mono-cyan-glitch' },
+  // CONVERGENCE — vibrating climax text (peak at 8.0s bang)
   { id:'d3', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
-    start:8.5, end:10.8, style:'large-vibrating' },
-  // AWAKENING — soft serif overlapping pair (42s timeline)
+    start:7.0, end:8.3, style:'large-vibrating' },
+  // AWAKENING 17-31s — soft serif overlapping pair
   { id:'d7', text:'Trong khoảng lặng giữa các vì sao',
-    start:33.0, end:35.5, style:'serif-italic' },
+    start:22.5, end:26.0, style:'serif-italic' },
   { id:'d8', text:'tôi tìm thấy tiếng vọng của chính mình...',
-    start:35.0, end:37.5, style:'serif-italic' },
+    start:25.5, end:28.0, style:'serif-italic' },
   // PRE-CLIMAX
   { id:'d9', text:'Khởi nguyên... một vũ trụ thức tỉnh',
-    start:37.8, end:39.0, style:'gold-scaling' },
+    start:28.2, end:29.0, style:'gold-scaling' },
   // FINAL HERO
   { id:'d10', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:39.2, end:42.0, style:'custom-d10' },
+    start:29.0, end:31.0, style:'custom-d10' },
 ];
 
 // ============================================================
@@ -73,19 +73,19 @@ const dissolveExit = {
 function getMotionProps(style: DialogueLine['style'], tier: string) {
   switch (style) {
     case 'neon-pink-italic': return {
-      initial:{ opacity:0, y:30, filter:'blur(20px)' },
-      animate:{ opacity:1, y:[0,-7,0], scale:[1,1.015,1], rotateZ:[0,1,0,-1,0], filter:'blur(0px)' },
+      initial:{ opacity:0, y:18, filter:'blur(14px)' },
+      animate:{ opacity:1, y:[0,-5,0], scale:[1,1.012,1], rotateZ:[0,0.8,0,-0.8,0], filter:'blur(0px)' },
       exit: dissolveExit,
-      transition:{ duration:1.4, ease:[0.16,1,0.3,1] as any,
-        y:{ duration:4.2, repeat:Infinity, ease:'easeInOut' },
-        scale:{ duration:4.2, repeat:Infinity, ease:'easeInOut' },
-        rotateZ:{ duration:6, repeat:Infinity, ease:'easeInOut' } },
+      transition:{ duration:0.75, ease:[0.16,1,0.3,1] as any,         // ← 1.4 → 0.75 (faster reveal)
+        y:{ duration:3.6, repeat:Infinity, ease:'easeInOut' },
+        scale:{ duration:3.6, repeat:Infinity, ease:'easeInOut' },
+        rotateZ:{ duration:5, repeat:Infinity, ease:'easeInOut' } },
     };
     case 'mono-cyan-glitch': return {
-      initial:{ opacity:0, x:-44, skewX:14 },
-      animate:{ opacity:1, x:0, skewX:0 },
+      initial:{ opacity:0, x:-18, skewX:5, filter:'blur(8px)' },
+      animate:{ opacity:1, x:0, skewX:0, filter:'blur(0px)' },
       exit: dissolveExit,
-      transition:{ duration:0.65, ease:[0.16,1,0.3,1] as any },
+      transition:{ duration:0.95, ease:[0.16,1,0.3,1] as any },
     };
     case 'large-vibrating': return {
       initial:{ opacity:0, scale:0.65, filter:'blur(12px)' },
@@ -119,7 +119,7 @@ function getMotionProps(style: DialogueLine['style'], tier: string) {
 // ============================================================
 // WORD STAGGER
 // ============================================================
-function SplitWords({ text, stagger = 0.09 }: { text:string; stagger?:number }) {
+function SplitWords({ text, stagger = 0.05 }: { text:string; stagger?:number }) {
   const words = text.split(' ');
   return (
     <motion.span className="inline"
@@ -129,8 +129,8 @@ function SplitWords({ text, stagger = 0.09 }: { text:string; stagger?:number }) 
       {words.map((w,i) => (
         <motion.span key={i} className="inline-block mr-[0.28em] last:mr-0"
           variants={{
-            hidden:{ opacity:0, y:24, filter:'blur(10px)' },
-            visible:{ opacity:1, y:0, filter:'blur(0px)', transition:{ duration:0.65, ease:[0.16,1,0.3,1] as any } },
+            hidden:{ opacity:0, y:16, filter:'blur(8px)' },
+            visible:{ opacity:1, y:0, filter:'blur(0px)', transition:{ duration:0.38, ease:[0.16,1,0.3,1] as any } },
           }}
         >{w}</motion.span>
       ))}
@@ -142,24 +142,25 @@ function SplitWords({ text, stagger = 0.09 }: { text:string; stagger?:number }) 
 // RGB GLITCH
 // ============================================================
 function GlitchText({ text }: { text:string }) {
+  // Softened chromatic split — readable, not seizure-inducing
   return (
     <span className="relative inline-block">
       <span className="relative z-10">{text}</span>
       <motion.span aria-hidden className="absolute inset-0 z-0 select-none"
-        style={{ color:'#ff3a8a', mixBlendMode:'screen' }}
-        animate={{ x:[0,-3,2,-1,0,-2,0], skewX:[0,1.5,-1,0.5,0], opacity:[0.7,0.95,0.5,0.85,0.7] }}
-        transition={{ duration:0.38, repeat:Infinity }}
+        style={{ color:'#ff5aa8', mixBlendMode:'screen', opacity:0.55 }}
+        animate={{ x:[0,-1.2,0.8,0], opacity:[0.55,0.7,0.45,0.55] }}
+        transition={{ duration:1.1, repeat:Infinity, ease:'easeInOut' }}
       >{text}</motion.span>
       <motion.span aria-hidden className="absolute inset-0 z-0 select-none"
-        style={{ color:'#26ffe6', mixBlendMode:'screen' }}
-        animate={{ x:[0,3,-2,1,0,2,0], opacity:[0.7,0.55,0.9,0.65,0.8,0.7] }}
-        transition={{ duration:0.38, repeat:Infinity, delay:0.06 }}
+        style={{ color:'#3ae8ff', mixBlendMode:'screen', opacity:0.55 }}
+        animate={{ x:[0,1.2,-0.8,0], opacity:[0.55,0.45,0.7,0.55] }}
+        transition={{ duration:1.1, repeat:Infinity, ease:'easeInOut', delay:0.12 }}
       >{text}</motion.span>
       <motion.span aria-hidden
-        className="absolute left-0 right-0 h-[2px] bg-cyan-300/70 blur-[1px] pointer-events-none"
+        className="absolute left-0 right-0 h-[1px] bg-cyan-300/45 blur-[1px] pointer-events-none"
         style={{ top:0 }}
         animate={{ top:['-5%','110%'] }}
-        transition={{ duration:2.0, repeat:Infinity, ease:'linear', repeatDelay:0.6 }}
+        transition={{ duration:2.8, repeat:Infinity, ease:'linear', repeatDelay:1.5 }}
       />
     </span>
   );
@@ -182,8 +183,8 @@ function DynamicClimaxText({ text }: { text:string }) {
 
   useAnimationFrame((msec) => {
     const t         = useCinematicStore.getState().time;
-    // Build-up starts 1s before bang (8.5s), peaks at bang (9.5s)
-    const intensity = Math.max(0, Math.min(1, (t - 8.5) / 1.0));
+    // Build-up starts 1s before bang (7.0s), peaks at bang (8.0s)
+    const intensity = Math.max(0, Math.min(1, (t - 7.0) / 1.0));
     const beat      = intensity > 0 ? Math.sin(msec * 0.018) * intensity * 0.07 : 0;
     progress.set(Math.min(1, intensity + beat));
     const amp = 1.2 + intensity * 5;
@@ -223,10 +224,10 @@ function DialogueLineView({ line, cinematicTime }: { line:DialogueLine; cinemati
   })();
 
   let inner: React.ReactNode = line.text;
-  if      (line.style === 'neon-pink-italic') inner = <SplitWords text={line.text} stagger={0.1} />;
+  if      (line.style === 'neon-pink-italic') inner = <SplitWords text={line.text} stagger={0.06} />;
   else if (line.style === 'mono-cyan-glitch') inner = <GlitchText text={line.text} />;
   else if (line.style === 'large-vibrating')  inner = <DynamicClimaxText text={line.text} />;
-  else if (line.style === 'serif-italic')     inner = <SplitWords text={line.text} stagger={0.13} />;
+  else if (line.style === 'serif-italic')     inner = <SplitWords text={line.text} stagger={0.09} />;
   else if (line.style === 'gold-scaling') {
     inner = (
       <>

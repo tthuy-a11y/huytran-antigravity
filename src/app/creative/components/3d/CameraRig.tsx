@@ -18,45 +18,42 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── BOOT / CREATION 0 → 5s ──────────────────────────────────
-  // Warp jump from deep space into the nebula
-  // (Removed intermediate t=1.8 keyframe. A continuous 1.5-power easing will
-  // naturally pass through z=82, fov=50, roll=0.10 at t=1.8 without any stutter)
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,  0.0, 200), target: new THREE.Vector3(0, 0, 0), fov: 30,  roll:  0.40 },
-  { t: 3.5,  pos: new THREE.Vector3( -1.2,  0.6,  22), target: new THREE.Vector3(0, 0, 0), fov: 60,  roll: -0.06 },
-  { t: 4.0,  pos: new THREE.Vector3( -1.8,  0.8,  20), target: new THREE.Vector3(0, 0, -1), fov: 58,  roll:  0.00 },
+  // ── WARP ARRIVAL 0 → 2s (compressed: stars rush toward viewer fast) ─
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,  0.0, 200), target: new THREE.Vector3(0, 0,  0), fov:  30, roll:  0.40 },
+  { t: 1.0,  pos: new THREE.Vector3( -0.6,  0.3,  80), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.22 },
+  { t: 2.0,  pos: new THREE.Vector3( -1.2,  0.6,  22), target: new THREE.Vector3(0, 0,  0), fov:  60, roll: -0.06 },
 
-  // ── TECHNOLOGY 5 → 9.5s ─────────────────────────────────────
-  // Sweep sideways across tech grid — aggressive roll
-  { t: 5.0,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0,-4),  fov: 56,  roll:  0.22 },
-  { t: 7.0,  pos: new THREE.Vector3( -3.0,  2.0,  10), target: new THREE.Vector3(0, 0,-8),  fov: 62,  roll: -0.18 },
-  { t: 8.5,  pos: new THREE.Vector3(  4.0,  1.5,   6), target: new THREE.Vector3(0, 0,-6),  fov: 68,  roll:  0.12 },
+  // ── CREATION SETTLE 2 → 4s ───────────────────────────────────
+  { t: 3.0,  pos: new THREE.Vector3( -1.8,  0.8,  20), target: new THREE.Vector3(0, 0, -1), fov:  58, roll:  0.00 },
 
-  // ── CONVERGENCE / PRE-BANG 9 → 9.5s ─────────────────────────
-  // Race toward impact — FOV explodes at 9.5
-  { t: 9.0,  pos: new THREE.Vector3(  0.0,  0.5,   8), target: new THREE.Vector3(0, 0, 0),  fov: 82,  roll:  0.05 },
-  { t: 9.4,  pos: new THREE.Vector3(  0.0,  0.0,   4), target: new THREE.Vector3(0, 0, 0),  fov: 110, roll:  0.00 },
-  // BANG — extreme FOV punch (camera is "inside" the explosion)
-  { t: 9.5,  pos: new THREE.Vector3(  0.0,  0.0,   2), target: new THREE.Vector3(0, 0, 0),  fov: 140, roll:  0.00 },
+  // ── TECHNOLOGY 4 → 8s ────────────────────────────────────────
+  { t: 4.0,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0, -4), fov:  56, roll:  0.22 },
+  { t: 5.8,  pos: new THREE.Vector3( -3.0,  2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
+  { t: 7.1,  pos: new THREE.Vector3(  4.0,  1.5,   6), target: new THREE.Vector3(0, 0, -6), fov:  68, roll:  0.12 },
 
-  // ── POST-BANG RECOIL 9.5 → 15s ──────────────────────────────
-  { t: 10.5, pos: new THREE.Vector3(  2.0,  2.0,  22), target: new THREE.Vector3(0, 0, 0),  fov: 62,  roll: -0.15 },
-  { t: 13.0, pos: new THREE.Vector3( -5.0,  3.0,  30), target: new THREE.Vector3(0, 0, 0),  fov: 55,  roll:  0.10 },
-  { t: 15.0, pos: new THREE.Vector3(  3.0,  4.0,  36), target: new THREE.Vector3(0, 0, 0),  fov: 52,  roll: -0.08 },
+  // ── PRE-BANG / BANG 7.5 → 8 ──────────────────────────────────
+  { t: 7.6,  pos: new THREE.Vector3(  0.0,  0.5,   8), target: new THREE.Vector3(0, 0,  0), fov:  82, roll:  0.05 },
+  { t: 7.9,  pos: new THREE.Vector3(  0.0,  0.0,   4), target: new THREE.Vector3(0, 0,  0), fov: 110, roll:  0.00 },
+  { t: 8.0,  pos: new THREE.Vector3(  0.0,  0.0,   2), target: new THREE.Vector3(0, 0,  0), fov: 140, roll:  0.00 },
 
-  // ── PILLARS 15 → 32s ─────────────────────────────────────────
-  { t: 18.0, pos: new THREE.Vector3( -4.0,  3.0,  32), target: new THREE.Vector3(0, 0, 0),  fov: 50,  roll:  0.06 },
-  { t: 22.0, pos: new THREE.Vector3(  0.0,  6.0,  40), target: new THREE.Vector3(0, 0, 0),  fov: 48,  roll:  0.00 },
-  { t: 26.0, pos: new THREE.Vector3(  2.0,  4.0,  32), target: new THREE.Vector3(0, 0, 0),  fov: 46,  roll: -0.04 },
-  { t: 30.0, pos: new THREE.Vector3(  1.0,  2.0,  24), target: new THREE.Vector3(0, 0, 0),  fov: 44,  roll:  0.00 },
+  // ── POST-BANG RECOIL 8 → 12s ─────────────────────────────────
+  { t: 8.7,  pos: new THREE.Vector3(  2.0,  2.0,  22), target: new THREE.Vector3(0, 0,  0), fov:  62, roll: -0.15 },
+  { t: 10.5, pos: new THREE.Vector3( -5.0,  3.0,  30), target: new THREE.Vector3(0, 0,  0), fov:  55, roll:  0.10 },
+  { t: 12.0, pos: new THREE.Vector3(  3.0,  4.0,  36), target: new THREE.Vector3(0, 0,  0), fov:  52, roll: -0.08 },
 
-  // ── AWAKENING / OUTRO 32 → 42s ───────────────────────────────
-  // Slow majestic push toward Sun
-  { t: 34.0, pos: new THREE.Vector3(  0.0,  2.0,  18), target: new THREE.Vector3(0, 0, 0),  fov: 46,  roll:  0.12 },
-  { t: 38.0, pos: new THREE.Vector3(  0.0,  0.5,  12), target: new THREE.Vector3(0, 0,-5),  fov: 55,  roll: -0.25 },
-  // Final warp-pull to Sun core
-  { t: 41.0, pos: new THREE.Vector3(  0.0,  0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.40 },
-  { t: 42.0, pos: new THREE.Vector3(  0.0,  0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
+  // ── CIVILIZATION / PILLARS 12 → 17s ──────────────────────────
+  { t: 14.0, pos: new THREE.Vector3( -4.0,  3.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  50, roll:  0.06 },
+  { t: 17.0, pos: new THREE.Vector3(  0.0,  6.0,  40), target: new THREE.Vector3(0, 0,  0), fov:  48, roll:  0.00 },
+
+  // ── AWAKENING / OUTRO 17 → 31s ───────────────────────────────
+  { t: 20.0, pos: new THREE.Vector3(  2.0,  4.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  46, roll: -0.04 },
+  { t: 23.0, pos: new THREE.Vector3(  1.0,  2.0,  24), target: new THREE.Vector3(0, 0,  0), fov:  44, roll:  0.00 },
+  { t: 25.5, pos: new THREE.Vector3(  0.0,  2.0,  18), target: new THREE.Vector3(0, 0,  0), fov:  46, roll:  0.12 },
+  { t: 28.5, pos: new THREE.Vector3(  0.0,  0.5,  12), target: new THREE.Vector3(0, 0, -5), fov:  55, roll: -0.25 },
+
+  // ── FINAL WARP PULL 30.5 → 31s ───────────────────────────────
+  { t: 30.5, pos: new THREE.Vector3(  0.0,  0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.40 },
+  { t: 31.0, pos: new THREE.Vector3(  0.0,  0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
 ];
 KEYS.sort((a, b) => a.t - b.t);
 
@@ -86,15 +83,15 @@ function fbmNoise(x: number, seed: number) {
   );
 }
 
-// Shake peaks at BIG_BANG_TIME (9.5), builds from 7.5s, decays by 13.5s
+// Shake peaks at BIG_BANG_TIME (8.0), builds from 6.5s, decays by 11s
 export function shakeEnvelope(t: number): number {
   const BANG = BIG_BANG_TIME;
-  if (t < BANG - 2.0 || t > BANG + 4.0) return 0;
+  if (t < BANG - 1.5 || t > BANG + 3.0) return 0;
   if (t < BANG) {
-    const k = (t - (BANG - 2.0)) / 2.0;
+    const k = (t - (BANG - 1.5)) / 1.5;
     return Math.pow(k, 2.5) * 1.8; // explosive build
   }
-  const k = 1 - (t - BANG) / 4.0;
+  const k = 1 - (t - BANG) / 3.0;
   return Math.pow(Math.max(0, k), 1.5) * 1.8;
 }
 

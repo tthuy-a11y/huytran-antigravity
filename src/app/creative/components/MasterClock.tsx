@@ -6,8 +6,9 @@ import { useCinematicStore, BIG_BANG_TIME, CINEMATIC_DURATION } from '@/app/crea
 import { audioEngine } from '@/app/creative/lib/audioEngine';
 
 // ============================================================
-// MASTER CLOCK — 42s front-loaded timeline
-// Big Bang at 9.5s. Audio cues fire once per threshold crossing.
+// MASTER CLOCK — 31s compressed timeline
+// Big Bang at 8.0s. Audio cues fire once per threshold crossing.
+// Palette: fast-warp whoosh + data flicker → tech sweep → bang climax.
 // ============================================================
 export function MasterClock({ onFinished }: { onFinished?: () => void }) {
   const finishedFiredRef = useRef(false);
@@ -26,57 +27,59 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
       if (next >= trigger && prev < trigger) audioEngine.playCue(id, opts);
     };
 
-    // ── Boot / Creation (5-Layer Audio Timeline) ──────────────────
-    // Layer 1 (Cosmic Ambient) is continuously playing via background mix.
-    // Layer 2: Warp Jump
-    cue(0.10, 'warp-jump',       { volume: 0.85 });
-    
-    // Layer 3: Digital Data Pulse
-    cue(0.40, 'data-beep',       { volume: 0.65, rate: 2.0 });
-    
-    // Layer 4: Rising Energy Synth
-    cue(1.00, 'planet-discover', { volume: 0.55, rate: 0.8 });
-    
-    // Layer 3 (repeated): Data Pulse
-    cue(1.50, 'data-beep',       { volume: 0.70, rate: 2.3 });
-    
-    // Layer 5: Particle Whoosh (layered light streaks)
-    cue(2.80, 'laser',           { volume: 0.40, rate: 1.8 });
-    cue(2.90, 'laser',           { volume: 0.40, rate: 1.9 });
-    cue(3.00, 'laser',           { volume: 0.40, rate: 2.0 });
-    
-    // Layer 2 + 5: Warp Impact + Creation Burst (arrival at z=22)
-    cue(3.50, 'shockwave',       { volume: 0.90 });
-    cue(3.50, 'glass-shatter',   { volume: 0.60, rate: 0.7 });
+    // ═══════════════════════════════════════════════════════════
+    // CREATION 0 → 4s  (high-speed warp zoom — stars rushing in)
+    // ═══════════════════════════════════════════════════════════
+    cue(0.05, 'warp-jump',       { volume: 0.95 });             // kick off (long whoosh)
+    cue(0.45, 'data-beep',       { volume: 0.55, rate: 2.0 });  // data flicker
+    cue(0.90, 'data-beep',       { volume: 0.55, rate: 2.3 });  // accelerating
+    cue(1.30, 'data-beep',       { volume: 0.55, rate: 2.5 });  // peak speed
+    cue(1.70, 'laser',           { volume: 0.42, rate: 1.95 }); // star streak whoosh
+    cue(1.85, 'laser',           { volume: 0.42, rate: 2.05 });
+    cue(2.00, 'shockwave',       { volume: 0.80 });             // ARRIVAL — matches camera key
+    cue(2.10, 'glass-shatter',   { volume: 0.50, rate: 0.7 });  // soft landing tinkle
+    cue(2.80, 'planet-discover', { volume: 0.45, rate: 0.85 }); // wonder
+    cue(3.40, 'data-beep',       { volume: 0.38, rate: 1.5 });  // ambient pulse
 
-    // ── Technology ──────────────────────────────────────────────
-    cue(5.10, 'warp-jump',      { volume: 0.65 });
-    cue(6.80, 'laser',          { volume: 0.55 });
-    cue(8.00, 'glass-shatter',  { volume: 0.75 });
+    // ═══════════════════════════════════════════════════════════
+    // TECHNOLOGY 4 → 8s  (fast holographic sweep — tense rising)
+    // ═══════════════════════════════════════════════════════════
+    cue(4.05, 'warp-jump',       { volume: 0.55, rate: 1.2 });  // slide into tech
+    cue(4.50, 'laser',           { volume: 0.55, rate: 1.0 });  // grid scan
+    cue(5.10, 'data-beep',       { volume: 0.50, rate: 1.6 });
+    cue(5.65, 'glass-shatter',   { volume: 0.55, rate: 1.15 }); // alert
+    cue(6.20, 'laser',           { volume: 0.55, rate: 1.05 }); // sweep
+    cue(6.70, 'data-beep',       { volume: 0.48, rate: 1.8 });
 
-    // ── Pre-bang buildup ─────────────────────────────────────────
-    cue(8.80, 'meteor-impact',  { volume: 0.85 });
-    cue(9.20, 'glass-shatter',  { volume: 0.90, rate: 0.8 });
+    // ── Pre-bang buildup (7.0 → 8.0) ───────────────────────────
+    cue(7.05, 'meteor-impact',   { volume: 0.75 });
+    cue(7.45, 'glass-shatter',   { volume: 0.78, rate: 0.85 });
+    cue(7.80, 'glass-shatter',   { volume: 0.95, rate: 0.70 }); // final crack
 
-    // ── BIG BANG 9.5s ────────────────────────────────────────────
-    cue(BIG_BANG_TIME,      'big-bang',       { volume: 1.0  });
-    cue(BIG_BANG_TIME,      'shockwave',      { volume: 1.0  });
-    cue(BIG_BANG_TIME + 0.1,'glass-shatter',  { volume: 0.85, rate: 1.3 });
+    // ═══════════════════════════════════════════════════════════
+    // BIG BANG 8.0s
+    // ═══════════════════════════════════════════════════════════
+    cue(BIG_BANG_TIME,       'big-bang',      { volume: 1.0 });
+    cue(BIG_BANG_TIME,       'shockwave',     { volume: 1.0 });
+    cue(BIG_BANG_TIME + 0.1, 'glass-shatter', { volume: 0.85, rate: 1.3 });
 
-    // ── Post-bang debris / pillars ───────────────────────────────
-    cue(11.5, 'meteor-impact',  { volume: 0.60 });
-    cue(14.0, 'planet-discover',{ volume: 0.65 });
-    cue(17.0, 'planet-discover',{ volume: 0.70 });
-    cue(20.0, 'planet-discover',{ volume: 0.60 });
+    // ═══════════════════════════════════════════════════════════
+    // CIVILIZATION / CONVERGENCE 8 → 17s  (9 seconds)
+    // ═══════════════════════════════════════════════════════════
+    cue( 9.00, 'meteor-impact',  { volume: 0.55 });   // debris settling
+    cue(11.00, 'planet-discover',{ volume: 0.65 });   // primal #1 — gold
+    cue(13.00, 'planet-discover',{ volume: 0.70 });   // primal #2 — pink
+    cue(15.00, 'planet-discover',{ volume: 0.65 });   // primal #3 — cyan
 
-    // ── Awakening ────────────────────────────────────────────────
-    cue(22.5, 'planet-discover',{ volume: 0.55 });
-    cue(27.0, 'data-beep',      { volume: 0.50 });
-
-    // ── Climax outro ─────────────────────────────────────────────
-    cue(35.0, 'warp-jump',      { volume: 0.80 });
-    cue(38.5, 'laser',          { volume: 0.70, rate: 0.9 });
-    cue(41.0, 'shockwave',      { volume: 1.0,  rate: 1.6 });
+    // ═══════════════════════════════════════════════════════════
+    // AWAKENING 17 → 31s  (14 seconds)
+    // ═══════════════════════════════════════════════════════════
+    cue(17.30, 'planet-discover',{ volume: 0.60, rate: 0.9 }); // Sun reveal
+    cue(20.00, 'data-beep',      { volume: 0.45 });
+    cue(22.50, 'data-beep',      { volume: 0.40, rate: 0.9 });
+    cue(25.00, 'warp-jump',      { volume: 0.75 });            // climax build
+    cue(27.50, 'laser',          { volume: 0.65, rate: 0.9 });
+    cue(30.00, 'shockwave',      { volume: 1.0,  rate: 1.6 }); // final hit
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {
       finishedFiredRef.current = true;

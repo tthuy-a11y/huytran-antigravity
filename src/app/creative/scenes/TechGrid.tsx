@@ -11,14 +11,14 @@ import {
 } from '@/app/creative/lib/cinematicStore';
 
 // ============================================================
-// SCENE LIFETIME (compressed 15% — synced with camera & dialogue)
-// 5.5s pre-roll fade in (overlap with Creation)
-// 11.9s scene ends
+// SCENE LIFETIME — 31s timeline, tech phase 4→8s
+// 3.5s pre-roll fade in (overlap with Creation fadeout)
+// 9.0s scene ends (cross-dissolve with bang debris)
 // ============================================================
-const SCENE_START = 5.5;
-const SCENE_FADE_IN_END = 7.65;
-const SCENE_FADE_OUT_START = 10.6;
-const SCENE_END = 11.9;
+const SCENE_START = 3.5;
+const SCENE_FADE_IN_END = 5.0;
+const SCENE_FADE_OUT_START = 8.2;
+const SCENE_END = 9.0;
 
 // ============================================================
 // SHARED SCRATCH OBJECTS — declared at module scope so they never
@@ -144,11 +144,11 @@ function GridNodes() {
     }
 
     // Expanding spherical wave: radius grows with time, brightens nodes near it
-    // Wave starts at center at t=5.95, expands to grid edge by t=9.8
+    // Wave starts at center at t=4.5, expands to grid edge by t=8.0 (bang moment)
     const waveRadius = THREE.MathUtils.lerp(
       0,
       config.half * config.spacing * 1.8,
-      smoothstep(5.95, 9.8, t)
+      smoothstep(4.5, 8.0, t)
     );
     const waveWidth = 1.6;
 
@@ -324,7 +324,7 @@ function GridLines() {
     uniforms.uWaveRadius.value = THREE.MathUtils.lerp(
       0,
       uniforms.uMaxDist.value,
-      smoothstep(5.95, 9.8, t)
+      smoothstep(4.5, 8.0, t)
     );
 
     const visible = reveal > 0.001;

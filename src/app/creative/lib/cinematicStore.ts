@@ -80,14 +80,14 @@ export interface SceneRange {
 }
 
 export const SCENE_RANGES: SceneRange[] = [
-  { id: 'creation',    start: 0.0,  end: 5.0  },
-  { id: 'technology',  start: 5.0,  end: 9.5  },
-  { id: 'convergence', start: 9.5,  end: 22.0 },
-  { id: 'awakening',   start: 22.0, end: 42.0 },
+  { id: 'creation',    start: 0.0,  end: 4.0  },
+  { id: 'technology',  start: 4.0,  end: 8.0  },
+  { id: 'convergence', start: 8.0,  end: 17.0 },
+  { id: 'awakening',   start: 17.0, end: 31.0 },
 ];
 
-export const CINEMATIC_DURATION = 42.0;
-export const BIG_BANG_TIME      = 9.5;   // ← nổ sớm hơn 30%
+export const CINEMATIC_DURATION = 31.0;   // ← rút gọn từ 42s
+export const BIG_BANG_TIME      = 8.0;    // ← bang ở giây 8
 
 const getSceneAt = (t: number): SceneId => {
   for (const r of SCENE_RANGES) if (t >= r.start && t < r.end) return r.id;

@@ -54,10 +54,10 @@ export function bloomIntensityAt(t: number): number {
     baseline = 0.95;
   } else if (t < BIG_BANG_TIME) {
     baseline = 0.95;
-  } else if (t < 22.0) {
-    baseline = THREE.MathUtils.lerp(1.0, 1.4, smoothstep(18.0, 22.0, t));
+  } else if (t < 17.0) {
+    baseline = THREE.MathUtils.lerp(1.0, 1.4, smoothstep(14.0, 17.0, t));
   } else {
-    baseline = 1.0 + smoothstep(22.0, 28.0, t) * 0.3;
+    baseline = 1.0 + smoothstep(17.0, 21.0, t) * 0.3;
   }
 
   return baseline + bangContribution + buildup + decay;
@@ -76,10 +76,10 @@ export function chromaticAt(t: number): number {
     -((t - BIG_BANG_TIME) * (t - BIG_BANG_TIME)) / (2 * bangSigma * bangSigma)
   );
   v += bang * 0.020;
-  if (t > BIG_BANG_TIME && t < 19.0) {
+  if (t > BIG_BANG_TIME && t < 15.0) {
     v += Math.exp(-(t - BIG_BANG_TIME) * 2.2) * 0.008;
   }
-  if (t >= 22.0) v = 0;
+  if (t >= 17.0) v = 0;
   return v;
 }
 
@@ -94,11 +94,11 @@ export function noiseAt(t: number): number {
     -((t - BIG_BANG_TIME) * (t - BIG_BANG_TIME)) / (2 * bangSigma * bangSigma)
   );
   v += bang * 0.45;
-  if (t > BIG_BANG_TIME && t < 19.5) {
+  if (t > BIG_BANG_TIME && t < 15.0) {
     v = Math.max(v, 0.18 * Math.exp(-(t - BIG_BANG_TIME) * 1.8));
   }
-  if (t >= 22.0) {
-    v = THREE.MathUtils.lerp(0.12, 0.04, smoothstep(22.0, 26.0, t));
+  if (t >= 17.0) {
+    v = THREE.MathUtils.lerp(0.12, 0.04, smoothstep(17.0, 20.0, t));
   }
   return v;
 }
@@ -113,18 +113,18 @@ export function vignetteAt(t: number): number {
   const bang = Math.exp(
     -((t - BIG_BANG_TIME) * (t - BIG_BANG_TIME)) / (2 * bangSigma * bangSigma)
   );
-  if (t < 18.5) {
+  if (t < 14.5) {
     return THREE.MathUtils.lerp(0.4, 0.05, Math.max(bang, smoothstep(BIG_BANG_TIME - 0.5, BIG_BANG_TIME + 1.0, t)));
   }
-  if (t < 22.0) {
-    return THREE.MathUtils.lerp(0.05, 0.35, smoothstep(18.5, 22.0, t));
+  if (t < 17.0) {
+    return THREE.MathUtils.lerp(0.05, 0.35, smoothstep(14.5, 17.0, t));
   }
-  return THREE.MathUtils.lerp(0.35, 0.55, smoothstep(22.0, 28.0, t));
+  return THREE.MathUtils.lerp(0.35, 0.55, smoothstep(17.0, 21.0, t));
 }
 
 export function dofFocusAt(t: number): { focusDistance: number; bokehScale: number } {
-  if (t < 22.0) return { focusDistance: 1.0, bokehScale: 0 };
-  const k = smoothstep(22.0, 27.0, t);
+  if (t < 17.0) return { focusDistance: 1.0, bokehScale: 0 };
+  const k = smoothstep(17.0, 20.5, t);
   return {
     focusDistance: 0.012,
     bokehScale: k * 2.5,
@@ -208,7 +208,7 @@ export function DynamicPostFx() {
     let intensity = bloomIntensityAt(t);
     // On mobile: reduce bloom intensity in the interactive system phase
     // to prevent the sun's additive glow from causing visible flashing
-    if (isMobileRef.current && t >= 22.0) {
+    if (isMobileRef.current && t >= 17.0) {
       intensity *= 0.6;
     }
     bloomEffect.intensity = intensity;

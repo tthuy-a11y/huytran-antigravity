@@ -53,10 +53,10 @@ function SceneBackdrop() {
   useFrame(() => {
     const t = useCinematicStore.getState().time;
     // Scene-tinted fog
-    if (t < 5) targetFog.current.setStyle('#0a0218');          // creation — purple void
-    else if (t < 9.5) targetFog.current.setStyle('#02101e');  // technology — tech cyan
-    else if (t < 16) targetFog.current.setStyle('#1a0508');   // convergence — impact red
-    else if (t < 22) targetFog.current.setStyle('#180a02');   // hot debris
+    if (t < 4) targetFog.current.setStyle('#0a0218');         // creation — purple void
+    else if (t < 8) targetFog.current.setStyle('#02101e');    // technology — tech cyan
+    else if (t < 13) targetFog.current.setStyle('#1a0508');   // convergence — impact red
+    else if (t < 17) targetFog.current.setStyle('#180a02');   // hot debris
     else targetFog.current.setStyle('#100802');               // awakening — warm amber
 
     currentFog.current.lerp(targetFog.current, 0.04);
