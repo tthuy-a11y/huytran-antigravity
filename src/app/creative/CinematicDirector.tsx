@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, AdaptiveEvents, Preload, Stats, PerformanceMonitor } from '@react-three/drei';
 import * as THREE from 'three';
 
-import { useCinematicStore } from '@/app/creative/lib/cinematicStore';
+import { useCinematicStore, smoothstep } from '@/app/creative/lib/cinematicStore';
 
 // Side-effect import: registers <plasmaSunMaterialImpl> + <coronaMaterialImpl>
 import '@/app/creative/shaders/PlasmaSunMaterial';

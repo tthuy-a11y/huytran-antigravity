@@ -95,16 +95,29 @@ function fbmNoise(x: number, seed: number) {
   );
 }
 
-// Shake peaks at BIG_BANG_TIME (8.0), builds from 6.5s, decays by 11s
 export function shakeEnvelope(t: number): number {
   const BANG = BIG_BANG_TIME;
-  if (t < BANG - 1.5 || t > BANG + 3.0) return 0;
+  let rumble = 0;
+  
+  // 1. Warp acceleration rumble (t = 0.5s to 2.5s)
+  if (t > 0.5 && t < 2.5) {
+    rumble += smoothstep(0.5, 1.0, t) * (1 - smoothstep(1.5, 2.5, t)) * 0.05;
+  }
+  
+  // 2. Cosmic dust entry rumble (t = 4.0s to 5.5s)
+  if (t > 4.0 && t < 5.5) {
+    rumble += smoothstep(4.0, 4.2, t) * (1 - smoothstep(5.0, 5.5, t)) * 0.03;
+  }
+
+  // 3. Big Bang explosive shake
+  if (t < BANG - 1.5 || t > BANG + 3.0) return rumble;
+  
   if (t < BANG) {
     const k = (t - (BANG - 1.5)) / 1.5;
-    return Math.pow(k, 2.5) * 1.8; // explosive build
+    return rumble + Math.pow(k, 2.5) * 1.8; // explosive build
   }
   const k = 1 - (t - BANG) / 3.0;
-  return Math.pow(Math.max(0, k), 1.5) * 1.8;
+  return rumble + Math.pow(Math.max(0, k), 1.5) * 1.8;
 }
 
 export { fbmNoise as shakeNoise };

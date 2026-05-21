@@ -35,6 +35,7 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     cue(1.50, 'data-beep',       { volume: 0.25, rate: 2.00 }); // High-speed data flicker
     cue(2.00, 'planet-discover', { volume: 0.35, rate: 1.30 }); // Galaxy becoming visible
     cue(2.80, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Outer planet encounter
+    cue(3.60, 'shockwave',       { volume: 0.60, rate: 0.80 }); // Cinematic Doppler swoosh past planet
     cue(3.80, 'planet-discover', { volume: 0.60, rate: 0.75 }); // Planet flyby — close encounter
     cue(4.00, 'shockwave',       { volume: 0.35, rate: 0.40 }); // Cosmic dust — distant rumble
     cue(4.80, 'data-beep',       { volume: 0.30, rate: 1.80 }); // TechGrid signal approaching

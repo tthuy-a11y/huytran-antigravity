@@ -132,6 +132,13 @@ export function vignetteAt(t: number): number {
 }
 
 export function dofFocusAt(t: number): { focusDistance: number; bokehScale: number } {
+  // Cinematic Planet Flyby (macro focus on planet, blur stars)
+  if (t >= 2.5 && t < 4.5) {
+    const bokeh = smoothstep(2.5, 3.2, t) * (1 - smoothstep(3.8, 4.5, t)) * 3.5;
+    const focus = THREE.MathUtils.lerp(0.05, 0.005, smoothstep(2.5, 3.8, t));
+    return { focusDistance: focus, bokehScale: bokeh };
+  }
+
   if (t < 17.0) return { focusDistance: 1.0, bokehScale: 0 };
   const k = smoothstep(17.0, 20.5, t);
   return {
