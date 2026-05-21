@@ -61,9 +61,22 @@ function SceneBackdrop() {
     else if (t < 17) targetFog.current.setStyle('#180a02');       // hot debris
     else targetFog.current.setStyle('#100802');                   // awakening — warm amber
 
+    // Dynamic fog density for cosmic dust transition (t=4.0 to 5.5s)
+    let density = 0.012; // base density
+    if (t >= 4.0 && t < 6.0) {
+      // Ramp up density to 0.035 for a thick dust cloud, then back down
+      const dustRamp = smoothstep(4.0, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
+      density = THREE.MathUtils.lerp(0.012, 0.035, dustRamp);
+    }
+    
     currentFog.current.lerp(targetFog.current, 0.04);
     if (scene.fog && (scene.fog as THREE.FogExp2).color) {
       (scene.fog as THREE.FogExp2).color.copy(currentFog.current);
+      (scene.fog as THREE.FogExp2).density = THREE.MathUtils.lerp(
+        (scene.fog as THREE.FogExp2).density,
+        density,
+        0.05
+      );
     }
     if (scene.background && (scene.background as THREE.Color).copy) {
       (scene.background as THREE.Color).copy(currentFog.current).multiplyScalar(0.3);
@@ -85,6 +98,7 @@ function DistantStarfield({ count }: { count: number }) {
 
   const uniforms = useRef({
     uTime:       { value: 0 },
+    uReveal:     { value: 0 },
     uPixelRatio: {
       value: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1,
     },
@@ -113,17 +127,23 @@ function DistantStarfield({ count }: { count: number }) {
     precision highp float;
     varying vec3 vColor;
     varying float vTwinkle;
+    uniform float uReveal;
     void main() {
       vec2 uv = gl_PointCoord - 0.5;
       float d = length(uv);
       if (d > 0.5) discard;
       float falloff = pow(1.0 - d * 2.0, 3.0);
-      gl_FragColor = vec4(vColor * vTwinkle * 1.5, falloff * vTwinkle);
+      gl_FragColor = vec4(vColor * vTwinkle * 1.5, falloff * vTwinkle * uReveal);
     }
   `;
 
   useFrame((_, delta) => {
+    const t = useCinematicStore.getState().time;
     uniforms.current.uTime.value += delta;
+    
+    // Smooth reveal from 0.8s to 2.5s (starts as pitch black)
+    uniforms.current.uReveal.value = smoothstep(0.8, 2.5, t);
+
     if (pointsRef.current) {
       pointsRef.current.rotation.y += delta * 0.003;
     }

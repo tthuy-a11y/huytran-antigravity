@@ -112,7 +112,8 @@ export function noiseAt(t: number): number {
 }
 
 export function vignetteAt(t: number): number {
-  if (t < 5.0) return THREE.MathUtils.lerp(0.85, 0.55, smoothstep(0, 5.0, t));
+  if (t < 2.0) return THREE.MathUtils.lerp(0.98, 0.70, smoothstep(0, 2.0, t));
+  if (t < 5.0) return THREE.MathUtils.lerp(0.70, 0.55, smoothstep(2.0, 5.0, t));
   if (t < 7.5) return 0.4;
   if (t < BIG_BANG_TIME) {
     return THREE.MathUtils.lerp(0.4, 0.15, smoothstep(7.5, BIG_BANG_TIME, t));

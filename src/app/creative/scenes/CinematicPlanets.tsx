@@ -287,20 +287,23 @@ export default function CinematicPlanets() {
     const t = useCinematicStore.getState().time;
     // Visibility control
     if (groupRef.current) {
-      groupRef.current.visible = t >= -0.1 && t <= 6.5;
+      groupRef.current.visible = t >= 2.0 && t <= 6.5;
     }
   });
 
   // We read time reactively for JSX-level decisions
   const t = useCinematicStore((s) => s.time);
-  // Extended fade-out: 2 seconds for smooth transition to cosmic dust / TechGrid
-  const opacity = fadeWindow(t, 0, 6.5, 0.05, 2.0);
-  const isVisible = t >= -0.1 && t <= 6.5;
+  // Delayed reveal: starts at 2.0, fades in over 1.0s. Fades out over 2.0s at the end.
+  const opacity = fadeWindow(t, 2.0, 6.5, 1.0, 2.0);
+  const isVisible = t >= 2.0 && t <= 6.5;
+
+  // Sun bursts into view from the EnergySeed between 2.0 and 2.8s
+  const sunScale = THREE.MathUtils.lerp(0.01, 3.9, smoothstep(2.0, 2.8, t));
 
   return (
     <group ref={groupRef} visible={isVisible}>
       {/* Central Sun */}
-      <Sun position={[0, 0, 0]} scale={3.9} reveal={opacity} intensity={1.25} />
+      <Sun position={[0, 0, 0]} scale={sunScale} reveal={opacity} intensity={1.25} />
 
       {/* Planets + Orbit Rings */}
       {PLANETS.map((planet, i) => (

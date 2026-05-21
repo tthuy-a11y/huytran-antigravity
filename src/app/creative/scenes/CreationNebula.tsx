@@ -113,17 +113,18 @@ function EnergySeed() {
 
     uniforms.uTime.value += delta;
 
-    // Growth & opacity ramps (31s timeline: creation 0→4s)
-    // Pre-bloom (0–1.2s): seed visible, growing
-    // 1.2–3.5s: blooms outward (grows scale + fades core)
+    // Growth & opacity ramps
+    // Pre-bloom (0–1.5s): seed is fully visible as the ONLY bright dot
+    // 1.5–3.5s: blooms outward (grows scale + fades core)
     // 3.5s+: dissolved into nebula
-    const growth = smoothstep(1.0, 3.5, t);
+    const growth = smoothstep(1.5, 3.5, t);
+    
+    // Start at 1.0 (bright dot), fade down to 0.3 as it blooms, then fade out at the end
     const opacity =
-      smoothstep(SCENE_START, 0.8, t) * (1 - smoothstep(3.2, 4.5, t));
+      THREE.MathUtils.lerp(1.0, 0.3, growth) * (1 - smoothstep(3.2, 4.5, t));
 
     uniforms.uGrowth.value = growth;
-    // Dimmed to 20% so CinematicPlanets are the visual focus
-    uniforms.uOpacity.value = opacity * 0.2;
+    uniforms.uOpacity.value = opacity;
 
     // Scale grows from 0.6 → 3.5 as it dissolves into nebula
     const scale = THREE.MathUtils.lerp(0.6, 3.5, growth);
@@ -326,13 +327,13 @@ function VolumetricNebula() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Reveal: cross-fade window — 35% base, boosted to 65% during cosmic dust phase (3.5-5.5s)
-    const baseReveal =
-      smoothstep(SCENE_START, SCENE_FADE_IN_END + 1.0, t) *
+    // Delayed reveal (0.5s) to preserve initial darkness
+    const reveal =
+      smoothstep(0.5, 1.5, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
     // Cosmic dust boost: ramps up from 3.5s, peaks at 4.5s, then fades with the scene
     const dustBoost = smoothstep(3.5, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
-    uniforms.uReveal.value = baseReveal * THREE.MathUtils.lerp(0.35, 0.65, dustBoost);
+    uniforms.uReveal.value = reveal * THREE.MathUtils.lerp(0.35, 0.65, dustBoost);
 
     // Spread: 0.15 → 1.0 over 1.2s to 3.8s (the "bloom outward" motion — compressed)
     uniforms.uSpread.value = THREE.MathUtils.lerp(
@@ -464,8 +465,8 @@ function SilkRibbon({
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    uniforms.uOpacity.value =
-      fadeWindow(t, 1.5, SCENE_END, 1.0, 0.8) * 0.85;
+    // SilkRibbons delayed to t=2.0 to avoid cluttering the dark start
+    uniforms.uOpacity.value = fadeWindow(t, 2.0, 4.5, 0.5, 1.5) * 0.6;
 
     if (groupRef.current) {
       groupRef.current.rotation.y += delta * speed * 0.3;
@@ -599,10 +600,10 @@ function AmbientSparkles() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    // Fade in/out with the scene (31s timeline)
+    // Delayed reveal (0.5s) to preserve initial darkness
     uniforms.uReveal.value =
-      smoothstep(0.0, 0.8, t) *
-      (1 - smoothstep(3.6, 4.8, t));
+      smoothstep(0.5, 1.5, t) *
+      (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
   });
 
   return (
@@ -702,8 +703,8 @@ function WarpSpeedLines() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Warp lines: full intensity from t=0, extended taper to 5.5s for cosmic dust feel
-    const intensity = 1.0 - smoothstep(4.0, 5.5, t);
+    // Warp lines: delay start to 0.3s, tapers off by 5.5s
+    const intensity = smoothstep(0.3, 0.8, t) * (1.0 - smoothstep(4.0, 5.5, t));
     uniforms.uIntensity.value = intensity * 0.95;
   });
 
