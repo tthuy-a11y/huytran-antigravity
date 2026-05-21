@@ -24,6 +24,7 @@ import { InteractiveSystem } from '@/app/creative/components/3d/InteractiveSyste
 import { InteractiveUI } from '@/app/creative/components/InteractiveUI';
 import { useSafeDispose } from '@/app/creative/lib/useSafeDispose';
 import { MasterClock } from '@/app/creative/components/MasterClock';
+import { BootSequence } from '@/app/creative/components/BootSequence';
 import { getStarfieldGeometry, disposeAllCachedGeometries } from '@/app/creative/lib/geometryCache';
 
 
@@ -191,16 +192,20 @@ function useKeyboardControls() {
 // (avoids autoplay-suspended audio + ensures gestures are captured)
 // ============================================================
 function useAutoStart() {
-  const isPlaying = useCinematicStore((s) => s.isPlaying);
-  const time = useCinematicStore((s) => s.time);
-  const play = useCinematicStore((s) => s.play);
+  const isPlaying        = useCinematicStore((s) => s.isPlaying);
+  const time             = useCinematicStore((s) => s.time);
+  const hasBootCompleted = useCinematicStore((s) => s.hasBootCompleted);
+  const play             = useCinematicStore((s) => s.play);
 
+  // Cinematic timer only starts AFTER BootSequence finishes its 2s overlay
+  // (BootSequence calls completeBoot() which sets isPlaying=true + hasBootCompleted=true).
+  // This hook is now a safety-net no-op for the boot path, but still kicks
+  // a play() if for any reason boot already completed yet timer is paused at 0.
   useEffect(() => {
-    if (isPlaying || time > 0) return;
-    // Start immediately on mount — no user gesture required for visuals
-    const id = window.setTimeout(() => play(), 100);
+    if (isPlaying || time > 0 || !hasBootCompleted) return;
+    const id = window.setTimeout(() => play(), 50);
     return () => window.clearTimeout(id);
-  }, [isPlaying, time, play]);
+  }, [isPlaying, time, hasBootCompleted, play]);
 }
 
 // ============================================================
@@ -351,7 +356,7 @@ export function CinematicDirector({
           preserveDrawingBuffer: false,
         }}
         dpr={quality.dpr}
-        camera={{ position: [0, 0, 14], fov: 60, near: 0.1, far: 500 }}
+        camera={{ position: [0, 0, 200], fov: 30, near: 0.1, far: 500 }}
         shadows={quality.shadows}
         frameloop="always"
         style={{ position: 'absolute', inset: 0, touchAction: 'none' }}
@@ -417,6 +422,9 @@ export function CinematicDirector({
       <AnimatePresence>
         {isTransitioning && <TransitionSkeleton key="skeleton" />}
       </AnimatePresence>
+
+      {/* ═══ BOOT SEQUENCE (DOM overlay z=60 — covers everything until t≈2s) ═══ */}
+      {!hasEnteredSystem && <BootSequence />}
     </motion.div>
   );
 }

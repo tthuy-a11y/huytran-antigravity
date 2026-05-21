@@ -101,6 +101,7 @@ interface CinematicState {
   time: number;
   isPlaying: boolean;
   isFinished: boolean;
+  hasBootCompleted: boolean;
   currentScene: SceneId;
   deviceTier: DeviceTier;
   quality: QualityBudget;
@@ -114,6 +115,7 @@ interface CinematicState {
   pause: () => void;
   reset: () => void;
   skip: () => void;
+  completeBoot: () => void;
   toggleMute: () => void;
   enterSystem: () => void;
   setTransitioning: (v: boolean) => void;
@@ -127,8 +129,9 @@ export const useCinematicStore = create<CinematicState>()(
     const tier = detectDeviceTier();
     return {
       time: 0,
-      isPlaying: true,
+      isPlaying: false,           // gated by boot sequence
       isFinished: false,
+      hasBootCompleted: false,    // becomes true when BootSequence finishes
       currentScene: 'creation',
       deviceTier: tier,
       quality: QUALITY_BUDGETS[tier],
@@ -149,9 +152,10 @@ export const useCinematicStore = create<CinematicState>()(
 
       play:  () => set({ isPlaying: true }),
       pause: () => set({ isPlaying: false }),
-      reset: () => set({ time: 0, isPlaying: true, isFinished: false, currentScene: 'creation' }),
-      skip:  () => set({ time: CINEMATIC_DURATION, isPlaying: false, isFinished: true,
+      reset: () => set({ time: 0, isPlaying: true, isFinished: false, hasBootCompleted: true, currentScene: 'creation' }),
+      skip:  () => set({ time: CINEMATIC_DURATION, isPlaying: false, isFinished: true, hasBootCompleted: true,
                          currentScene: 'awakening', hasEnteredSystem: true }),
+      completeBoot: () => set({ hasBootCompleted: true, isPlaying: true }),
       toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
       enterSystem: () => {
         set({ isTransitioning: true });

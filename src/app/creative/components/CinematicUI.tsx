@@ -15,9 +15,9 @@ type DialogueLine = {
 };
 
 const DIALOGUE: DialogueLine[] = [
-  // CREATION — warm up, word-stagger float
+  // CREATION — warm up, word-stagger float (delayed until camera settles from warp arrival)
   { id:'d1', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:0.2, end:3.5, style:'neon-pink-italic' },
+    start:1.8, end:4.5, style:'neon-pink-italic' },
   // TECHNOLOGY — mono glitch slide-in
   { id:'d2', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
     start:4.0, end:8.0, style:'mono-cyan-glitch' },

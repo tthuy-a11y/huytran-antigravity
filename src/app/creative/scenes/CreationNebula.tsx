@@ -625,19 +625,20 @@ function WarpSpeedLines() {
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const { geometry, uniforms } = useMemo(() => {
-    const count = 120;
+    const count = 280;                              // denser warp tunnel
     const positions = new Float32Array(count * 2 * 3);
     const alphas = new Float32Array(count * 2);
-    
+
     for (let i = 0; i < count; i++) {
       // Random position in a cylinder around the camera path
       const angle = Math.random() * Math.PI * 2;
-      const radius = 3 + Math.random() * 12; 
+      // Wider distribution — some streaks near camera axis, some far edge
+      const radius = 2 + Math.random() * 22;
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
-      
-      const zOffset = Math.random() * 200;
-      const length = 8 + Math.random() * 20; // long streaks
+
+      const zOffset = Math.random() * 220;
+      const length = 12 + Math.random() * 28;       // longer streaks
       
       // Start point (tail)
       positions[i * 6 + 0] = x;
@@ -697,10 +698,11 @@ function WarpSpeedLines() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    
-    // Intensity peaks during the first 2 seconds of warp, fades out right before arrival at 3.5s
-    const intensity = smoothstep(0.0, 0.4, t) * (1.0 - smoothstep(2.5, 3.5, t));
-    uniforms.uIntensity.value = intensity * 0.45;
+
+    // Warp lines: at full intensity from t=0 (boot fade reveals them mid-warp),
+    // taper to 0 by t=3.4 as camera settles into the nebula
+    const intensity = 1.0 - smoothstep(2.0, 3.4, t);
+    uniforms.uIntensity.value = intensity * 0.85;
   });
 
   return (
