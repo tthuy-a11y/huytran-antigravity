@@ -28,13 +28,13 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     };
 
     // ═══════════════════════════════════════════════════════════
-    // CREATION 0 → 4s  (high-speed warp zoom — stars rushing in)
+    // CREATION 0 → 4.5s  (deep warp zoom — from distant star to sun)
     // ═══════════════════════════════════════════════════════════
-    cue(0.45, 'data-beep',       { volume: 0.15, rate: 2.0 });  // data flicker (khởi đầu nhẹ)
-    cue(0.90, 'data-beep',       { volume: 0.25, rate: 2.3 });  // accelerating
-    cue(1.30, 'data-beep',       { volume: 0.35, rate: 2.5 });  // peak speed
-    cue(2.80, 'planet-discover', { volume: 0.45, rate: 0.85 }); // wonder
-    cue(3.40, 'data-beep',       { volume: 0.45, rate: 1.5 });  // ambient pulse
+    cue(0.10, 'warp-jump',       { volume: 0.65, rate: 0.85 }); // Deep rumble as zoom initiates
+    cue(0.90, 'shockwave',       { volume: 0.45, rate: 0.50 }); // Rushing whoosh through space
+    cue(1.80, 'planet-discover', { volume: 0.35, rate: 1.20 }); // Slicing through outer orbits
+    cue(2.80, 'planet-discover', { volume: 0.55, rate: 0.85 }); // Passing inner glowing planets
+    cue(3.60, 'data-beep',       { volume: 0.35, rate: 1.50 }); // Sun arrival / Tech grid prep
 
     // ═══════════════════════════════════════════════════════════
     // TECHNOLOGY 4 → 8s  (fast holographic sweep — tense rising)
