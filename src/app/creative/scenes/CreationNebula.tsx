@@ -122,7 +122,8 @@ function EnergySeed() {
       smoothstep(SCENE_START, 0.8, t) * (1 - smoothstep(3.2, 4.5, t));
 
     uniforms.uGrowth.value = growth;
-    uniforms.uOpacity.value = opacity;
+    // Dimmed to 40% so CinematicPlanets are the visual focus
+    uniforms.uOpacity.value = opacity * 0.4;
 
     // Scale grows from 0.6 → 3.5 as it dissolves into nebula
     const scale = THREE.MathUtils.lerp(0.6, 3.5, growth);
@@ -325,11 +326,11 @@ function VolumetricNebula() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Reveal: cross-fade window
+    // Reveal: cross-fade window — dimmed to 35% so CinematicPlanets shine through
     const reveal =
       smoothstep(SCENE_START, SCENE_FADE_IN_END + 1.0, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
-    uniforms.uReveal.value = reveal;
+    uniforms.uReveal.value = reveal * 0.35;
 
     // Spread: 0.15 → 1.0 over 1.2s to 3.8s (the "bloom outward" motion — compressed)
     uniforms.uSpread.value = THREE.MathUtils.lerp(
@@ -546,7 +547,7 @@ function AmbientSparkles() {
       
       // Move from far (z = -10) to near and past the camera (z = 35)
       // Boosted speed for the fast warp arrival — stars rush in 2.5× faster
-      float speed = 1.0;
+      float speed = 2.5;
       float travel = fract(pos.z + uTime * speed);
       float zPos = -10.0 + travel * 45.0; 
       pos.z = zPos;
@@ -560,7 +561,7 @@ function AmbientSparkles() {
       
       // Size grows exponentially as they get very close to the camera
       // pow(zNorm, 3.0) makes them suddenly huge right before passing the screen
-      float sizeGrowth = 1.0 + pow(zNorm, 4.0) * 40.0;
+      float sizeGrowth = 1.0 + pow(zNorm, 4.0) * 80.0;
       
       // Avoid division by zero or negative size when passing camera
       float dist = max(1.0, -mvPos.z);
@@ -700,8 +701,8 @@ function WarpSpeedLines() {
     uniforms.uTime.value += delta;
 
     // Warp lines: full intensity from t=0 (boot fade reveals them mid-warp),
-    // taper to 0 by t=2.5 — camera arrives at z=22 by t=2.0 then settles
-    const intensity = 1.0 - smoothstep(1.5, 2.5, t);
+    // taper to 0 by t=4.0
+    const intensity = 1.0 - smoothstep(3.0, 4.0, t);
     uniforms.uIntensity.value = intensity * 0.95;
   });
 

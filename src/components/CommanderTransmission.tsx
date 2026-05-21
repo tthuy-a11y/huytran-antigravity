@@ -310,7 +310,7 @@ export interface HolographicAvatarHandle {
   setVideoIndex: (idx: number) => void;
   setMuted: (muted: boolean) => void;
   isMuted: () => boolean;
-  getVideo: () => HTMLVideoElement | null;
+  unlockAudio: () => void;
 }
 
 interface HolographicAvatarProps {
@@ -321,38 +321,83 @@ interface HolographicAvatarProps {
 
 const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, HolographicAvatarProps>(
   ({ isActive, onEnded, videos }, ref) => {
-    const [activeIndex, setActiveIndex] = useState(0);
+    const vA = useRef<HTMLVideoElement | null>(null);
+    const vB = useRef<HTMLVideoElement | null>(null);
+    
+    // 0 = A is active, 1 = B is active
+    const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
+    const [srcA, setSrcA] = useState<string>(videos[0]);
+    const [srcB, setSrcB] = useState<string>('');
+    
     const activeIndexRef = useRef(0);
-    const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+    const onEndedRef = useRef(onEnded);
+    onEndedRef.current = onEnded;
 
     React.useImperativeHandle(ref, () => ({
       play: () => {
-        const video = videoRefs.current[activeIndexRef.current];
-        if (!video) return Promise.resolve();
-        const p = video.play();
+        const v = activeBuf === 0 ? vA.current : vB.current;
+        if (!v) return Promise.resolve();
+        const p = v.play();
         return p instanceof Promise ? p.catch(() => {}) : Promise.resolve();
       },
       pause: () => {
-        videoRefs.current[activeIndexRef.current]?.pause();
+        vA.current?.pause();
+        vB.current?.pause();
+      },
+      unlockAudio: () => {
+        // Play and immediately pause both to grant mobile autoplay rights
+        [vA.current, vB.current].forEach(v => {
+          if (!v) return;
+          const p = v.play();
+          if (p instanceof Promise) {
+            p.then(() => v.pause()).catch(() => {});
+          } else {
+            v.pause();
+          }
+        });
       },
       setVideoIndex: (idx: number) => {
-        // Pause current
-        videoRefs.current[activeIndexRef.current]?.pause();
+        if (idx === activeIndexRef.current || !videos[idx]) return;
         activeIndexRef.current = idx;
-        setActiveIndex(idx);
-        // We do NOT play automatically here; parent calls play()
+        
+        const nextSrc = videos[idx];
+        const nextBuf = activeBuf === 0 ? 1 : 0;
+        const currentMuted = (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true;
+
+        if (nextBuf === 0) {
+          setSrcA(nextSrc);
+          if (vA.current) {
+            vA.current.muted = currentMuted;
+            vA.current.load();
+            const p = vA.current.play();
+            if (p instanceof Promise) p.catch(() => {});
+          }
+        } else {
+          setSrcB(nextSrc);
+          if (vB.current) {
+            vB.current.muted = currentMuted;
+            vB.current.load();
+            const p = vB.current.play();
+            if (p instanceof Promise) p.catch(() => {});
+          }
+        }
       },
       setMuted: (muted: boolean) => {
-        videoRefs.current.forEach(v => { if (v) v.muted = muted; });
+        if (vA.current) vA.current.muted = muted;
+        if (vB.current) vB.current.muted = muted;
       },
-      isMuted: () => videoRefs.current[activeIndexRef.current]?.muted ?? true,
-      getVideo: () => videoRefs.current[activeIndexRef.current],
-    }), []);
+      isMuted: () => (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true,
+    }), [videos, activeBuf]);
+
+    // Handle seamless swap when the background video actually starts playing
+    const handlePlayingA = () => { if (activeIndexRef.current % 2 === 0) setActiveBuf(0); };
+    const handlePlayingB = () => { if (activeIndexRef.current % 2 === 1) setActiveBuf(1); };
 
     // Pause when going inactive
     React.useEffect(() => {
       if (!isActive) {
-        videoRefs.current.forEach(v => v?.pause());
+        vA.current?.pause();
+        vB.current?.pause();
       }
     }, [isActive]);
 
@@ -367,19 +412,22 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         </div>
 
         {/* VIDEOS */}
-        {videos.map((src, idx) => (
-          <video
-            key={src}
-            ref={el => { videoRefs.current[idx] = el; }}
-            src={src}
-            playsInline
-            preload="auto"
-            className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${idx === activeIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            onEnded={() => {
-              if (idx === activeIndex && onEnded) onEnded();
-            }}
-          />
-        ))}
+        <video
+          ref={vA}
+          src={srcA}
+          playsInline
+          className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onPlaying={handlePlayingA}
+          onEnded={() => onEndedRef.current?.()}
+        />
+        <video
+          ref={vB}
+          src={srcB}
+          playsInline
+          className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          onPlaying={handlePlayingB}
+          onEnded={() => onEndedRef.current?.()}
+        />
 
         {/* Subtle scanlines */}
         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,242,254,0.04)_3px,rgba(0,242,254,0.04)_4px)] pointer-events-none z-10" />
@@ -734,27 +782,18 @@ export default function CommanderTransmission() {
 
   const startTransmission = () => {
     audioRef.current?.init();
-    // CRITICAL: setSrc + play() must run synchronously inside this click handler.
-    // Mobile browsers (esp. iOS Safari) only honor unmuted playback when play()
-    // is invoked during user activation — any await/setState before this kills it.
     const avatar = avatarRef.current;
-    const video = avatar?.getVideo();
-    if (avatar && video) {
+    if (avatar) {
+      avatar.unlockAudio();
       avatar.setVideoIndex(0);
-      // Try unmuted first (best UX). If the browser rejects (Low Power Mode,
-      // strict autoplay policy), fall back to muted so the video at least plays —
-      // user can then click the floating speaker button to unmute, which is itself
-      // a fresh user gesture and will always succeed.
-      video.muted = false;
+      avatar.setMuted(false);
       setIsMuted(false);
-      const p = video.play();
-      if (p instanceof Promise) {
-        p.catch(() => {
-          video.muted = true;
-          setIsMuted(true);
-          video.play().catch(() => {});
-        });
-      }
+      
+      avatar.play().catch(() => {
+        avatar.setMuted(true);
+        setIsMuted(true);
+        avatar.play().catch(() => {});
+      });
     }
     setPhase('dialogue');
     setCurrentVideoIdx(0);

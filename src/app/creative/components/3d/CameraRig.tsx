@@ -18,13 +18,14 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── WARP ARRIVAL 0 → 2s (compressed: stars rush toward viewer fast) ─
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,  0.0, 200), target: new THREE.Vector3(0, 0,  0), fov:  30, roll:  0.40 },
-  { t: 1.0,  pos: new THREE.Vector3( -0.6,  0.3,  80), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.22 },
-  { t: 2.0,  pos: new THREE.Vector3( -1.2,  0.6,  22), target: new THREE.Vector3(0, 0,  0), fov:  60, roll: -0.06 },
-
-  // ── CREATION SETTLE 2 → 4s ───────────────────────────────────
-  { t: 3.0,  pos: new THREE.Vector3( -1.8,  0.8,  20), target: new THREE.Vector3(0, 0, -1), fov:  58, roll:  0.00 },
+  // ── PLANETARY FLYTHROUGH 0 → 3.5s (spiral approach through the solar system) ─
+  // Planet orbits: 9, 12, 15, 19, 23, 28 — camera must start outside R=28 then spiral IN
+  { t: 0.0,  pos: new THREE.Vector3( 12.0,  8.0,  65), target: new THREE.Vector3(0, 0,  0), fov:  35, roll:  0.40 },
+  { t: 0.6,  pos: new THREE.Vector3(-15.0,  5.0,  32), target: new THREE.Vector3(0, 0, -5), fov:  50, roll: -0.22 },
+  { t: 1.2,  pos: new THREE.Vector3( 10.0,  4.0,  20), target: new THREE.Vector3(-2, 0, -3), fov:  55, roll:  0.15 },
+  { t: 2.0,  pos: new THREE.Vector3( -8.0,  2.5,  12), target: new THREE.Vector3(2, 0, -1), fov:  54, roll: -0.08 },
+  { t: 3.0,  pos: new THREE.Vector3( -3.0,  1.5,   8), target: new THREE.Vector3(0, 0, -2), fov:  52, roll:  0.00 },
+  { t: 3.5,  pos: new THREE.Vector3( -2.0,  1.0,   7), target: new THREE.Vector3(0, 0, -3), fov:  50, roll:  0.00 },
 
   // ── TECHNOLOGY 4 → 8s ────────────────────────────────────────
   { t: 4.0,  pos: new THREE.Vector3( -8.0,  1.5,  16), target: new THREE.Vector3(0, 0, -4), fov:  56, roll:  0.22 },

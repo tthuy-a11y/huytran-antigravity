@@ -14,9 +14,9 @@ export default function PostProcessing() {
   return (
     <EffectComposer multisampling={0}>
       <Bloom
-        intensity={1.3}
-        luminanceThreshold={0.2}
-        luminanceSmoothing={0.85}
+        intensity={1.8}
+        luminanceThreshold={0.15}
+        luminanceSmoothing={0.9}
         mipmapBlur
       />
       <ChromaticAberration

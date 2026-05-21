@@ -14,6 +14,7 @@ import {
   smootherstep,
   smoothstep,
 } from '@/app/creative/lib/cinematicStore';
+import { getPlanetGeometry, getAtmosphereGeometry } from '@/app/creative/lib/geometryCache';
 
 // ============================================================
 // SHARED GEOMETRIES (avoid duplicate allocation across instances)
@@ -392,12 +393,12 @@ export const CollisionAsteroid = forwardRef<
 });
 
 // ============================================================
-// PRIMAL ASTEROID — post-Bang artifacts that drift apart, then orbit
+// CINEMATIC PLANET — post-Bang planets that drift apart, then orbit
 // Drei <Html> labels are attached EXTERNALLY in BigBangClash.
 // ============================================================
 export type PrimalTint = 'gold' | 'pink' | 'cyan';
 
-interface PrimalAsteroidProps {
+interface CinematicPlanetProps {
   children?: React.ReactNode;
   /** Stable id used by parent to query position for HUD label attachment */
   id: string;
@@ -415,7 +416,7 @@ interface PrimalAsteroidProps {
   customColors?: { base: string; emissive: string };
 }
 
-export interface PrimalAsteroidHandle {
+export interface CinematicPlanetHandle {
   group: THREE.Group | null;
   getWorldPosition: (out: THREE.Vector3) => THREE.Vector3;
 }
@@ -429,10 +430,10 @@ const TINT_COLORS: Record<
   cyan: { base: '#022430', emissive: '#3ae8ff' },
 };
 
-export const PrimalAsteroid = forwardRef<
-  PrimalAsteroidHandle,
-  PrimalAsteroidProps
->(function PrimalAsteroid(
+export const CinematicPlanet = forwardRef<
+  CinematicPlanetHandle,
+  CinematicPlanetProps
+>(function CinematicPlanet(
   {
     tint,
     driftDir,
@@ -451,9 +452,120 @@ export const PrimalAsteroid = forwardRef<
     [driftDir]
   );
 
-  const geometry = useMemo(
-    () => makeAsteroidGeometry(ASTEROID_GEOMETRY_MD, seed, 0.32),
-    [seed]
+  const colors = customColors || TINT_COLORS[tint];
+
+  // Procedural planet material with FBM noise (khớp với InteractivePlanetNode)
+  const planetMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(colors.base),
+      emissive: new THREE.Color(colors.emissive),
+      emissiveIntensity: 0.15,
+      roughness: 0.55,
+      metalness: 0.35,
+    });
+
+    mat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = { value: 0 };
+      shader.uniforms.uNoiseScale = { value: 2.5 };
+      (mat as any).userData.shader = shader;
+
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <common>",
+        /* glsl */ `
+          #include <common>
+          varying vec3 vWorldPos;
+          varying vec3 vLocalPos;
+        `
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        /* glsl */ `
+          #include <begin_vertex>
+          vLocalPos = position;
+          vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <common>",
+        /* glsl */ `
+          #include <common>
+          uniform float uTime;
+          uniform float uNoiseScale;
+          varying vec3 vWorldPos;
+          varying vec3 vLocalPos;
+
+          float hash(vec3 p){p=fract(p*vec3(443.8975,397.2973,491.1871));p+=dot(p,p.yxz+19.19);return fract((p.x+p.y)*p.z);}
+          float noise(vec3 p){
+            vec3 i=floor(p); vec3 f=fract(p);
+            f=f*f*(3.0-2.0*f);
+            float n=mix(
+              mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),
+                  mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
+              mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),
+                  mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);
+            return n;
+          }
+          float fbm(vec3 p){
+            float v=0.0; float a=0.5;
+            for(int i=0;i<5;i++){v+=a*noise(p); p*=2.0; a*=0.5;}
+            return v;
+          }
+        `
+      );
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <emissivemap_fragment>",
+        /* glsl */ `
+          #include <emissivemap_fragment>
+          float n = fbm(vLocalPos * uNoiseScale);
+          float bands = fbm(vLocalPos * uNoiseScale * 3.0 + uTime * 0.05);
+          float pattern = smoothstep(0.3, 0.7, n * 0.7 + bands * 0.3);
+
+          vec3 darkSurface = diffuseColor.rgb * 0.35;
+          vec3 brightSurface = diffuseColor.rgb * 1.15;
+          diffuseColor.rgb = mix(darkSurface, brightSurface, pattern);
+
+          totalEmissiveRadiance += diffuseColor.rgb * 0.08 * (1.0 - pattern);
+        `
+      );
+    };
+
+    return mat;
+  }, [colors.base, colors.emissive]);
+
+  // Atmosphere fresnel shader
+  const atmosphereMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uColor: { value: new THREE.Color(colors.emissive) },
+          uPower: { value: 2.5 },
+          uIntensity: { value: 1.0 },
+        },
+        transparent: true,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        vertexShader: /* glsl */ `
+          varying vec3 vNormal;
+          void main(){
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          uniform vec3 uColor;
+          uniform float uPower;
+          uniform float uIntensity;
+          varying vec3 vNormal;
+          void main(){
+            float f = pow(1.0 - abs(dot(vNormal, vec3(0.0,0.0,1.0))), uPower);
+            gl_FragColor = vec4(uColor * f * uIntensity, f);
+          }
+        `,
+      }),
+    [colors.emissive]
   );
 
   useImperativeHandle(ref, () => ({
@@ -470,6 +582,10 @@ export const PrimalAsteroid = forwardRef<
     const g = groupRef.current;
     if (!g) return;
 
+    if ((planetMaterial as any).userData.shader) {
+      (planetMaterial as any).userData.shader.uniforms.uTime.value += delta;
+    }
+
     // Three life phases:
     // 16.0–18.0  : explode outward from origin along drift direction (fast)
     // 18.0–22.0  : decelerate, drift slow, label appears
@@ -477,19 +593,17 @@ export const PrimalAsteroid = forwardRef<
     let x = 0, y = 0, z = 0;
 
     if (t < 16.0) {
-      // Pre-bang: hidden at origin (handled via parent visibility)
+      // Pre-bang: hidden at origin
       x = y = z = 0;
     } else if (t < 22.0) {
       // Drift phase
       const k = t - 16.0;
-      // Distance grows logarithmically — fast burst, then ease
       const dist = 1 - Math.exp(-k * 0.55);
       const reach = orbitRadius * 1.05 * dist;
       x = dir.x * reach;
       y = dir.y * reach;
       z = dir.z * reach;
 
-      // Blend toward orbit start at 22s
       if (t > 20.5) {
         const blend = smootherstep(20.5, 22.0, t);
         const ox = Math.cos(orbitPhase) * orbitRadius;
@@ -503,7 +617,7 @@ export const PrimalAsteroid = forwardRef<
       const angle = orbitPhase + (t - 22.0) * orbitSpeed;
       x = Math.cos(angle) * orbitRadius;
       z = Math.sin(angle) * orbitRadius;
-      y = Math.sin(angle * 0.5) * 0.4; // gentle vertical wobble
+      y = Math.sin(angle * 0.5) * 0.4;
     }
 
     g.position.set(x, y, z);
@@ -511,30 +625,23 @@ export const PrimalAsteroid = forwardRef<
     g.rotation.y += delta * 0.45;
   });
 
-  const colors = customColors || TINT_COLORS[tint];
-
   return (
     <group ref={groupRef} scale={scale}>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial
-          color={colors.base}
-          emissive={colors.emissive}
-          emissiveIntensity={1.2}
-          roughness={0.55}
-          metalness={0.45}
-        />
-      </mesh>
-      {/* Subtle rim glow shell */}
-      <mesh geometry={geometry} scale={1.06}>
+      <mesh geometry={getPlanetGeometry()} material={planetMaterial} castShadow receiveShadow />
+      <mesh geometry={getAtmosphereGeometry()} material={atmosphereMaterial} scale={1.25} />
+      
+      {/* Subtle halo glow */}
+      <mesh geometry={getPlanetGeometry()} scale={1.12}>
         <meshBasicMaterial
           color={colors.emissive}
           transparent
-          opacity={0.12}
+          opacity={0.2}
           blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </mesh>
-      {/* Local fill light to brighten when in shadow of debris */}
+      
+      {/* Local fill light */}
       <pointLight color={colors.emissive} intensity={0.9} distance={6} decay={2} />
     </group>
   );

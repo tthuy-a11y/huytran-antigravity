@@ -14,8 +14,8 @@ import {
 import {
   Sun,
   CollisionAsteroid,
-  PrimalAsteroid,
-  type PrimalAsteroidHandle,
+  CinematicPlanet,
+  type CinematicPlanetHandle,
   type PrimalTint,
 } from '@/app/creative/components/3d/PlanetNode';
 
@@ -346,30 +346,30 @@ function WhiteFlash() {
 // ============================================================
 const PRIMAL_CONFIG = [
   { id:'asteroid-1', tint:'gold'  as PrimalTint, driftDir:[-0.9, 0.35,-0.25] as [number,number,number],
-    orbitRadius:8,  orbitPhase:Math.PI*0.15, orbitSpeed:0.18, scale:0.9, seed:13,
+    orbitRadius:8,  orbitPhase:Math.PI*0.15, orbitSpeed:0.18, scale:1.35, seed:13,
     labelStart:11.0, labelText:'Một kỷ nguyên mới',  labelColor:'#ffc857' },
   { id:'asteroid-2', tint:'pink'  as PrimalTint, driftDir:[0.85,-0.20, 0.40] as [number,number,number],
-    orbitRadius:10.5,orbitPhase:Math.PI*0.85, orbitSpeed:0.14, scale:1.1, seed:27,
+    orbitRadius:10.5,orbitPhase:Math.PI*0.85, orbitSpeed:0.14, scale:1.65, seed:27,
     labelStart:13.0, labelText:'Một thời đại mới',   labelColor:'#ff5aa8' },
   { id:'asteroid-3', tint:'cyan'  as PrimalTint, driftDir:[0.15, 0.70,-0.85] as [number,number,number],
-    orbitRadius:13,  orbitPhase:Math.PI*1.55, orbitSpeed:0.11, scale:1.0, seed:41,
+    orbitRadius:13,  orbitPhase:Math.PI*1.55, orbitSpeed:0.11, scale:1.5, seed:41,
     labelStart:15.0, labelText:'Một vũ trụ mới',     labelColor:'#3ae8ff' },
 ] as const;
 
 function PrimalLabel({ text, color, fade }: { text:string; color:string; fade:number }) {
   if (fade < 0.01) return null;
   return (
-    <Html center distanceFactor={10} zIndexRange={[10,0]}
-      style={{ pointerEvents:'none', userSelect:'none', opacity: fade, transform:'translate(0,-66px)', transition:'opacity 0.3s ease-out' }}
+    <Html center distanceFactor={15} zIndexRange={[10,0]}
+      style={{ pointerEvents:'none', userSelect:'none', opacity: fade, transform:'translate(0,-198px)', transition:'opacity 0.3s ease-out' }}
     >
       <div style={{
         color:'#fff', fontFamily:'system-ui,sans-serif', fontWeight:700,
-        fontSize:'1.45rem', letterSpacing:'0.06em', whiteSpace:'nowrap',
+        fontSize:'4.35rem', letterSpacing:'0.08em', whiteSpace:'nowrap',
         background:'rgba(0,0,0,0.22)', backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
-        padding:'9px 20px', borderRadius:'999px',
+        padding:'27px 60px', borderRadius:'999px',
         border:`1px solid ${color}55`,
-        boxShadow:`0 0 20px ${color}99, 0 0 50px ${color}44, inset 0 0 14px ${color}22`,
-        textShadow:`0 0 10px ${color}, 0 0 22px ${color}88`,
+        boxShadow:`0 0 60px ${color}99, 0 0 150px ${color}44, inset 0 0 42px ${color}22`,
+        textShadow:`0 0 30px ${color}, 0 0 66px ${color}88`,
       }}>
         <span style={{
           background:`linear-gradient(180deg,#ffffff 0%,${color} 100%)`,
@@ -381,7 +381,7 @@ function PrimalLabel({ text, color, fade }: { text:string; color:string; fade:nu
 }
 
 function PrimalWithFollower({ cfg }: { cfg: typeof PRIMAL_CONFIG[number] }) {
-  const handle      = useRef<PrimalAsteroidHandle>(null);
+  const handle      = useRef<CinematicPlanetHandle>(null);
   const follower    = useRef<THREE.Group>(null);
   const visRef      = useRef(false);
   const fadeRef     = useRef(0);
@@ -417,7 +417,7 @@ function PrimalWithFollower({ cfg }: { cfg: typeof PRIMAL_CONFIG[number] }) {
 
   return (
     <>
-      <PrimalAsteroid
+      <CinematicPlanet
         ref={handle} id={cfg.id} tint={cfg.tint}
         driftDir={cfg.driftDir} orbitRadius={cfg.orbitRadius}
         orbitPhase={cfg.orbitPhase} orbitSpeed={cfg.orbitSpeed}

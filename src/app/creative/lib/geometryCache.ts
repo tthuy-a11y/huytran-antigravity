@@ -51,3 +51,9 @@ export const getStarfieldGeometry = (count: number) =>
     geo.computeBoundingSphere();
     return geo;
   });
+
+export const getPlanetGeometry = () =>
+  getCachedGeometry('planet-geo', () => new THREE.SphereGeometry(1, 64, 64));
+
+export const getAtmosphereGeometry = () =>
+  getCachedGeometry('atmosphere-geo', () => new THREE.SphereGeometry(1, 32, 32));

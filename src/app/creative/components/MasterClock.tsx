@@ -30,16 +30,11 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // ═══════════════════════════════════════════════════════════
     // CREATION 0 → 4s  (high-speed warp zoom — stars rushing in)
     // ═══════════════════════════════════════════════════════════
-    cue(0.05, 'warp-jump',       { volume: 0.95 });             // kick off (long whoosh)
-    cue(0.45, 'data-beep',       { volume: 0.55, rate: 2.0 });  // data flicker
-    cue(0.90, 'data-beep',       { volume: 0.55, rate: 2.3 });  // accelerating
-    cue(1.30, 'data-beep',       { volume: 0.55, rate: 2.5 });  // peak speed
-    cue(1.70, 'laser',           { volume: 0.42, rate: 1.95 }); // star streak whoosh
-    cue(1.85, 'laser',           { volume: 0.42, rate: 2.05 });
-    cue(2.00, 'shockwave',       { volume: 0.80 });             // ARRIVAL — matches camera key
-    cue(2.10, 'glass-shatter',   { volume: 0.50, rate: 0.7 });  // soft landing tinkle
+    cue(0.45, 'data-beep',       { volume: 0.15, rate: 2.0 });  // data flicker (khởi đầu nhẹ)
+    cue(0.90, 'data-beep',       { volume: 0.25, rate: 2.3 });  // accelerating
+    cue(1.30, 'data-beep',       { volume: 0.35, rate: 2.5 });  // peak speed
     cue(2.80, 'planet-discover', { volume: 0.45, rate: 0.85 }); // wonder
-    cue(3.40, 'data-beep',       { volume: 0.38, rate: 1.5 });  // ambient pulse
+    cue(3.40, 'data-beep',       { volume: 0.45, rate: 1.5 });  // ambient pulse
 
     // ═══════════════════════════════════════════════════════════
     // TECHNOLOGY 4 → 8s  (fast holographic sweep — tense rising)

@@ -25,12 +25,17 @@ interface IntroCinematicProps {
 export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const [phase, setPhase] = useState<Phase>('prompt');
   const [clipIdx, setClipIdx] = useState(0);
+  const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
+  const [srcA, setSrcA] = useState<string>(INTRO_CLIPS[0]);
+  const [srcB, setSrcB] = useState<string>('');
+  
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [subtitle, setSubtitle] = useState('');
   const [isMuted, setIsMuted] = useState(false);
   const [audioBlocked, setAudioBlocked] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const vA = useRef<HTMLVideoElement>(null);
+  const vB = useRef<HTMLVideoElement>(null);
   const activeTimeouts = useRef<NodeJS.Timeout[]>([]);
 
   // 80 hạt lượng tử — GPU optimized, không re-compute
@@ -87,7 +92,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const triggerDissolve = useCallback(() => {
     if (phase === 'dissolving' || phase === 'done') return;
     setPhase('dissolving');
-    if (videoRef.current) videoRef.current.pause();
+    if (vA.current) vA.current.pause();
+    if (vB.current) vB.current.pause();
 
     playSfx('/audio/cues/shockwave.mp3', 0.95);
     const t1 = setTimeout(() => playSfx('/audio/cues/glass-shatter.mp3', 0.85), 160);
@@ -115,44 +121,62 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     }
   }, [clipIdx, playSfx, triggerDissolve]);
 
-  // Sync mute state to video element
+  // Sync mute state to video elements
   useEffect(() => {
-    if (videoRef.current) videoRef.current.muted = isMuted;
+    if (vA.current) vA.current.muted = isMuted;
+    if (vB.current) vB.current.muted = isMuted;
   }, [isMuted]);
 
   const handleUnblock = useCallback(() => {
     setAudioBlocked(false);
     setIsMuted(false);
-    if (videoRef.current) videoRef.current.muted = false;
   }, []);
 
   const toggleMute = useCallback(() => {
     setAudioBlocked(false);
-    setIsMuted((m) => {
-      if (videoRef.current) videoRef.current.muted = !m;
-      return !m;
-    });
+    setIsMuted((m) => !m);
   }, []);
 
-  // Play video + typewriter subtitle
+  // Play video + subtitle syncing
   useEffect(() => {
     if (phase !== 'playing' || isTransitioning) return;
-    const video = videoRef.current;
-    if (!video) return;
+    
+    const nextSrc = INTRO_CLIPS[clipIdx];
+    const nextBuf = activeBuf === 0 ? 1 : 0;
 
-    video.src = INTRO_CLIPS[clipIdx];
-    video.muted = isMuted;
-    video.load();
-
-    // Try with audio first; if blocked, fall back to muted
-    video.play().catch(() => {
-      video.muted = true;
-      setIsMuted(true);
-      setAudioBlocked(true);
-      video.play().catch(() => {
-        setTimeout(handleVideoEnded, 1000);
-      });
-    });
+    if (clipIdx === 0) {
+      // First clip: unlock both
+      if (vA.current) {
+        vA.current.muted = isMuted;
+        vA.current.play().catch(() => {
+          setIsMuted(true);
+          setAudioBlocked(true);
+          vA.current!.muted = true;
+          vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
+        });
+      }
+      if (vB.current) {
+        vB.current.muted = isMuted;
+        vB.current.play().then(() => vB.current?.pause()).catch(() => {});
+      }
+    } else {
+      // Subsequent clips: double buffer swap
+      if (nextBuf === 0) {
+        setSrcA(nextSrc);
+        if (vA.current) {
+          vA.current.muted = isMuted;
+          vA.current.load();
+          vA.current.play().catch(() => {});
+        }
+      } else {
+        setSrcB(nextSrc);
+        if (vB.current) {
+          vB.current.muted = isMuted;
+          vB.current.load();
+          vB.current.play().catch(() => {});
+        }
+      }
+    }
 
     setSubtitle('');
     const text = SUBTITLES[clipIdx];
@@ -289,15 +313,32 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   )}
                 </AnimatePresence>
 
+                {/* DOUBLE BUFFERING VIDEOS */}
                 <video
-                  ref={videoRef}
+                  ref={vA}
+                  src={srcA}
                   playsInline
                   preload="auto"
-                  muted
-                  className="w-full h-full object-cover"
-                  onEnded={handleVideoEnded}
-                  onError={(e) => console.warn('[IntroCinematic] Video error:', e)}
+                  className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"
+                  style={{ opacity: activeBuf === 0 ? 1 : 0, zIndex: activeBuf === 0 ? 2 : 1 }}
+                  onEnded={() => { if (activeBuf === 0) handleVideoEnded(); }}
+                  onPlaying={() => { if (clipIdx % 2 === 0) setActiveBuf(0); }}
                 />
+                <video
+                  ref={vB}
+                  src={srcB}
+                  playsInline
+                  preload="auto"
+                  className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"
+                  style={{ opacity: activeBuf === 1 ? 1 : 0, zIndex: activeBuf === 1 ? 2 : 1 }}
+                  onEnded={() => { if (activeBuf === 1) handleVideoEnded(); }}
+                  onPlaying={() => { if (clipIdx % 2 === 1) setActiveBuf(1); }}
+                />
+
+                {/* Preload next clip */}
+                {INTRO_CLIPS[clipIdx + 1] && (
+                  <link rel="preload" as="video" href={INTRO_CLIPS[clipIdx + 1]} />
+                )}
 
                 {/* Scanlines */}
                 <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(transparent,transparent_2px,rgba(0,242,254,0.05)_3px)] z-10" />

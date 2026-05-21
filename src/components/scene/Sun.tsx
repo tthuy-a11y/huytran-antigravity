@@ -17,7 +17,10 @@ export default function Sun({ onReady }: SunProps) {
   const corona1Ref = useRef<THREE.Mesh>(null);
   const corona2Ref = useRef<THREE.Mesh>(null);
   const corona3Ref = useRef<THREE.Mesh>(null);
+  const corona4Ref = useRef<THREE.Mesh>(null);
+  const corona5Ref = useRef<THREE.Mesh>(null);
   const textGroupRef = useRef<THREE.Group>(null);
+  const solarWindRef = useRef<THREE.Points>(null);
 
   const [hovered, setHovered] = useState(false);
   const setSunFocused = useSceneStore((s) => s.setSunFocused);
@@ -163,6 +166,53 @@ export default function Sun({ onReady }: SunProps) {
     []
   );
 
+  // ==========================================
+  // SOLAR WIND — particles radiating outward
+  // ==========================================
+  const solarWindData = useMemo(() => {
+    const count = 400;
+    const positions = new Float32Array(count * 3);
+    const velocities = new Float32Array(count * 3); // direction & speed
+    const lifetimes = new Float32Array(count); // 0..1 phase
+
+    for (let i = 0; i < count; i++) {
+      // Random direction on sphere surface
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const dir = new THREE.Vector3(
+        Math.sin(phi) * Math.cos(theta),
+        Math.sin(phi) * Math.sin(theta),
+        Math.cos(phi)
+      );
+
+      // Start near sun surface
+      const startR = 5.0 + Math.random() * 1.0;
+      positions[i * 3] = dir.x * startR;
+      positions[i * 3 + 1] = dir.y * startR;
+      positions[i * 3 + 2] = dir.z * startR;
+
+      // Velocity (radial outward)
+      const speed = 0.02 + Math.random() * 0.04;
+      velocities[i * 3] = dir.x * speed;
+      velocities[i * 3 + 1] = dir.y * speed;
+      velocities[i * 3 + 2] = dir.z * speed;
+
+      // Phase offset for staggered animation
+      lifetimes[i] = Math.random();
+    }
+
+    return { positions, velocities, lifetimes, count };
+  }, []);
+
+  const solarWindGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(solarWindData.positions.slice(), 3)
+    );
+    return geo;
+  }, [solarWindData]);
+
   useFrame((state, delta) => {
     const t = state.clock.elapsedTime;
     sunMaterial.uniforms.uTime.value = t;
@@ -176,7 +226,50 @@ export default function Sun({ onReady }: SunProps) {
     if (corona1Ref.current) corona1Ref.current.rotation.y -= delta * 0.02;
     if (corona2Ref.current) corona2Ref.current.rotation.y += delta * 0.04;
     if (corona3Ref.current) corona3Ref.current.rotation.y -= delta * 0.01;
+    if (corona4Ref.current) corona4Ref.current.rotation.y += delta * 0.015;
+    if (corona5Ref.current) corona5Ref.current.rotation.y -= delta * 0.008;
     if (textGroupRef.current) textGroupRef.current.rotation.y += delta * 0.12;
+
+    // Animate solar wind particles
+    if (solarWindRef.current) {
+      const posAttr = solarWindRef.current.geometry.getAttribute("position") as THREE.BufferAttribute;
+      const maxR = 14.0; // max distance before reset
+      const sunR = 5.0;
+
+      for (let i = 0; i < solarWindData.count; i++) {
+        let x = posAttr.getX(i);
+        let y = posAttr.getY(i);
+        let z = posAttr.getZ(i);
+
+        // Move outward
+        x += solarWindData.velocities[i * 3];
+        y += solarWindData.velocities[i * 3 + 1];
+        z += solarWindData.velocities[i * 3 + 2];
+
+        // Check if too far — reset to sun surface
+        const dist = Math.sqrt(x * x + y * y + z * z);
+        if (dist > maxR) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(2 * Math.random() - 1);
+          x = Math.sin(phi) * Math.cos(theta) * sunR;
+          y = Math.sin(phi) * Math.sin(theta) * sunR;
+          z = Math.cos(phi) * sunR;
+
+          // Reassign velocity
+          const dir = new THREE.Vector3(x, y, z).normalize();
+          const speed = 0.02 + Math.random() * 0.04;
+          solarWindData.velocities[i * 3] = dir.x * speed;
+          solarWindData.velocities[i * 3 + 1] = dir.y * speed;
+          solarWindData.velocities[i * 3 + 2] = dir.z * speed;
+        }
+
+        posAttr.setXYZ(i, x, y, z);
+      }
+      posAttr.needsUpdate = true;
+
+      // Slow rotation for wind cloud
+      solarWindRef.current.rotation.y += delta * 0.03;
+    }
   });
 
   return (
@@ -221,7 +314,7 @@ export default function Sun({ onReady }: SunProps) {
         distance={50}
       />
 
-      {/* Corona 3 lớp */}
+      {/* Corona 5 lớp — thêm 2 lớp ngoài cho cinematic effect */}
       <mesh ref={corona1Ref}>
         <sphereGeometry args={[5.7, 64, 64]} />
         <primitive
@@ -261,6 +354,55 @@ export default function Sun({ onReady }: SunProps) {
           fragmentShader={coronaMaterial.fragmentShader}
         />
       </mesh>
+      {/* NEW: Corona layer 4 — soft outer haze */}
+      <mesh ref={corona4Ref}>
+        <sphereGeometry args={[10.5, 48, 48]} />
+        <shaderMaterial
+          uniforms={{
+            uTime: coronaMaterial.uniforms.uTime,
+            uColor: { value: new THREE.Color("#FFD066") },
+            uIntensity: { value: 0.15 },
+          }}
+          transparent
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          vertexShader={coronaMaterial.vertexShader}
+          fragmentShader={coronaMaterial.fragmentShader}
+        />
+      </mesh>
+      {/* NEW: Corona layer 5 — ultra-wide ambient glow */}
+      <mesh ref={corona5Ref}>
+        <sphereGeometry args={[13, 48, 48]} />
+        <shaderMaterial
+          uniforms={{
+            uTime: coronaMaterial.uniforms.uTime,
+            uColor: { value: new THREE.Color("#FFEECC") },
+            uIntensity: { value: 0.08 },
+          }}
+          transparent
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          vertexShader={coronaMaterial.vertexShader}
+          fragmentShader={coronaMaterial.fragmentShader}
+        />
+      </mesh>
+
+      {/* ===== SOLAR WIND PARTICLES ===== */}
+      <points ref={solarWindRef}>
+        <primitive object={solarWindGeo} attach="geometry" />
+        <pointsMaterial
+          color="#FFCC66"
+          size={0.08}
+          sizeAttenuation
+          transparent
+          opacity={0.65}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          toneMapped={false}
+        />
+      </points>
 
       {/* Holographic text quay quanh sun */}
       <group ref={textGroupRef}>

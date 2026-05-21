@@ -6,9 +6,11 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useCinematicStore } from '@/app/creative/lib/cinematicStore';
 import { PLANETS, PlanetData } from '@/lib/planets-data';
-import { PrimalAsteroid, Sun } from './PlanetNode';
+import { Sun } from './PlanetNode';
 import { useSafeDispose } from '@/app/creative/lib/useSafeDispose';
 import { audioEngine } from '@/app/creative/lib/audioEngine';
+import { getPlanetGeometry, getAtmosphereGeometry } from '@/app/creative/lib/geometryCache';
+import { PresetGasPlanet, type PlanetPresetName } from './GasPlanet';
 
 // ============================================================
 // PLANET RINGS
@@ -130,6 +132,24 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
 
   // Initial phase distribution
   const initialPhase = (index / PLANETS.length) * Math.PI * 2;
+
+  // Mobile check to selectively enable heavy shaders
+  const isMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent
+    );
+  }, []);
+
+  const gasPlanetPreset = useMemo(() => {
+    if (data.id === 'backend-api') return 'jupiter';
+    if (data.id === 'creative-canvas') return 'alien';
+    if (data.id === 'ui-ux') return 'inferno';
+    if (data.id === 'physics-motion') return 'neptune';
+    return null;
+  }, [data.id]);
+
+  const shouldUseGasPlanet = gasPlanetPreset !== null;
 
   // Procedural planet material with noise
   const planetMaterial = useMemo(() => {
@@ -306,23 +326,30 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
   return (
     <group ref={groupRef}>
       <group>
-        <mesh
-          material={planetMaterial}
-          castShadow
-          receiveShadow
-        >
-          <sphereGeometry args={[currentRadius, 64, 64]} />
-        </mesh>
+        {shouldUseGasPlanet ? (
+          <PresetGasPlanet 
+            preset={gasPlanetPreset as PlanetPresetName} 
+            radius={currentRadius} 
+            audioReactive={true} 
+            rotationSpeed={0.08} 
+          />
+        ) : (
+          <mesh
+            material={planetMaterial}
+            castShadow
+            receiveShadow
+            scale={currentRadius}
+            geometry={getPlanetGeometry()}
+          />
+        )}
         
         {/* Atmosphere / Glow */}
-        <mesh scale={1.18}>
-          <sphereGeometry args={[currentRadius, 32, 32]} />
+        <mesh scale={currentRadius * 1.18} geometry={getAtmosphereGeometry()}>
           <primitive object={atmosphereMaterial} attach="material" />
         </mesh>
         
         {/* Glow Halo (Additive blending) */}
-        <mesh scale={1.3}>
-          <sphereGeometry args={[currentRadius, 32, 32]} />
+        <mesh scale={currentRadius * 1.3} geometry={getAtmosphereGeometry()}>
           <meshBasicMaterial
             color={data.emissiveColor}
             transparent
@@ -373,8 +400,9 @@ function InteractivePlanetNode({ data, index }: { data: PlanetData; index: numbe
         onPointerOver={handlePointerOver}
         onPointerOut={handlePointerOut}
         onClick={handleClick}
+        scale={currentRadius * 1.5}
+        geometry={getAtmosphereGeometry()}
       >
-        <sphereGeometry args={[currentRadius * 1.5, 32, 32]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
     </group>
@@ -472,6 +500,24 @@ export function InteractiveSystem() {
   const hasEnteredSystem = useCinematicStore((s) => s.hasEnteredSystem);
   const focusedPlanetId = useCinematicStore((s) => s.focusedPlanetId);
   const controlsRef = useRef<any>(null);
+  const { camera } = useThree();
+
+  // Reset FOV and Position when entering system to prevent bugs from cinematic end
+  useEffect(() => {
+    if (hasEnteredSystem && camera && (camera as THREE.PerspectiveCamera).isPerspectiveCamera) {
+      const persp = camera as THREE.PerspectiveCamera;
+      if (persp.fov !== 45) {
+        persp.fov = 45;
+        persp.updateProjectionMatrix();
+      }
+      
+      // RESET POSITION to ensure the planetary system looks identical 
+      // whether the user watched the cinematic (camera ends up at z=-300) 
+      // or skipped it (camera stays at default z=200).
+      persp.position.set(0, 0, 200);
+      persp.lookAt(0, 0, 0);
+    }
+  }, [hasEnteredSystem, camera]);
 
   // Setup OrbitControls config when entered system
   useEffect(() => {

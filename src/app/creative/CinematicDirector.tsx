@@ -20,6 +20,7 @@ import { TransitionSkeleton } from '@/app/creative/components/TransitionSkeleton
 import { CreationNebula } from '@/app/creative/scenes/CreationNebula';
 import { TechGrid } from '@/app/creative/scenes/TechGrid';
 import { BigBangClash } from '@/app/creative/scenes/BigBangClash';
+import CinematicPlanets from '@/app/creative/scenes/CinematicPlanets';
 import { InteractiveSystem } from '@/app/creative/components/3d/InteractiveSystem';
 import { InteractiveUI } from '@/app/creative/components/InteractiveUI';
 import { useSafeDispose } from '@/app/creative/lib/useSafeDispose';
@@ -151,6 +152,7 @@ function DistantStarfield({ count }: { count: number }) {
 function CinematicScenes() {
   return (
     <>
+      <CinematicPlanets />
       <CreationNebula />
       <TechGrid />
       <BigBangClash />
@@ -227,7 +229,8 @@ function AudioInit() {
       (s) => s.currentScene,
       (scene) => {
         import('@/app/creative/lib/audioEngine').then(({ audioEngine }) => {
-          audioEngine.setSceneMix(scene);
+          const rampSec = scene === 'creation' ? 4.0 : 1.5;
+          audioEngine.setSceneMix(scene, rampSec);
         });
       }
     );

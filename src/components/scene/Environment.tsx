@@ -3,25 +3,103 @@
 
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
 import * as THREE from "three";
 
 export default function Environment() {
   return (
     <>
-      <Stars
-        radius={200}
-        depth={80}
-        count={8000}
-        factor={4}
-        saturation={0.6}
-        fade
-        speed={0.3}
-      />
+      <TwinklingStars count={6000} />
       <NebulaBackground />
       <CosmicDust count={2000} />
       <ambientLight intensity={0.15} color="#4060a0" />
     </>
+  );
+}
+
+/* =============================================
+   TWINKLING STARS — shader-based opacity animation
+   ============================================= */
+function TwinklingStars({ count = 6000 }: { count?: number }) {
+  const ref = useRef<THREE.Points>(null);
+
+  const { positions, phases, baseSizes } = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    const ph = new Float32Array(count);
+    const sz = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      const radius = 150 + Math.random() * 150;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      pos[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      pos[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      pos[i * 3 + 2] = radius * Math.cos(phi);
+
+      // Random phase for twinkling offset
+      ph[i] = Math.random() * Math.PI * 2;
+      // Random base size
+      sz[i] = 0.3 + Math.random() * 1.8;
+    }
+
+    return { positions: pos, phases: ph, baseSizes: sz };
+  }, [count]);
+
+  // Custom shader material for per-star twinkling
+  const material = useMemo(() => {
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+      },
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      vertexShader: /* glsl */ `
+        attribute float aPhase;
+        attribute float aSize;
+        uniform float uTime;
+        varying float vAlpha;
+
+        void main() {
+          // Twinkling: each star has unique phase
+          float twinkle = sin(uTime * (1.0 + aPhase * 0.5) + aPhase * 6.28) * 0.5 + 0.5;
+          vAlpha = 0.15 + twinkle * 0.85;
+
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = aSize * (200.0 / -mvPos.z);
+          gl_Position = projectionMatrix * mvPos;
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        varying float vAlpha;
+
+        void main() {
+          // Soft circular point
+          float dist = length(gl_PointCoord - vec2(0.5));
+          if (dist > 0.5) discard;
+          float softness = 1.0 - smoothstep(0.2, 0.5, dist);
+          gl_FragColor = vec4(vec3(0.9, 0.95, 1.0), vAlpha * softness);
+        }
+      `,
+    });
+  }, []);
+
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+    geo.setAttribute("aSize", new THREE.BufferAttribute(baseSizes, 1));
+    return geo;
+  }, [positions, phases, baseSizes]);
+
+  useFrame((state) => {
+    material.uniforms.uTime.value = state.clock.elapsedTime;
+    if (ref.current) {
+      ref.current.rotation.y += 0.00005;
+    }
+  });
+
+  return (
+    <points ref={ref} geometry={geometry} material={material} />
   );
 }
 

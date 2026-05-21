@@ -20,6 +20,10 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
   const planetGroupRef = useRef<THREE.Group>(null);
   const planetMeshRef = useRef<THREE.Mesh>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
+  const dustRef = useRef<THREE.Points>(null);
+  const ring1Ref = useRef<THREE.Mesh>(null);
+  const ring2Ref = useRef<THREE.Mesh>(null);
+  const ring3Ref = useRef<THREE.Mesh>(null);
 
   const [hovered, setHovered] = useState(false);
 
@@ -144,6 +148,63 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
     [data.emissiveColor]
   );
 
+  // ==========================================
+  // PLANET DUST CLOUD — particle system
+  // ==========================================
+  const dustData = useMemo(() => {
+    const count = 120; // particles per planet
+    const positions = new Float32Array(count * 3);
+    const opacities = new Float32Array(count);
+    const speeds = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      const r = data.radius * (1.5 + Math.random() * 1.2);
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      // Flatten slightly to form a disk-like shape
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta) * 0.35;
+      positions[i * 3 + 2] = r * Math.cos(phi);
+      opacities[i] = 0.3 + Math.random() * 0.6;
+      speeds[i] = 0.2 + Math.random() * 0.5;
+    }
+
+    return { positions, opacities, speeds, count };
+  }, [data.radius]);
+
+  // ==========================================
+  // RING MATERIALS — 3 tilted rotating rings
+  // ==========================================
+  const ringMaterials = useMemo(() => {
+    const baseColor = new THREE.Color(data.emissiveColor);
+    return [
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(0xffffff),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: baseColor.clone().lerp(new THREE.Color(0xffffff), 0.5),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.4,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+      new THREE.MeshBasicMaterial({
+        color: baseColor.clone().lerp(new THREE.Color(0xaaffff), 0.3),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
+    ];
+  }, [data.emissiveColor]);
+
   // Quỹ đạo elip
   const a = data.orbitRadius;
   const b = data.orbitRadius * (1 - data.orbitEccentricity);
@@ -195,6 +256,30 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
         0.08
       );
     }
+
+    // Rotate dust cloud
+    if (dustRef.current) {
+      dustRef.current.rotation.y += delta * 0.15;
+      // Slight pulsing
+      const dustScale = 1.0 + Math.sin(t * 1.5) * 0.05;
+      const targetDustScale = hovered || isFocused ? dustScale * 1.3 : dustScale;
+      dustRef.current.scale.lerp(
+        new THREE.Vector3(targetDustScale, targetDustScale, targetDustScale),
+        0.05
+      );
+    }
+
+    // Rotate rings at different speeds
+    if (ring1Ref.current) ring1Ref.current.rotation.z += delta * 0.35;
+    if (ring2Ref.current) ring2Ref.current.rotation.z -= delta * 0.22;
+    if (ring3Ref.current) ring3Ref.current.rotation.z += delta * 0.12;
+
+    // Ring opacity boost on hover
+    ringMaterials.forEach((mat, i) => {
+      const baseOp = [0.6, 0.4, 0.25][i];
+      const targetOp = hovered || isFocused ? baseOp * 1.8 : baseOp;
+      mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOp, 0.08);
+    });
   });
 
   const handlePointerOver = (e: any) => {
@@ -218,10 +303,13 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
     setFocusedPlanet(isFocused ? null : data.id);
   };
 
+  // Ring size ratios
+  const r = data.radius;
+
   return (
     <group rotation={[tiltRad, 0, 0]}>
-      {/* Quỹ đạo visual line (ellipse) */}
-      <OrbitLine a={a} b={b} color={data.emissiveColor} />
+      {/* Quỹ đạo visual — MULTI-LAYER */}
+      <MultiLayerOrbit a={a} b={b} color={data.emissiveColor} />
 
       {/* Group quay quanh sun */}
       <group ref={orbitGroupRef}>
@@ -247,6 +335,48 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
             <sphereGeometry args={[data.radius, 32, 32]} />
             <primitive object={atmosphereMaterial} attach="material" />
           </mesh>
+
+          {/* ===== ROTATING RINGS (3 lớp) ===== */}
+          <mesh
+            ref={ring1Ref}
+            rotation={[Math.PI / 2 + 0.15, 0, 0]}
+            material={ringMaterials[0]}
+          >
+            <ringGeometry args={[r * 1.5, r * 1.7, 96]} />
+          </mesh>
+          <mesh
+            ref={ring2Ref}
+            rotation={[Math.PI / 2 - 0.2, 0, 0]}
+            material={ringMaterials[1]}
+          >
+            <ringGeometry args={[r * 1.8, r * 2.0, 96]} />
+          </mesh>
+          <mesh
+            ref={ring3Ref}
+            rotation={[Math.PI / 2 + 0.3, 0, 0]}
+            material={ringMaterials[2]}
+          >
+            <ringGeometry args={[r * 2.1, r * 2.3, 96]} />
+          </mesh>
+
+          {/* ===== PARTICLE DUST CLOUD ===== */}
+          <points ref={dustRef}>
+            <bufferGeometry>
+              <primitive
+                attach="attributes-position"
+                object={new THREE.BufferAttribute(dustData.positions, 3)}
+              />
+            </bufferGeometry>
+            <pointsMaterial
+              color={data.emissiveColor}
+              size={0.06}
+              sizeAttenuation
+              transparent
+              opacity={0.75}
+              blending={THREE.AdditiveBlending}
+              depthWrite={false}
+            />
+          </points>
 
           {/* Label khi hover */}
           {(hovered || isFocused) && (
@@ -339,8 +469,10 @@ export default function Planet({ data, initialAngle }: PlanetProps) {
   );
 }
 
-/* Vẽ đường quỹ đạo elip */
-function OrbitLine({
+/* =============================================
+   MULTI-LAYER ORBIT — 3 lớp glow + particle flow
+   ============================================= */
+function MultiLayerOrbit({
   a,
   b,
   color,
@@ -349,9 +481,12 @@ function OrbitLine({
   b: number;
   color: string;
 }) {
-  const points = useMemo(() => {
+  const particlesRef = useRef<THREE.Points>(null);
+
+  // Shared ellipse points
+  const orbitPoints = useMemo(() => {
     const pts: THREE.Vector3[] = [];
-    const segments = 128;
+    const segments = 256;
     for (let i = 0; i <= segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
       pts.push(new THREE.Vector3(Math.cos(angle) * a, 0, Math.sin(angle) * b));
@@ -360,19 +495,110 @@ function OrbitLine({
   }, [a, b]);
 
   const geometry = useMemo(() => {
-    const g = new THREE.BufferGeometry().setFromPoints(points);
-    return g;
-  }, [points]);
+    return new THREE.BufferGeometry().setFromPoints(orbitPoints);
+  }, [orbitPoints]);
+
+  // Orbit particle flow — small dots flowing along the orbit
+  const particleData = useMemo(() => {
+    const count = 80;
+    const positions = new Float32Array(count * 3);
+    const phases = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      phases[i] = Math.random() * Math.PI * 2;
+      // Initial positions (will be updated in useFrame)
+      const angle = phases[i];
+      positions[i * 3] = Math.cos(angle) * a;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 0.3;
+      positions[i * 3 + 2] = Math.sin(angle) * b;
+    }
+
+    return { positions, phases, count };
+  }, [a, b]);
+
+  const particleGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute(
+      "position",
+      new THREE.BufferAttribute(particleData.positions, 3)
+    );
+    return geo;
+  }, [particleData]);
+
+  // Animate particles flowing along orbit
+  useFrame((state) => {
+    if (!particlesRef.current) return;
+    const t = state.clock.elapsedTime;
+    const posAttr = particlesRef.current.geometry.getAttribute(
+      "position"
+    ) as THREE.BufferAttribute;
+
+    for (let i = 0; i < particleData.count; i++) {
+      const angle = particleData.phases[i] + t * 0.3;
+      posAttr.setXYZ(
+        i,
+        Math.cos(angle) * a,
+        (Math.sin(angle * 3 + t) * 0.15),
+        Math.sin(angle) * b
+      );
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  const orbitColor = new THREE.Color(color);
 
   return (
-    <line>
-      <primitive object={geometry} attach="geometry" />
-      <lineBasicMaterial
-        color={color}
-        transparent
-        opacity={0.15}
-        toneMapped={false}
-      />
-    </line>
+    <group>
+      {/* Layer 1 — Outer glow (wide, dim) */}
+      <line>
+        <primitive object={geometry.clone()} attach="geometry" />
+        <lineBasicMaterial
+          color={orbitColor}
+          transparent
+          opacity={0.12}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </line>
+
+      {/* Layer 2 — Mid glow (color + brighter) */}
+      <line>
+        <primitive object={geometry.clone()} attach="geometry" />
+        <lineBasicMaterial
+          color={orbitColor}
+          transparent
+          opacity={0.35}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </line>
+
+      {/* Layer 3 — Core line (thin, white/cyan, bright) */}
+      <line>
+        <primitive object={geometry.clone()} attach="geometry" />
+        <lineBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.55}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </line>
+
+      {/* Layer 4 — Energy particle flow */}
+      <points ref={particlesRef}>
+        <primitive object={particleGeo} attach="geometry" />
+        <pointsMaterial
+          color={color}
+          size={0.12}
+          sizeAttenuation
+          transparent
+          opacity={0.9}
+          toneMapped={false}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </points>
+    </group>
   );
 }

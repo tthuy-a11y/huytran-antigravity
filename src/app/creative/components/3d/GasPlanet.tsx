@@ -35,11 +35,10 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { audioEngine } from '../../lib/audioEngine';
 import { useCinematicStore } from '../../lib/cinematicStore';
+import { getPlanetGeometry } from '../../lib/geometryCache';
 
-// Inline shaders (có thể import từ .glsl file qua webpack loader,
-// nhưng inline đơn giản hơn cho ví dụ)
-import vertexShader from '../../shaders/planet.vert.glsl';
-import fragmentShader from '../../shaders/gasPlanet.frag.glsl';
+// Import shaders đã convert sang string để tương thích Next.js Turbopack
+import { vertexShader, fragmentShader } from '@/app/creative/shaders/gasPlanetShaders';
 
 // NOTE: Nếu `?raw` import không work với Next.js, dùng cách này:
 //   - Tạo file shaders/index.ts với `export const gasPlanetFrag = "..."`
@@ -116,8 +115,7 @@ export function GasPlanet({
   });
 
   return (
-    <mesh ref={meshRef} position={position}>
-      <sphereGeometry args={[radius, tessellation, tessellation]} />
+    <mesh ref={meshRef} position={position} scale={radius} geometry={getPlanetGeometry()}>
       <shaderMaterial
         ref={materialRef}
         vertexShader={vertexShader}
