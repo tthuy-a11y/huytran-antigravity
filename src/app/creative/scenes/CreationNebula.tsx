@@ -673,10 +673,10 @@ function WarpSpeedLines() {
     uniform float uTime;
     void main() {
       vec3 pos = position;
-      // Fly towards camera incredibly fast
-      pos.z -= uTime * 250.0; 
-      // Wrap around seamlessly
-      pos.z = mod(pos.z, 200.0) - 50.0;
+      // Fly towards camera incredibly fast (positive Z direction)
+      pos.z += uTime * 250.0; 
+      // Wrap around seamlessly over the camera's travel path (-50 to 250)
+      pos.z = mod(pos.z, 300.0) - 50.0;
       
       vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
       gl_Position = projectionMatrix * mvPos;
