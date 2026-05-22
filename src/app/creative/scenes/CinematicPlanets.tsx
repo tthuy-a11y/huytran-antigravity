@@ -285,20 +285,20 @@ export default function CinematicPlanets() {
 
   useFrame(() => {
     const t = useCinematicStore.getState().time;
-    // Visibility control
+    // Visibility control - starts at t=2.2s
     if (groupRef.current) {
-      groupRef.current.visible = t >= 2.0 && t <= 6.5;
+      groupRef.current.visible = t >= 2.2 && t <= 6.5;
     }
   });
 
   // We read time reactively for JSX-level decisions
   const t = useCinematicStore((s) => s.time);
-  // Delayed reveal: starts at 2.0, fades in over 1.0s. Fades out over 2.0s at the end.
-  const opacity = fadeWindow(t, 2.0, 6.5, 1.0, 2.0);
-  const isVisible = t >= 2.0 && t <= 6.5;
+  // Delayed reveal: starts at 2.2, fades in over 0.8s. Fades out over 2.0s at the end.
+  const opacity = fadeWindow(t, 2.2, 6.5, 0.8, 2.0);
+  const isVisible = t >= 2.2 && t <= 6.5;
 
-  // Sun bursts into view from the EnergySeed between 2.0 and 2.8s
-  const sunScale = THREE.MathUtils.lerp(0.01, 3.9, smoothstep(2.0, 2.8, t));
+  // Sun bursts into view from the EnergySeed between 2.2 and 3.0s
+  const sunScale = THREE.MathUtils.lerp(0.01, 3.9, smoothstep(2.2, 3.0, t));
 
   return (
     <group ref={groupRef} visible={isVisible}>

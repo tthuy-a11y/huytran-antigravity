@@ -317,15 +317,17 @@ interface HolographicAvatarProps {
   isActive: boolean;
   onEnded?: () => void;
   videos: string[];
+  isMuted: boolean;
 }
 
 const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, HolographicAvatarProps>(
-  ({ isActive, onEnded, videos }, ref) => {
+  ({ isActive, onEnded, videos, isMuted }, ref) => {
     const vA = useRef<HTMLVideoElement | null>(null);
     const vB = useRef<HTMLVideoElement | null>(null);
     
     // 0 = A is active, 1 = B is active
     const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
+    const activeBufRef = useRef<0 | 1>(0);
     
     const activeIndexRef = useRef(-1);
     const onEndedRef = useRef(onEnded);
@@ -333,7 +335,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
 
     React.useImperativeHandle(ref, () => ({
       playActive: async (muted: boolean) => {
-        const v = activeBuf === 0 ? vA.current : vB.current;
+        const v = activeBufRef.current === 0 ? vA.current : vB.current;
         if (!v) return { success: false, muted };
         v.muted = muted;
         try {
@@ -357,10 +359,15 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
       },
       unlockAudio: () => {
         if (vA.current) {
-          vA.current.src = videos[0];
+          if (!vA.current.src.endsWith(videos[0])) {
+            vA.current.src = videos[0];
+          }
         }
         if (vB.current) {
-          vB.current.src = videos[1] || videos[0];
+          const targetB = videos[1] || videos[0];
+          if (!vB.current.src.endsWith(targetB)) {
+            vB.current.src = targetB;
+          }
           vB.current.muted = true; // Luôn tắt tiếng buffer ẩn để tránh xung đột audio
           vB.current.load();
           const p = vB.current.play();
@@ -376,8 +383,9 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         activeIndexRef.current = idx;
         
         const nextSrc = videos[idx];
-        const nextBuf = idx % 2;
+        const nextBuf = (idx % 2) as 0 | 1;
 
+        activeBufRef.current = nextBuf;
         if (nextBuf === 0) {
           if (vA.current) {
             if (!vA.current.src.endsWith(nextSrc)) {
@@ -418,8 +426,8 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         if (vA.current) vA.current.muted = muted;
         if (vB.current) vB.current.muted = muted;
       },
-      isMuted: () => (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true,
-    }), [videos, activeBuf]);
+      isMuted: () => (activeBufRef.current === 0 ? vA.current : vB.current)?.muted ?? true,
+    }), [videos]);
 
     // Pause when going inactive
     React.useEffect(() => {
@@ -442,7 +450,10 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         {/* VIDEOS */}
         <video
           ref={vA}
+          src={videos[0]}
           playsInline
+          preload="auto"
+          muted={activeBuf === 0 ? isMuted : true}
           className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
           style={{
             opacity: activeBuf === 0 ? 1 : 0.8,
@@ -453,7 +464,10 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         />
         <video
           ref={vB}
+          src={videos[1] || videos[0]}
           playsInline
+          preload="auto"
+          muted={activeBuf === 1 ? isMuted : true}
           className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
           style={{
             opacity: activeBuf === 1 ? 1 : 0.8,
@@ -1230,6 +1244,7 @@ export default function CommanderTransmission() {
                         isActive={phase === 'dialogue'}
                         onEnded={phase === 'dialogue' ? handleVideoEnded : undefined}
                         videos={VIDEO_CLIPS}
+                        isMuted={isMuted}
                       />
                     </div>
                     <div

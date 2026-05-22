@@ -30,19 +30,26 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // ═══════════════════════════════════════════════════════════
     // DEEP ZOOM FLYTHROUGH 0 → 5.5s (distant star → planet flyby → cosmic dust)
     // ═══════════════════════════════════════════════════════════
-    // Heartbeat suspense in the darkness (0-1.5s)
-    cue(0.30, 'meteor-impact',   { volume: 0.90, rate: 0.40 }); // Heartbeat thump 1
-    cue(1.00, 'meteor-impact',   { volume: 0.95, rate: 0.45 }); // Heartbeat thump 2
-    
-    cue(0.05, 'warp-jump',       { volume: 0.70, rate: 0.70 }); // Deep bass rumble — warp initiating
-    cue(0.20, 'planet-discover', { volume: 0.45, rate: 1.20 }); // Text 1: Trong khoảng lặng
-    cue(1.50, 'shockwave',       { volume: 0.70, rate: 0.40 }); // Space rushing sound — Big reveal
-    cue(1.80, 'data-beep',       { volume: 0.30, rate: 1.50 }); // Text 2: tôi tìm thấy
-    cue(2.50, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Text 3: Nơi sáng tạo
-    cue(3.60, 'shockwave',       { volume: 0.60, rate: 0.80 }); // Cinematic Doppler swoosh past planet
-    cue(4.20, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4: Còn trí tuệ công nghệ
-    cue(4.30, 'shockwave',       { volume: 0.85, rate: 0.60 }); // Fog wipe begins
-    cue(4.50, 'glass-shatter',   { volume: 0.65, rate: 1.20 }); // Fog wipe impact
+    // Phase 1: Darkness & Energy Seed (0s to 1.0s)
+    cue(0.05, 'warp-jump',       { volume: 0.65, rate: 0.35 }); // Low, growing space drone in absolute black
+    cue(0.20, 'planet-discover', { volume: 0.45, rate: 1.20 }); // Subtitle 1 keystroke: "Trong khoảng lặng..."
+    cue(0.30, 'meteor-impact',   { volume: 0.95, rate: 0.35 }); // Heartbeat Thump 1: energy seed appears!
+    cue(0.90, 'meteor-impact',   { volume: 1.00, rate: 0.38 }); // Heartbeat Thump 2: energy seed blooms!
+
+    // Phase 2: Galaxy Materialization (1.0s to 2.0s)
+    cue(1.20, 'data-beep',       { volume: 0.30, rate: 1.40 }); // Subtitle 2: "tôi tìm thấy..."
+    cue(1.30, 'shockwave',       { volume: 0.65, rate: 0.45 }); // Deep atmospheric whoosh as galaxy fades in
+
+    // Phase 3: Planetary Bloom & Hyperspace Rush (2.0s to 3.5s)
+    cue(2.20, 'planet-discover', { volume: 0.75, rate: 0.75 }); // Majestic chime: Sun & solar system revealed!
+    cue(2.50, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Subtitle 3: "Nơi sáng tạo là chìa khóa..."
+    cue(2.60, 'warp-jump',       { volume: 0.85, rate: 0.95 }); // Swooshing warp jump acceleration as we zoom past
+
+    // Phase 4: Planet Flyby & Fog Exit (3.5s to 5.5s)
+    cue(3.50, 'shockwave',       { volume: 0.80, rate: 0.90 }); // Doppler swoosh past orbits
+    cue(4.20, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Subtitle 4: "Còn trí tuệ công nghệ..."
+    cue(4.30, 'shockwave',       { volume: 0.90, rate: 0.60 }); // Fog wipe begins
+    cue(4.50, 'glass-shatter',   { volume: 0.75, rate: 1.10 }); // Transition impact into TechGrid
 
     // ═══════════════════════════════════════════════════════════
     // TECHNOLOGY 5.5 → 8s  (holographic grid sweep — tense rising)
@@ -81,8 +88,9 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     cue(21.50, 'planet-discover',{ volume: 0.70 });            // primal #2 (pink)
     cue(23.00, 'warp-jump',      { volume: 0.65, rate: 1.1 }); // Một vũ trụ mới
     cue(23.00, 'planet-discover',{ volume: 0.65 });            // primal #3 (cyan)
-    cue(24.50, 'planet-discover',{ volume: 0.75, rate: 0.9 }); // TH2003
-    cue(26.50, 'shockwave',      { volume: 1.0,  rate: 1.6 }); // final hit
+    cue(24.50, 'planet-discover', { volume: 0.95, rate: 0.75 }); // Majestic crystalline chime
+    cue(24.50, 'meteor-impact',   { volume: 1.00, rate: 0.55 }); // Blockbuster low bass impact slam!
+    cue(27.75, 'shockwave',       { volume: 1.00, rate: 1.40 }); // Warp-out pullback sound starts at 27.75s
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {
       finishedFiredRef.current = true;

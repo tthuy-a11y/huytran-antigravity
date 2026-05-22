@@ -39,7 +39,7 @@ const DIALOGUE: DialogueLine[] = [
 
   // FINAL HERO
   { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:24.5, end:27.0, style:'custom-slam' },
+    start:24.5, end:28.25, style:'custom-slam' },
 ];
 
 // ============================================================
@@ -52,7 +52,7 @@ const STYLE_CLS: Record<DialogueLine['style'], string> = {
   'serif-italic':      'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-wide',
   'gold-scaling':      'font-sans font-bold text-3xl md:text-5xl lg:text-6xl tracking-tight uppercase',
   'custom-d10':        'font-serif italic text-4xl md:text-6xl text-white drop-shadow-2xl text-center px-4',
-  'custom-slam':       'font-serif italic text-5xl md:text-7xl lg:text-8xl text-white text-center px-4 font-black tracking-tight',
+  'custom-slam':       'w-full h-full flex flex-col items-center justify-center pointer-events-none select-none',
 };
 
 const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
@@ -66,9 +66,7 @@ const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
     filter:'drop-shadow(0 0 16px rgba(255,200,80,0.55)) drop-shadow(0 0 40px rgba(255,150,40,0.35))',
   },
   'custom-d10': {},
-  'custom-slam': {
-    textShadow: '0 0 20px rgba(255,255,255,0.8), 0 0 60px rgba(100,200,255,0.6)',
-  },
+  'custom-slam': {},
 };
 
 // ============================================================
@@ -128,10 +126,15 @@ function getMotionProps(style: DialogueLine['style'], tier: string) {
       transition:{ duration:1.6, ease:[0.16,1,0.3,1] as any },
     };
     case 'custom-slam': return {
-      initial:{ opacity:0, scale:8, filter:'blur(40px)' },
-      animate:{ opacity:1, scale:[8, 1, 1.05, 1], filter:['blur(40px)', 'blur(0px)', 'blur(0px)', 'blur(0px)'] },
-      exit:{ opacity:0, scale:0.9, filter:'blur(10px)' },
-      transition:{ duration:0.6, times:[0, 0.15, 0.25, 1], ease:['easeIn', 'easeOut', 'easeInOut'] as any },
+      initial:{ opacity:0 },
+      animate:{ opacity:1 },
+      exit:{ 
+        opacity:0, 
+        scale:1.15, 
+        filter:'blur(32px)',
+        transition: { duration: 1.2, ease: 'easeIn' as const }
+      },
+      transition:{ duration:0.5, ease:[0.16, 1, 0.3, 1] as any },
     };
   }
 }
@@ -305,6 +308,84 @@ function DialogueLineView({ line, cinematicTime }: { line:DialogueLine; cinemati
               fontSize:'clamp(5rem,12vw,12rem)', fontWeight:900, lineHeight:1, willChange:'transform,opacity',
             }}
           >TH2003</motion.div>
+        </div>
+      </div>
+    );
+  } else if (line.style === 'custom-slam') {
+    inner = (
+      <div className="relative w-full h-full flex flex-col items-center justify-center pointer-events-none select-none">
+        {/* Ignition Sun Burst backdrop behind TH2003 */}
+        <div className="absolute z-0 flex items-center justify-center" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+          <motion.div
+            aria-hidden
+            className="rounded-full"
+            initial={{ opacity: 0, scale: 0.1 }}
+            animate={{ 
+              opacity: [0, 0.95, 0.75, 0.95], 
+              scale: [0.1, 1.65, 1.4, 1.6] 
+            }}
+            transition={{ 
+              duration: 3.5, 
+              ease: "easeOut",
+              times: [0, 0.35, 0.7, 1],
+              opacity: { repeat: Infinity, duration: 4, ease: "easeInOut" },
+              scale: { repeat: Infinity, duration: 4, ease: "easeInOut" }
+            }}
+            style={{
+              width: '280px',
+              height: '280px',
+              background: 'radial-gradient(circle, rgba(255,190,40,0.95) 0%, rgba(255,100,20,0.4) 30%, rgba(255,30,0,0.15) 55%, transparent 75%)',
+              filter: 'blur(36px)',
+              mixBlendMode: 'screen'
+            }}
+          />
+        </div>
+  
+        {/* 3-layer cohesive text cluster */}
+        <div className="relative z-10 flex flex-col items-center justify-center text-center">
+          {/* Layer 1: "Chào mừng đến với" */}
+          <motion.div
+            initial={{ opacity: 0, y: -25, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.8, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+            className="font-serif italic font-light tracking-wide text-2xl md:text-3xl lg:text-4xl text-cyan-100/90 mb-1"
+            style={{
+              textShadow: '0 0 12px rgba(0, 240, 255, 0.65), 0 0 30px rgba(0, 100, 255, 0.3)'
+            }}
+          >
+            Chào mừng đến với
+          </motion.div>
+  
+          {/* Layer 2: "HỆ HÀNH TINH" */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            transition={{ duration: 0.9, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="font-sans font-extrabold uppercase tracking-[0.2em] text-3xl md:text-5xl lg:text-6xl text-cyan-50/95 mb-4"
+            style={{
+              textShadow: '0 0 16px rgba(0, 242, 254, 0.85), 0 0 35px rgba(0, 150, 255, 0.5), 0 0 70px rgba(0, 100, 255, 0.25)'
+            }}
+          >
+            Hệ Hành Tinh
+          </motion.div>
+  
+          {/* Layer 3: "TH2003" */}
+          <motion.div
+            initial={{ opacity: 0, scale: 3.2, filter: 'blur(20px)' }}
+            animate={{ opacity: 1, scale: 1.0, filter: 'blur(0px)' }}
+            transition={{ duration: 0.95, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="relative font-serif italic font-black uppercase text-7xl md:text-9xl lg:text-[10rem] leading-none tracking-tight select-none"
+            style={{
+              background: 'linear-gradient(180deg, #ffffff 0%, #fff0a0 22%, #ffb800 58%, #ff5500 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              color: 'transparent',
+              filter: 'drop-shadow(0 0 32px rgba(255,140,0,0.85)) drop-shadow(0 0 70px rgba(255,60,0,0.45)) drop-shadow(0 0 120px rgba(255,0,0,0.25))'
+            }}
+          >
+            TH2003
+          </motion.div>
         </div>
       </div>
     );

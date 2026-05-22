@@ -87,7 +87,21 @@ export function chromaticAt(t: number): number {
   if (t > BIG_BANG_TIME && t < 15.0) {
     v += Math.exp(-(t - BIG_BANG_TIME) * 2.2) * 0.008;
   }
-  if (t >= 17.0) v = 0;
+  
+  // V8 - Post-processing upgrades for Awakening Outro
+  if (t >= 17.0) {
+    v = 0;
+    // 1. Title card slam shockwave thump at t = 24.5s
+    if (t >= 24.5 && t < 25.5) {
+      const elapsed = t - 24.5;
+      v += Math.exp(-elapsed * 5.0) * 0.022; // Quick sharp decay
+    }
+    // 2. Final warp speed pullback streaking at t = 27.75s to 28.25s
+    if (t >= 27.75 && t <= 28.25) {
+      const elapsed = t - 27.75;
+      v += (elapsed / 0.5) * 0.038; // Intense warp streak
+    }
+  }
   return v;
 }
 

@@ -83,10 +83,10 @@ export const SCENE_RANGES: SceneRange[] = [
   { id: 'creation',    start: 0.0,  end: 4.0  },
   { id: 'technology',  start: 4.0,  end: 8.0  },
   { id: 'convergence', start: 8.0,  end: 17.0 },
-  { id: 'awakening',   start: 17.0, end: 27.0 },
+  { id: 'awakening',   start: 17.0, end: 28.25 },
 ];
 
-export const CINEMATIC_DURATION = 27.0;   // ← rút gọn từ 31s
+export const CINEMATIC_DURATION = 28.25;   // ← tăng thêm 0.75s ở cuối (25% cảnh kết)
 export const BIG_BANG_TIME      = 8.0;    // ← bang ở giây 8
 
 const getSceneAt = (t: number): SceneId => {

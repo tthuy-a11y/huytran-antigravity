@@ -116,19 +116,21 @@ function EnergySeed() {
     uniforms.uTime.value += delta;
 
     // Growth & opacity ramps
+    let scale = 0.0;
+    let opacity = 0.0;
     const growth = smoothstep(2.0, 3.5, t);
-    
-    // Start at 0.1, blink for 1s, grow to 3.5 between 1s and 2s
-    let scale = 0.1;
-    if (t < 1.0) scale = 0.1;
-    else if (t < 2.0) scale = THREE.MathUtils.lerp(0.1, 3.5, Math.pow(t - 1.0, 2.0));
-    else scale = THREE.MathUtils.lerp(3.5, 4.5, growth);
 
-    let opacity = 1.0;
-    if (t < 1.0) {
-      opacity = 0.4 + 0.6 * Math.sin(t * 25.0); // Blinking effect
-    } else {
-      opacity = THREE.MathUtils.lerp(1.0, 0.3, growth) * (1 - smoothstep(3.2, 4.5, t));
+    if (t >= 0.3 && t < 0.8) {
+      scale = 0.15;
+      opacity = smoothstep(0.3, 0.8, t) * (0.6 + 0.4 * Math.sin((t - 0.3) * 35.0)); // suspense heartbeat pulse
+    } else if (t >= 0.8 && t < 2.0) {
+      const progress = (t - 0.8) / 1.2;
+      scale = THREE.MathUtils.lerp(0.15, 4.5, Math.pow(progress, 2.5));
+      opacity = 1.0;
+    } else if (t >= 2.0 && t < 3.0) {
+      const dissolve = smoothstep(2.0, 3.0, t);
+      scale = THREE.MathUtils.lerp(4.5, 5.5, dissolve);
+      opacity = 1.0 - smoothstep(2.0, 3.0, t); // dissolve seamlessly into the Sun
     }
 
     uniforms.uGrowth.value = growth;
@@ -209,8 +211,8 @@ const nebulaVertex = /* glsl */ `
     gl_Position = projectionMatrix * mvPos;
 
     vColor = aColor;
-    // Reveal fade + radial fade against distance from origin
-    float radial = 1.0 - smoothstep(2.5, 6.0, length(pos));
+    // Reveal fade + radial fade against distance from origin (scaled for massive spiral galaxy)
+    float radial = 1.0 - smoothstep(12.0, 68.0, length(pos));
     vAlpha = uReveal * radial;
   }
 `;
@@ -259,28 +261,53 @@ function VolumetricNebula() {
       new THREE.Color('#ffd0e8'), // pink-white
     ];
 
+    const arms = 3;
     for (let i = 0; i < count; i++) {
-      // Sample inside ellipsoid with denser core (cube-root for radial bias)
-      const r = Math.pow(Math.random(), 0.55) * 4.5;
-      const theta = Math.random() * Math.PI * 2;
-      // Flattened on Y axis for disc-like form
-      const phi = Math.acos(2 * Math.random() - 1);
-
-      const x = r * Math.sin(phi) * Math.cos(theta) * 1.4;
-      const y = r * Math.cos(phi) * 0.5;
-      const z = r * Math.sin(phi) * Math.sin(theta) * 1.4;
+      // 35% of particles are in the dense core, 65% in the spiral arms
+      const isCore = Math.random() < 0.35;
+      
+      let x = 0, y = 0, z = 0;
+      let r = 0;
+      let distNorm = 0;
+      
+      if (isCore) {
+        // Dense core: spheroid of radius up to 6.0
+        r = Math.pow(Math.random(), 1.5) * 6.0;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        x = r * Math.sin(phi) * Math.cos(theta) * 1.5;
+        y = r * Math.cos(phi) * 0.6;
+        z = r * Math.sin(phi) * Math.sin(theta) * 1.5;
+        distNorm = r / 6.0;
+      } else {
+        // Spiral arms: logarithmic arms extending out to 58.0 units
+        r = 6.0 + Math.pow(Math.random(), 1.2) * 52.0;
+        const armIndex = i % arms;
+        
+        // Logarithmic spiral math: angle increases with radius
+        const theta = (armIndex / arms) * Math.PI * 2 + (r * 0.08) + (Math.random() - 0.5) * 0.38;
+        
+        x = Math.cos(theta) * r;
+        y = (Math.random() - 0.5) * (4.0 * (1.0 - r / 58.0)); // thinner at outer edges
+        z = Math.sin(theta) * r;
+        distNorm = r / 58.0;
+      }
 
       positions[i * 3]     = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
 
-      // Color by radial distance: hot inner → cool outer
-      const distNorm = Math.min(1, r / 4.5);
+      // Color based on radial normalized distance (warm core, cool neon outer arms)
       let col: THREE.Color;
-      if (distNorm < 0.3) col = palette[2]; // orange center
-      else if (distNorm < 0.55) col = palette[1]; // pink mid
-      else if (distNorm < 0.85) col = palette[0]; // purple
-      else col = palette[3]; // deep violet edges
+      if (isCore) {
+        if (distNorm < 0.3) col = palette[2]; // hot orange center
+        else if (distNorm < 0.6) col = palette[4]; // pink-white glow
+        else col = palette[1]; // pink edge of core
+      } else {
+        if (distNorm < 0.3) col = palette[1]; // pink arm start
+        else if (distNorm < 0.75) col = palette[0]; // purple mid arm
+        else col = palette[3]; // deep violet outer tips
+      }
 
       // Add color jitter
       const jitter = palette[Math.floor(Math.random() * palette.length)];
@@ -289,15 +316,15 @@ function VolumetricNebula() {
       const cg = col.g * (1 - mix) + jitter.g * mix;
       const cb = col.b * (1 - mix) + jitter.b * mix;
 
-      colors[i * 3]     = cr;
-      colors[i * 3 + 1] = cg;
-      colors[i * 3 + 2] = cb;
+      colors[i * 3]     = cr * 1.5; // Boost colors for dramatic pop
+      colors[i * 3 + 1] = cg * 1.5;
+      colors[i * 3 + 2] = cb * 1.5;
 
-      // Size: small majority, occasional bright "embers"
-      const isEmber = Math.random() > 0.96;
+      // Size: larger in the core, delicate in the outer arms
+      const isEmber = Math.random() > 0.95;
       sizes[i] = isEmber
-        ? 8 + Math.random() * 14
-        : 1.5 + Math.random() * 3.5;
+        ? (isCore ? 10 + Math.random() * 15 : 6 + Math.random() * 10)
+        : (isCore ? 2.5 + Math.random() * 4.0 : 1.5 + Math.random() * 2.5);
 
       phases[i] = Math.random();
 
@@ -336,9 +363,9 @@ function VolumetricNebula() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Delayed reveal (1.5s) to preserve initial darkness
+    // Volumetric nebula fades in beautifully between 1.2s and 2.5s
     const reveal =
-      smoothstep(1.5, 2.5, t) *
+      smoothstep(1.2, 2.5, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
     // Cosmic dust boost: ramps up from 3.5s, peaks at 4.5s, then fades with the scene
     const dustBoost = smoothstep(3.5, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
@@ -502,8 +529,142 @@ function SilkRibbon({
 }
 
 // ============================================================
-// 4. AMBIENT SPARKLE PARTICLES — Light dots from far away moving closer
-// User requested: "phông nền là các đốm sáng từ xa chuyển lại gần và to hơn, sáng hơn, 1/4 màn hình"
+// 4. COSMIC DUST BACKGROUND — Faint volumetric cosmic gas clouds phông nền
+// User requested: "Hãy tạo thêm cảnh, phông nền"
+// ============================================================
+function CosmicDustBackground() {
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const pointsRef = useRef<THREE.Points>(null);
+
+  const { geometry, uniforms } = useMemo(() => {
+    const count = 600;
+    const positions = new Float32Array(count * 3);
+    const colors    = new Float32Array(count * 3);
+    const phases    = new Float32Array(count);
+    const sizes     = new Float32Array(count);
+
+    // Gorgeous cosmic gas cloud palette
+    const palette = [
+      new THREE.Color('#10002b'), // Very deep purple
+      new THREE.Color('#240046'), // Deep violet
+      new THREE.Color('#3c004a'), // Dark magenta
+      new THREE.Color('#03001e'), // Midnight blue
+      new THREE.Color('#00203f'), // Deep forest-teal
+    ];
+
+    for (let i = 0; i < count; i++) {
+      // Widespread coordinates in deep space surrounding the camera's Z path
+      positions[i * 3]     = (Math.random() - 0.5) * 280.0;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 200.0;
+      positions[i * 3 + 2] = -100.0 + Math.random() * 550.0; // Spans -100 to 450
+
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      colors[i * 3]     = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+
+      phases[i] = Math.random() * Math.PI * 2;
+      sizes[i] = 50.0 + Math.random() * 85.0; // Extremely large soft shapes
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('aColor',   new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('aPhase',   new THREE.BufferAttribute(phases, 1));
+    geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 175), 350);
+
+    const unis = {
+      uTime:       { value: 0 },
+      uReveal:     { value: 0 },
+      uPixelRatio: {
+        value:
+          typeof window !== 'undefined'
+            ? Math.min(window.devicePixelRatio, 2)
+            : 1,
+      },
+    };
+    return { geometry: geo, uniforms: unis };
+  }, []);
+
+  const vertex = /* glsl */ `
+    attribute float aPhase;
+    attribute float aSize;
+    attribute vec3  aColor;
+    varying vec3  vColor;
+    varying float vAlpha;
+    uniform float uTime;
+    uniform float uPixelRatio;
+    uniform float uReveal;
+
+    void main() {
+      vec3 pos = position;
+      
+      // Extremely slow drift so the cosmic clouds look alive
+      pos.y += sin(uTime * 0.12 + aPhase) * 1.5;
+      pos.x += cos(uTime * 0.10 + aPhase) * 1.5;
+
+      vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+      float dist = max(1.0, -mvPos.z);
+
+      // Scale and cap the gas clouds sizes so they blend smoothly
+      gl_PointSize = clamp(aSize * uPixelRatio * (340.0 / dist), 10.0, 380.0);
+      gl_Position = projectionMatrix * mvPos;
+
+      vColor = aColor;
+      
+      // Smooth lens near-clip to dissolve gaseous dust clouds before hitting the camera
+      float nearClip = smoothstep(5.0, 22.0, dist);
+      vAlpha = uReveal * nearClip;
+    }
+  `;
+
+  const fragment = /* glsl */ `
+    precision highp float;
+    varying vec3  vColor;
+    varying float vAlpha;
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float d = length(uv);
+      if (d > 0.5) discard;
+      
+      // Soft falloff mimicking beautiful galactic fog dust
+      float falloff = pow(1.0 - d * 2.0, 3.2);
+      
+      gl_FragColor = vec4(vColor * (1.1 + falloff * 0.4), falloff * vAlpha * 0.18);
+    }
+  `;
+
+  useSafeDispose([pointsRef.current, matRef.current, geometry]);
+
+  useFrame((_, delta) => {
+    const t = useCinematicStore.getState().time;
+    uniforms.uTime.value += delta;
+    
+    // Cosmic dust starts immediately at 0.02s to pre-populate the space, fading with the scene
+    uniforms.uReveal.value =
+      smoothstep(0.02, 0.9, t) *
+      (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
+  });
+
+  return (
+    <points ref={pointsRef} geometry={geometry}>
+      <shaderMaterial
+        ref={matRef}
+        uniforms={uniforms}
+        vertexShader={vertex}
+        fragmentShader={fragment}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ============================================================
+// 5. AMBIENT SPARKLE PARTICLES — Deep 3D Z-Axis Starfield (twinkling spots growing larger)
+// User requested: "đoạn đầu thấy những đốm sáng to dần và cảm giác người xem đang được dịch chuyển"
 // ============================================================
 function AmbientSparkles() {
   const matRef = useRef<THREE.ShaderMaterial>(null);
@@ -511,28 +672,37 @@ function AmbientSparkles() {
   const quality = useCinematicStore((s) => s.quality);
 
   const { geometry, uniforms } = useMemo(() => {
-    // Increased particle count for the tunnel effect
-    const count = Math.floor(quality.nebulaParticles * 0.25);
+    // 35% of overall particles is around 3,500 on High tier
+    const count = Math.floor(quality.nebulaParticles * 0.35);
     const positions = new Float32Array(count * 3);
     const phases    = new Float32Array(count);
     const sizes     = new Float32Array(count);
 
     for (let i = 0; i < count; i++) {
-      // x and y spread for the 1/4 screen cone, z is initial phase (0..1)
-      positions[i * 3]     = (Math.random() - 0.5) * 8.0;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 6.0;
-      positions[i * 3 + 2] = Math.random(); // used as phase in shader
+      const theta = Math.random() * Math.PI * 2;
+      
+      // 45% of stars are placed near the camera's Z path to create dramatic close flybys
+      // 55% are placed at a distance to populate the starry background
+      const isClose = Math.random() < 0.45;
+      const r = isClose
+        ? 1.2 + Math.random() * 7.5
+        : 10.0 + Math.random() * 90.0;
+
+      positions[i * 3]     = Math.cos(theta) * r;
+      positions[i * 3 + 1] = Math.sin(theta) * r;
+      positions[i * 3 + 2] = -100.0 + Math.random() * 550.0; // Spans from -100 up to 450
 
       phases[i] = Math.random() * Math.PI * 2;
-      sizes[i] = 3.0 + Math.random() * 6.0;
+      sizes[i] = isClose
+        ? 3.5 + Math.random() * 6.5   // Close-up stars are slightly larger to pop
+        : 1.5 + Math.random() * 4.5;  // Distant stars are fine, delicate points
     }
 
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('aPhase',   new THREE.BufferAttribute(phases, 1));
     geo.setAttribute('aSize',    new THREE.BufferAttribute(sizes, 1));
-    // Large bounding sphere so it doesn't get culled easily
-    geo.computeBoundingSphere();
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 175), 350);
 
     const unis = {
       uTime:       { value: 0 },
@@ -551,56 +721,46 @@ function AmbientSparkles() {
     attribute float aPhase;
     attribute float aSize;
     varying float vTwinkle;
+    varying float vAlpha;
     uniform float uTime;
     uniform float uPixelRatio;
+    uniform float uReveal;
 
     void main() {
       vec3 pos = position;
-      
-      // Move from far (z = -10) to near and past the camera (z = 35)
-      // Boosted speed for the fast warp arrival — stars rush in 2.5× faster
-      float speed = 2.5;
-      float travel = fract(pos.z + uTime * speed);
-      float zPos = -10.0 + travel * 45.0; 
-      pos.z = zPos;
-
-      // Cone shape: narrow at far, wider at near (makes them spread outward as they approach)
-      float zNorm = travel; // 0 to 1
-      pos.x *= 0.5 + zNorm * 4.0;
-      pos.y *= 0.5 + zNorm * 4.0;
-
       vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
       
-      // Size grows exponentially as they get very close to the camera
-      // pow(zNorm, 3.0) makes them suddenly huge right before passing the screen
-      float sizeGrowth = 1.0 + pow(zNorm, 4.0) * 80.0;
+      float dist = max(0.1, -mvPos.z);
       
-      // Avoid division by zero or negative size when passing camera
-      float dist = max(1.0, -mvPos.z);
-      gl_PointSize = aSize * sizeGrowth * uPixelRatio * (300.0 / dist);
+      // Math to make stars physically grow larger as we get closer (1/dist relation)
+      // Capped at 110.0 to avoid huge blocky pixels on the lens
+      gl_PointSize = clamp(aSize * uPixelRatio * (280.0 / dist), 1.0, 110.0);
       
       gl_Position = projectionMatrix * mvPos;
 
-      // Brightness increases as it gets closer
-      vTwinkle = 0.6 + 0.4 * sin(uTime * 4.0 + aPhase * 6.28);
+      // Twinkle glow using sine wave offset by particle's randomized phase
+      float twinkle = 0.4 + 0.6 * sin(uTime * 3.5 + aPhase * 6.28);
       
-      // Fade in from far, stay bright, then fade out just as they pass the camera
-      float alpha = smoothstep(0.0, 0.2, zNorm) * (1.0 - smoothstep(0.9, 1.0, zNorm));
-      vTwinkle *= alpha;
+      // Lens near-clip: smoothly fade out close stars so they don't clip harshly
+      float nearClip = smoothstep(1.5, 8.0, dist);
+      
+      vTwinkle = twinkle;
+      vAlpha = uReveal * nearClip;
     }
   `;
   const fragment = /* glsl */ `
     precision highp float;
     varying float vTwinkle;
-    uniform float uReveal;
+    varying float vAlpha;
     void main() {
       vec2 uv = gl_PointCoord - 0.5;
       float d = length(uv);
       if (d > 0.5) discard;
-      float falloff = pow(1.0 - d * 2.0, 2.0);
-      // Bright white/cyan dots
-      vec3 col = vec3(0.9, 0.95, 1.0) * vTwinkle;
-      gl_FragColor = vec4(col * 2.5, falloff * vTwinkle * uReveal);
+      float falloff = pow(1.0 - d * 2.0, 2.2);
+      
+      // Super bright white/cyan star core
+      vec3 col = vec3(0.92, 0.96, 1.0) * vTwinkle;
+      gl_FragColor = vec4(col * 2.8, falloff * vAlpha);
     }
   `;
 
@@ -609,9 +769,10 @@ function AmbientSparkles() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    // Delayed reveal (1.5s) to preserve initial darkness
+    
+    // Twinkling stars fade in immediately from t = 0.0s to 0.8s
     uniforms.uReveal.value =
-      smoothstep(1.5, 2.5, t) *
+      smoothstep(0.0, 0.8, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
   });
 
@@ -714,8 +875,8 @@ function WarpSpeedLines() {
     const speedMult = t > 2.0 ? 1.8 : 1.0;
     uniforms.uTime.value += delta * speedMult;
 
-    // Warp lines: delay start to 0.3s, tapers off by 5.5s
-    let intensity = smoothstep(0.3, 0.8, t) * (1.0 - smoothstep(4.5, 5.5, t));
+    // Warp lines: delay start to 1.5s (after galaxy reveal), tapers off by 5.5s
+    let intensity = smoothstep(1.5, 2.2, t) * (1.0 - smoothstep(4.5, 5.5, t));
     
     // Cường điệu hóa độ sáng và dày lúc đâm xuyên hệ hành tinh (2.0s -> 4.5s)
     if (t > 1.5 && t < 4.8) {
@@ -760,6 +921,7 @@ export function CreationNebula() {
     <group ref={groupRef}>
       <EnergySeed />
       <VolumetricNebula />
+      <CosmicDustBackground />
       <AmbientSparkles />
       <WarpSpeedLines />
 

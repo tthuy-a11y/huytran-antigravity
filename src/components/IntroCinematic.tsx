@@ -141,13 +141,18 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const handleStart = useCallback(() => {
     playSfx('/audio/cues/shockwave.mp3', 0.8);
     
-    // 1. Gán src ngay lập tức cho vA và vB
+    // 1. Gán src nếu chưa đúng đường dẫn (tránh hủy cache tải trước của trình duyệt)
     if (vA.current) {
-      vA.current.src = INTRO_CLIPS[0];
+      if (!vA.current.src.endsWith(INTRO_CLIPS[0])) {
+        vA.current.src = INTRO_CLIPS[0];
+      }
       vA.current.muted = isMuted;
     }
     if (vB.current) {
-      vB.current.src = INTRO_CLIPS[1] || INTRO_CLIPS[0];
+      const targetB = INTRO_CLIPS[1] || INTRO_CLIPS[0];
+      if (!vB.current.src.endsWith(targetB)) {
+        vB.current.src = targetB;
+      }
       vB.current.muted = true; // Luôn tắt tiếng buffer ẩn để tránh xung đột audio
     }
 
@@ -403,14 +408,13 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
           )}
 
           {/* ===== PHASE 2 & 3: VIDEO PLAYER + DISSOLVE ===== */}
-          {(phase === 'playing' || phase === 'dissolving') && (
-            <motion.div
-              key="player"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.35 }}
-              className="absolute inset-0 flex items-center justify-center p-4 md:p-8 w-full h-full"
-            >
+          <div
+            className={`absolute inset-0 flex items-center justify-center p-4 md:p-8 w-full h-full transition-all duration-[600ms] ease-out ${
+              phase === 'playing' || phase === 'dissolving'
+                ? 'opacity-100 scale-100 pointer-events-auto'
+                : 'opacity-0 scale-95 pointer-events-none'
+            }`}
+          >
               {/* Dynamic Cyberpunk Ambient Glow (Ambilight) */}
               <div 
                 className="absolute w-full max-w-7xl aspect-video -z-10 opacity-75 blur-[100px] pointer-events-none transition-all duration-[1000ms] ease-in-out rounded-3xl scale-[1.08] saturate-200"
@@ -479,8 +483,10 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                 {/* DOUBLE BUFFERING VIDEOS */}
                 <video
                   ref={vA}
+                  src={INTRO_CLIPS[0]}
                   playsInline
                   preload="auto"
+                  muted={activeBuf === 0 ? isMuted : true}
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   style={{
                     opacity: activeBuf === 0 ? 1 : 0,
@@ -491,8 +497,10 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                 />
                 <video
                   ref={vB}
+                  src={INTRO_CLIPS[1]}
                   playsInline
                   preload="auto"
+                  muted={activeBuf === 1 ? isMuted : true}
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   style={{
                     opacity: activeBuf === 1 ? 1 : 0,
@@ -649,8 +657,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   ))}
                 </div>
               )}
-            </motion.div>
-          )}
+          </div>
 
         </AnimatePresence>
       </div>
