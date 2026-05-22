@@ -26,7 +26,7 @@ const CONVERGENCE_START = 5.5;   // asteroids visible / rushing in
 const BANG              = BIG_BANG_TIME;   // 8.0
 const PRIMAL_REVEAL     = 9.0;   // 3 primal asteroids emerge (post-bang)
 const AWAKENING_START   = 17.0;  // Sun blazes, debris clearing
-const SCENE_END         = 31.0;
+const SCENE_END         = 27.0;
 
 // Module-scope scratch vectors (zero GC in useFrame hot paths)
 const S = {
@@ -347,13 +347,13 @@ function WhiteFlash() {
 const PRIMAL_CONFIG = [
   { id:'asteroid-1', tint:'gold'  as PrimalTint, driftDir:[-0.9, 0.35,-0.25] as [number,number,number],
     orbitRadius:8,  orbitPhase:Math.PI*0.15, orbitSpeed:0.18, scale:1.35, seed:13,
-    labelStart:11.0, labelText:'Một kỷ nguyên mới',  labelColor:'#ffc857' },
+    labelStart:20.0, labelText:'Một thời đại mới',  labelColor:'#ffc857' },
   { id:'asteroid-2', tint:'pink'  as PrimalTint, driftDir:[0.85,-0.20, 0.40] as [number,number,number],
     orbitRadius:10.5,orbitPhase:Math.PI*0.85, orbitSpeed:0.14, scale:1.65, seed:27,
-    labelStart:13.0, labelText:'Một thời đại mới',   labelColor:'#ff5aa8' },
+    labelStart:21.5, labelText:'Một kỷ nguyên mới',   labelColor:'#ff5aa8' },
   { id:'asteroid-3', tint:'cyan'  as PrimalTint, driftDir:[0.15, 0.70,-0.85] as [number,number,number],
     orbitRadius:13,  orbitPhase:Math.PI*1.55, orbitSpeed:0.11, scale:1.5, seed:41,
-    labelStart:15.0, labelText:'Một vũ trụ mới',     labelColor:'#3ae8ff' },
+    labelStart:23.0, labelText:'Một vũ trụ mới',     labelColor:'#3ae8ff' },
 ] as const;
 
 function PrimalLabel({ text, color, fade }: { text:string; color:string; fade:number }) {

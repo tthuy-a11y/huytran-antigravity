@@ -37,19 +37,9 @@ const DIALOGUE: DialogueLine[] = [
   { id:'d5', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
     start:7.0, end:8.3, style:'large-vibrating' },
 
-  // ═══════════════════════════════════════════════════════════
-  // ĐOẠN KẾT (Nhanh, gọn, dứt khoát)
-  // ═══════════════════════════════════════════════════════════
-  { id:'d6', text:'Một thời đại mới',
-    start:23.5, end:24.5, style:'mono-cyan-glitch' },
-  { id:'d7', text:'Một kỷ nguyên mới',
-    start:24.8, end:25.8, style:'mono-cyan-glitch' },
-  { id:'d8', text:'Một vũ trụ mới',
-    start:26.1, end:27.5, style:'gold-scaling' },
-  
   // FINAL HERO
   { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:28.0, end:31.0, style:'custom-d10' },
+    start:24.5, end:27.0, style:'custom-d10' },
 ];
 
 // ============================================================

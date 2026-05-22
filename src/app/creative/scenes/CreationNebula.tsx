@@ -336,9 +336,9 @@ function VolumetricNebula() {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
 
-    // Delayed reveal (0.5s) to preserve initial darkness
+    // Delayed reveal (1.5s) to preserve initial darkness
     const reveal =
-      smoothstep(0.5, 1.5, t) *
+      smoothstep(1.5, 2.5, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
     // Cosmic dust boost: ramps up from 3.5s, peaks at 4.5s, then fades with the scene
     const dustBoost = smoothstep(3.5, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
@@ -609,9 +609,9 @@ function AmbientSparkles() {
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
     uniforms.uTime.value += delta;
-    // Delayed reveal (0.5s) to preserve initial darkness
+    // Delayed reveal (1.5s) to preserve initial darkness
     uniforms.uReveal.value =
-      smoothstep(0.5, 1.5, t) *
+      smoothstep(1.5, 2.5, t) *
       (1 - smoothstep(SCENE_FADE_OUT_START, SCENE_END, t));
   });
 

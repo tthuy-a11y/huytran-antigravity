@@ -27,14 +27,14 @@ const KEYS: CameraKey[] = [
   // ── PHASE 3: GALAXY RUSH 1.5s — FOV opens wide, warp feeling ──────────
   { t: 1.5,  pos: new THREE.Vector3( -8.0,   8.0,  80), target: new THREE.Vector3(0, 0, -5), fov:  45, roll:  0.35 },
 
-  // ── PHASE 4: OUTER PLANETS 2.8s — slicing through R=28/23 orbits ───────
-  { t: 2.8,  pos: new THREE.Vector3( 15.0,   4.0,  30), target: new THREE.Vector3(-3, 0, -8), fov:  55, roll: -0.25 },
+  // ── PHASE 4: OUTER PLANETS 2.8s ───────
+  { t: 2.8,  pos: new THREE.Vector3(  5.0,   4.0,  30), target: new THREE.Vector3(-3, 0, -8), fov:  55, roll: -0.25 },
 
-  // ── PHASE 5: PLANET FLYBY 3.8s — banking sideways past inner planets ───
-  { t: 3.8,  pos: new THREE.Vector3(-12.0,   2.0,  12), target: new THREE.Vector3(5,  0, -3), fov:  58, roll:  0.30 },
+  // ── PHASE 5: PLANET FLYBY 3.8s — diving straight through the system ───
+  { t: 3.8,  pos: new THREE.Vector3( -2.0,   2.0,   5), target: new THREE.Vector3(0,  0, -10), fov:  70, roll:  0.30 },
 
-  // ── PHASE 6: COSMIC DUST 4.5s — decelerating into nebula haze ──────────
-  { t: 4.5,  pos: new THREE.Vector3( -3.0,   1.5,   8), target: new THREE.Vector3(0,  0, -5), fov:  52, roll:  0.05 },
+  // ── PHASE 6: COSMIC DUST 4.5s — flown completely past into the deep fog ─
+  { t: 4.5,  pos: new THREE.Vector3(  0.0,   1.5, -20), target: new THREE.Vector3(0,  0, -30), fov:  52, roll:  0.05 },
 
   // ── HANDOFF TO TECHGRID 5.5s ───────────────────────────────────────────
   { t: 5.5,  pos: new THREE.Vector3( -5.0,   1.5,  14), target: new THREE.Vector3(0, 0, -6), fov:  56, roll:  0.18 },
@@ -57,15 +57,15 @@ const KEYS: CameraKey[] = [
   { t: 14.0, pos: new THREE.Vector3( -4.0,  3.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  50, roll:  0.06 },
   { t: 17.0, pos: new THREE.Vector3(  0.0,  6.0,  40), target: new THREE.Vector3(0, 0,  0), fov:  48, roll:  0.00 },
 
-  // ── AWAKENING / OUTRO 17 → 31s ───────────────────────────────
-  { t: 20.0, pos: new THREE.Vector3(  2.0,  4.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  46, roll: -0.04 },
-  { t: 23.0, pos: new THREE.Vector3(  1.0,  2.0,  24), target: new THREE.Vector3(0, 0,  0), fov:  44, roll:  0.00 },
-  { t: 25.5, pos: new THREE.Vector3(  0.0,  2.0,  18), target: new THREE.Vector3(0, 0,  0), fov:  46, roll:  0.12 },
-  { t: 28.5, pos: new THREE.Vector3(  0.0,  0.5,  12), target: new THREE.Vector3(0, 0, -5), fov:  55, roll: -0.25 },
+  // ── AWAKENING / OUTRO 17 → 27s (Reduced 30%) ───────────────────────
+  { t: 19.5, pos: new THREE.Vector3(  2.0,  4.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  46, roll: -0.04 },
+  { t: 22.0, pos: new THREE.Vector3(  1.0,  2.0,  24), target: new THREE.Vector3(0, 0,  0), fov:  44, roll:  0.00 },
+  { t: 24.5, pos: new THREE.Vector3(  0.0,  2.0,  18), target: new THREE.Vector3(0, 0,  0), fov:  46, roll:  0.12 },
+  { t: 26.0, pos: new THREE.Vector3(  0.0,  0.5,  12), target: new THREE.Vector3(0, 0, -5), fov:  55, roll: -0.25 },
 
-  // ── FINAL WARP PULL 30.5 → 31s ───────────────────────────────
-  { t: 30.5, pos: new THREE.Vector3(  0.0,  0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.40 },
-  { t: 31.0, pos: new THREE.Vector3(  0.0,  0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
+  // ── FINAL WARP PULL 26.5 → 27s ───────────────────────────────
+  { t: 26.5, pos: new THREE.Vector3(  0.0,  0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.40 },
+  { t: 27.0, pos: new THREE.Vector3(  0.0,  0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
 ];
 KEYS.sort((a, b) => a.t - b.t);
 

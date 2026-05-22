@@ -37,6 +37,8 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     cue(2.50, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Text 3: Nơi sáng tạo
     cue(3.60, 'shockwave',       { volume: 0.60, rate: 0.80 }); // Cinematic Doppler swoosh past planet
     cue(4.20, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4: Còn trí tuệ công nghệ
+    cue(4.30, 'shockwave',       { volume: 0.85, rate: 0.60 }); // Fog wipe begins
+    cue(4.50, 'glass-shatter',   { volume: 0.65, rate: 1.20 }); // Fog wipe impact
 
     // ═══════════════════════════════════════════════════════════
     // TECHNOLOGY 5.5 → 8s  (holographic grid sweep — tense rising)
@@ -62,21 +64,21 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // CIVILIZATION / CONVERGENCE 8 → 17s  (9 seconds)
     // ═══════════════════════════════════════════════════════════
     cue( 9.00, 'meteor-impact',  { volume: 0.55 });   // debris settling
-    cue(11.00, 'planet-discover',{ volume: 0.65 });   // primal #1 — gold
-    cue(13.00, 'planet-discover',{ volume: 0.70 });   // primal #2 — pink
-    cue(15.00, 'planet-discover',{ volume: 0.65 });   // primal #3 — cyan
 
     // ═══════════════════════════════════════════════════════════
-    // AWAKENING 17 → 31s  (14 seconds)
+    // AWAKENING 17 → 27s
     // ═══════════════════════════════════════════════════════════
     cue(17.30, 'planet-discover',{ volume: 0.60, rate: 0.9 }); // Sun reveal
     
     // Nhanh, gọn, dứt khoát ending
-    cue(23.50, 'data-beep',      { volume: 0.45, rate: 1.5 }); // Một thời đại mới
-    cue(24.80, 'data-beep',      { volume: 0.50, rate: 1.2 }); // Một kỷ nguyên mới
-    cue(26.10, 'warp-jump',      { volume: 0.65, rate: 1.1 }); // Một vũ trụ mới
-    cue(28.00, 'planet-discover',{ volume: 0.75, rate: 0.9 }); // TH2003
-    cue(30.00, 'shockwave',      { volume: 1.0,  rate: 1.6 }); // final hit
+    cue(20.00, 'data-beep',      { volume: 0.45, rate: 1.5 }); // Một thời đại mới
+    cue(20.00, 'planet-discover',{ volume: 0.65 });            // primal #1 (gold)
+    cue(21.50, 'data-beep',      { volume: 0.50, rate: 1.2 }); // Một kỷ nguyên mới
+    cue(21.50, 'planet-discover',{ volume: 0.70 });            // primal #2 (pink)
+    cue(23.00, 'warp-jump',      { volume: 0.65, rate: 1.1 }); // Một vũ trụ mới
+    cue(23.00, 'planet-discover',{ volume: 0.65 });            // primal #3 (cyan)
+    cue(24.50, 'planet-discover',{ volume: 0.75, rate: 0.9 }); // TH2003
+    cue(26.50, 'shockwave',      { volume: 1.0,  rate: 1.6 }); // final hit
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {
       finishedFiredRef.current = true;

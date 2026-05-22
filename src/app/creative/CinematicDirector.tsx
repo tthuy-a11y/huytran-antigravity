@@ -62,11 +62,12 @@ function SceneBackdrop() {
     else targetFog.current.setStyle('#100802');                   // awakening — warm amber
 
     // Dynamic fog density for cosmic dust transition (t=4.0 to 5.5s)
+    // We push density extremely high to create a "Wipe" effect between scenes
     let density = 0.012; // base density
     if (t >= 4.0 && t < 6.0) {
-      // Ramp up density to 0.035 for a thick dust cloud, then back down
-      const dustRamp = smoothstep(4.0, 4.5, t) * (1 - smoothstep(5.0, 6.0, t));
-      density = THREE.MathUtils.lerp(0.012, 0.035, dustRamp);
+      // Ramp up density to 0.22 (opaque) at 4.5s, then back down
+      const dustRamp = smoothstep(4.0, 4.5, t) * (1 - smoothstep(4.8, 6.0, t));
+      density = THREE.MathUtils.lerp(0.012, 0.22, dustRamp);
     }
     
     currentFog.current.lerp(targetFog.current, 0.04);
@@ -141,8 +142,8 @@ function DistantStarfield({ count }: { count: number }) {
     const t = useCinematicStore.getState().time;
     uniforms.current.uTime.value += delta;
     
-    // Smooth reveal from 0.8s to 2.5s (starts as pitch black)
-    uniforms.current.uReveal.value = smoothstep(0.8, 2.5, t);
+    // Smooth reveal from 1.5s to 2.5s (starts as pitch black)
+    uniforms.current.uReveal.value = smoothstep(1.5, 2.5, t);
 
     if (pointsRef.current) {
       pointsRef.current.rotation.y += delta * 0.003;
