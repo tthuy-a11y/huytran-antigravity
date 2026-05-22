@@ -27,7 +27,6 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const [clipIdx, setClipIdx] = useState(0);
   const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
 
-  
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [subtitle, setSubtitle] = useState('');
   const [isMuted, setIsMuted] = useState(false);
@@ -36,6 +35,42 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const vA = useRef<HTMLVideoElement>(null);
   const vB = useRef<HTMLVideoElement>(null);
   const activeTimeouts = useRef<NodeJS.Timeout[]>([]);
+  const sfxCache = useRef<Record<string, HTMLAudioElement>>({});
+
+  // Tải trước (preload) và cache các tài nguyên SFX để tối ưu hóa CPU & tránh lag luồng chính
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const effects = [
+      '/audio/sfx/modal-open.mp3',
+      '/audio/sfx/hover.mp3',
+      '/audio/sfx/click.mp3',
+      '/audio/cues/shockwave.mp3',
+      '/audio/cues/glass-shatter.mp3',
+      '/audio/cues/data-beep.mp3'
+    ];
+    effects.forEach(src => {
+      try {
+        const audio = new Audio(src);
+        audio.preload = 'auto';
+        audio.load();
+        sfxCache.current[src] = audio;
+      } catch (_) {}
+    });
+  }, []);
+
+  const playSfx = useCallback((src: string, vol = 0.6) => {
+    if (typeof window === 'undefined') return;
+    try {
+      let audio = sfxCache.current[src];
+      if (!audio) {
+        audio = new Audio(src);
+        sfxCache.current[src] = audio;
+      }
+      audio.currentTime = 0;
+      audio.volume = vol;
+      audio.play().catch(() => {});
+    } catch (_e) {}
+  }, []);
 
   // 80 hạt lượng tử — GPU optimized, không re-compute
   const particles = useMemo(() => {
@@ -56,15 +91,6 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
               : '#ff00e5',
       };
     });
-  }, []);
-
-  const playSfx = useCallback((src: string, vol = 0.6) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const audio = new Audio(src);
-      audio.volume = vol;
-      audio.play().catch(() => {});
-    } catch (_e) {}
   }, []);
 
   // SFX khi mở Prompt Gate
@@ -99,8 +125,11 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       setIsTransitioning(true);
       playSfx('/audio/cues/data-beep.mp3', 0.45);
 
+      // Chuyển đổi clipIdx ngay lập tức để video tiếp theo bắt đầu phát không có độ trễ
+      setClipIdx((prev) => prev + 1);
+
+      // Tắt lớp transition glitch sau 420ms trong background
       const t = setTimeout(() => {
-        setClipIdx((prev) => prev + 1);
         setIsTransitioning(false);
       }, 420);
       activeTimeouts.current.push(t);
@@ -111,33 +140,60 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
 
   const handleStart = useCallback(() => {
     playSfx('/audio/cues/shockwave.mp3', 0.8);
+    
+    // 1. Gán src ngay lập tức cho vA và vB
     if (vA.current) {
-      vA.current.muted = false;
-      vA.current.play().then(() => {
-        setAudioBlocked(false);
-        setIsMuted(false);
-      }).catch(() => {
-        // Autoplay blocked
-        setIsMuted(true);
-        setAudioBlocked(true);
-        vA.current!.muted = true;
-        vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
-      });
+      vA.current.src = INTRO_CLIPS[0];
+      vA.current.muted = isMuted;
     }
     if (vB.current) {
       vB.current.src = INTRO_CLIPS[1] || INTRO_CLIPS[0];
-      vB.current.muted = isMuted;
-      vB.current.play().then(() => vB.current?.pause()).catch(() => {});
+      vB.current.muted = true; // Luôn tắt tiếng buffer ẩn để tránh xung đột audio
+    }
+
+    // 2. Kích hoạt phát vA (buffer hoạt động)
+    if (vA.current) {
+      const p = vA.current.play();
+      if (p instanceof Promise) {
+        p.then(() => {
+          setAudioBlocked(false);
+        }).catch((err) => {
+          console.warn("Unmuted play blocked for vA, trying muted fallback:", err);
+          if (vA.current) {
+            vA.current.muted = true;
+            setIsMuted(true);
+            setAudioBlocked(true);
+            vA.current.play().catch((innerErr) => {
+              console.error("Muted play also blocked:", innerErr);
+              setTimeout(handleVideoEnded, 1000);
+            });
+          }
+        });
+      }
+    }
+
+    // 3. Mở khóa vB (buffer ẩn) bằng cách phát và tạm dừng ngay lập tức ở chế độ MUTED
+    if (vB.current) {
+      const p = vB.current.play();
+      if (p instanceof Promise) {
+        p.then(() => {
+          vB.current?.pause();
+        }).catch(() => {});
+      } else {
+        vB.current.pause();
+      }
     }
 
     setPhase('playing');
+    setClipIdx(0);
+    setActiveBuf(0);
   }, [playSfx, isMuted, handleVideoEnded]);
 
   const handleSkipImmediate = useCallback(() => {
     triggerDissolve();
   }, [triggerDissolve]);
 
-  // Sync mute state to video elements
+  // Đồng bộ trạng thái âm thanh tới cả hai video
   useEffect(() => {
     if (vA.current) vA.current.muted = isMuted;
     if (vB.current) vB.current.muted = isMuted;
@@ -153,51 +209,91 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     setIsMuted((m) => !m);
   }, []);
 
-  // Play video + subtitle syncing
+  // Double-buffering chủ động + Preload clip tiếp theo ẩn dưới nền
   useEffect(() => {
-    if (phase !== 'playing' || isTransitioning) return;
+    if (phase !== 'playing') return;
     
     const nextSrc = INTRO_CLIPS[clipIdx];
-    const nextBuf = activeBuf === 0 ? 1 : 0;
+    const isEven = clipIdx % 2 === 0;
 
-    if (clipIdx === 0) {
-      // First clip: already unlocked and started in handleStart
-    } else {
-      // Subsequent clips: double buffer swap
-      if (nextBuf === 0) {
+    if (clipIdx > 0) {
+      if (isEven) {
+        // Phát trên vA
         if (vA.current) {
           if (!vA.current.src.endsWith(nextSrc)) {
             vA.current.src = nextSrc;
             vA.current.load();
           }
           vA.current.muted = isMuted;
-          vA.current.play().catch(() => {});
+          const p = vA.current.play();
+          if (p instanceof Promise) p.catch(() => {});
+        }
+        // Đổi hiển thị active sang vA ngay lập tức
+        setActiveBuf(0);
+        
+        // Preload clip tiếp theo (idx + 1) vào vB (inactive buffer)
+        const nextClip = INTRO_CLIPS[clipIdx + 1];
+        if (vB.current && nextClip) {
+          if (!vB.current.src.endsWith(nextClip)) {
+            vB.current.src = nextClip;
+            vB.current.load();
+          }
         }
       } else {
+        // Phát trên vB
         if (vB.current) {
           if (!vB.current.src.endsWith(nextSrc)) {
             vB.current.src = nextSrc;
             vB.current.load();
           }
           vB.current.muted = isMuted;
-          vB.current.play().catch(() => {});
+          const p = vB.current.play();
+          if (p instanceof Promise) p.catch(() => {});
+        }
+        // Đổi hiển thị active sang vB ngay lập tức
+        setActiveBuf(1);
+
+        // Preload clip tiếp theo (idx + 1) vào vA (inactive buffer)
+        const nextClip = INTRO_CLIPS[clipIdx + 1];
+        if (vA.current && nextClip) {
+          if (!vA.current.src.endsWith(nextClip)) {
+            vA.current.src = nextClip;
+            vA.current.load();
+          }
+        }
+      }
+    } else {
+      // clipIdx === 0
+      // Preload sẵn clip thứ 2 vào vB
+      const nextClip = INTRO_CLIPS[1];
+      if (vB.current && nextClip) {
+        if (!vB.current.src.endsWith(nextClip)) {
+          vB.current.src = nextClip;
+          vB.current.load();
         }
       }
     }
 
+    // Phụ đề typewriter
     setSubtitle('');
     const text = SUBTITLES[clipIdx];
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i <= text.length) {
-        setSubtitle(text.slice(0, i));
-        i++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 48);
-    return () => clearInterval(interval);
-  }, [clipIdx, phase, isTransitioning, isMuted, handleVideoEnded]);
+    if (text) {
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i <= text.length) {
+          setSubtitle(text.slice(0, i));
+          // Play click SFX every 3rd character for authentic high-tech terminal feel
+          if (i > 0 && i % 3 === 0 && !isMuted) {
+            playSfx('/audio/sfx/click.mp3', 0.12);
+          }
+          i++;
+        } else {
+          clearInterval(interval);
+        }
+      }, 48);
+      return () => clearInterval(interval);
+    }
+  }, [clipIdx, phase, isMuted, playSfx]);
 
   // Hotkeys: ESC, SPACE, ENTER
   useEffect(() => {
@@ -242,9 +338,19 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
           background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
           animation: noise 0.15s steps(3) infinite;
         }
+
+        @keyframes sheen {
+          100% { transform: translateX(200%); }
+        }
       `}</style>
 
-      <div className="fixed inset-0 z-[99999] bg-[#010204]/95 backdrop-blur-3xl flex items-center justify-center overflow-hidden">
+      <div 
+        className={`fixed inset-0 z-[99999] flex items-center justify-center overflow-hidden transition-colors duration-[1600ms] ease-out ${
+          phase === 'dissolving' 
+            ? 'bg-[#010204]/0 backdrop-blur-none pointer-events-none' 
+            : 'bg-[#010204]/95 backdrop-blur-3xl'
+        }`}
+      >
         <AnimatePresence>
 
           {/* ===== PHASE 1: PROMPT GATE ===== */}
@@ -272,16 +378,21 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   <button
                     onClick={handleStart}
                     onMouseEnter={() => playSfx('/audio/sfx/hover.mp3', 0.4)}
-                    className="group relative w-full py-5 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-lg uppercase tracking-[3px] rounded-2xl overflow-hidden hover:scale-105 shadow-[0_0_40px_rgba(0,242,254,0.4)] transition-transform"
+                    className="group relative w-full py-5 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-lg uppercase tracking-[3px] rounded-2xl overflow-hidden hover:scale-105 hover:shadow-[0_0_50px_rgba(0,242,254,0.65)] transition-all duration-300"
                   >
+                    {/* Glass shimmer sheer sweep */}
+                    <span 
+                      className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-[-25deg] -translate-x-full" 
+                      style={{ animation: 'sheen 2.2s infinite' }}
+                    />
                     <span className="relative z-10 flex items-center justify-center gap-3">
-                      <Play className="w-6 h-6" /> XEM HƯỚNG DẪN
+                      <Play className="w-6 h-6 fill-black" /> XEM HƯỚNG DẪN
                     </span>
                   </button>
                   <button
                     onClick={handleSkipImmediate}
                     onMouseEnter={() => playSfx('/audio/sfx/hover.mp3', 0.4)}
-                    className="w-full py-5 border border-white/20 hover:border-cyan-400 text-white/60 hover:text-white rounded-2xl uppercase tracking-[3px] text-sm transition-all"
+                    className="w-full py-5 border border-white/10 hover:border-red-500/50 hover:bg-red-500/5 text-white/50 hover:text-red-200 rounded-2xl uppercase tracking-[3px] text-sm transition-all duration-300 hover:shadow-[0_0_24px_rgba(239,68,68,0.15)]"
                   >
                     BỎ QUA → VÀO NGAY
                   </button>
@@ -300,6 +411,21 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
               transition={{ duration: 0.35 }}
               className="absolute inset-0 flex items-center justify-center p-4 md:p-8 w-full h-full"
             >
+              {/* Dynamic Cyberpunk Ambient Glow (Ambilight) */}
+              <div 
+                className="absolute w-full max-w-7xl aspect-video -z-10 opacity-75 blur-[100px] pointer-events-none transition-all duration-[1000ms] ease-in-out rounded-3xl scale-[1.08] saturate-200"
+                style={{
+                  background:
+                    phase === 'dissolving'
+                      ? 'radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 70%)'
+                      : clipIdx === 0
+                        ? 'radial-gradient(circle, rgba(6,182,212,0.42) 0%, rgba(59,130,246,0.05) 70%)'
+                        : clipIdx === 1
+                          ? 'radial-gradient(circle, rgba(168,85,247,0.42) 0%, rgba(99,102,241,0.05) 70%)'
+                          : 'radial-gradient(circle, rgba(236,72,153,0.48) 0%, rgba(6,182,212,0.08) 70%)'
+                }}
+              />
+
               <div
                 className={`relative w-full max-w-7xl aspect-video rounded-3xl overflow-hidden border-4 border-cyan-400/70 shadow-[0_0_130px_rgba(0,242,254,0.2)] ${
                   phase === 'dissolving' ? 'animate-dissolve' : ''
@@ -312,10 +438,40 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="absolute inset-0 z-20 bg-black flex items-center justify-center"
+                      className="absolute inset-0 z-20 bg-[#02050a] flex flex-col items-center justify-center font-mono overflow-hidden pointer-events-none"
                     >
-                      <div className="bg-noise absolute inset-0 mix-blend-screen" />
-                      <div className="w-full h-9 bg-cyan-400/30 animate-scan blur-xl" />
+                      <div className="bg-noise absolute inset-0 mix-blend-screen opacity-20" />
+                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,242,254,0.03)_1px,transparent_1px)] bg-[size:100%_4px]" />
+                      <div className="w-full h-12 bg-cyan-400/20 animate-scan blur-2xl absolute" />
+                      <div className="w-full h-[2px] bg-cyan-300 animate-scan absolute shadow-[0_0_15px_#00f2fe]" />
+                      
+                      <div className="relative z-30 flex flex-col items-center gap-2 text-center select-none px-4">
+                        <div className="flex items-center gap-3 text-cyan-400 font-black tracking-[0.25em] text-xs sm:text-sm animate-pulse">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                          {clipIdx === 1 ? 'ĐỒNG BỘ DỮ LIỆU VŨ TRỤ' : 'KÍCH HOẠT CỔNG KHÔNG GIAN'}
+                        </div>
+                        <div className="text-[9px] md:text-[10px] text-cyan-300/60 font-mono tracking-widest uppercase">
+                          {clipIdx === 1 
+                            ? 'SYSTEM_STATUS: SECURING_SECTOR_2 // CORES_ACTIVE' 
+                            : 'SYSTEM_STATUS: OPENING_WORMHOLE_SINGULARITY // QUANTUM_OVERCLOCK'
+                          }
+                        </div>
+                        <div className="flex gap-1.5 mt-2">
+                          {Array.from({ length: 12 }).map((_, i) => (
+                            <motion.div
+                              key={i}
+                              className="w-1.5 h-3 bg-cyan-500/85 rounded-[1px]"
+                              initial={{ opacity: 0.1 }}
+                              animate={{ opacity: [0.1, 1, 0.1] }}
+                              transition={{
+                                duration: 0.35,
+                                repeat: Infinity,
+                                delay: i * 0.03,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -325,25 +481,26 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   ref={vA}
                   playsInline
                   preload="auto"
-                  className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"
-                  style={{ opacity: activeBuf === 0 ? 1 : 0, zIndex: activeBuf === 0 ? 2 : 1 }}
+                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                  style={{
+                    opacity: activeBuf === 0 ? 1 : 0,
+                    zIndex: activeBuf === 0 ? 3 : 2,
+                    pointerEvents: activeBuf === 0 ? 'auto' : 'none'
+                  }}
                   onEnded={() => { if (activeBuf === 0) handleVideoEnded(); }}
-                  onPlaying={() => { if (clipIdx % 2 === 0) setActiveBuf(0); }}
                 />
                 <video
                   ref={vB}
                   playsInline
                   preload="auto"
-                  className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"
-                  style={{ opacity: activeBuf === 1 ? 1 : 0, zIndex: activeBuf === 1 ? 2 : 1 }}
+                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                  style={{
+                    opacity: activeBuf === 1 ? 1 : 0,
+                    zIndex: activeBuf === 1 ? 3 : 2,
+                    pointerEvents: activeBuf === 1 ? 'auto' : 'none'
+                  }}
                   onEnded={() => { if (activeBuf === 1) handleVideoEnded(); }}
-                  onPlaying={() => { if (clipIdx % 2 === 1) setActiveBuf(1); }}
                 />
-
-                {/* Preload next clip */}
-                {INTRO_CLIPS[clipIdx + 1] && (
-                  <link rel="preload" as="video" href={INTRO_CLIPS[clipIdx + 1]} />
-                )}
 
                 {/* Scanlines */}
                 <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(transparent,transparent_2px,rgba(0,242,254,0.05)_3px)] z-10" />

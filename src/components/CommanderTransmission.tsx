@@ -305,7 +305,7 @@ class TransmissionAudio {
 // HOLOGRAPHIC AVATAR (MEMOIZED + FORWARDREF)
 // =============================================================================
 export interface HolographicAvatarHandle {
-  play: () => Promise<void>;
+  playActive: (muted: boolean) => Promise<{ success: boolean; muted: boolean }>;
   pause: () => void;
   setVideoIndex: (idx: number) => void;
   setMuted: (muted: boolean) => void;
@@ -332,29 +332,44 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
     onEndedRef.current = onEnded;
 
     React.useImperativeHandle(ref, () => ({
-      play: () => {
+      playActive: async (muted: boolean) => {
         const v = activeBuf === 0 ? vA.current : vB.current;
-        if (!v) return Promise.resolve();
-        const p = v.play();
-        return p instanceof Promise ? p.catch(() => {}) : Promise.resolve();
+        if (!v) return { success: false, muted };
+        v.muted = muted;
+        try {
+          await v.play();
+          return { success: true, muted };
+        } catch (err) {
+          console.warn("Unmuted play blocked for active video, trying muted:", err);
+          v.muted = true;
+          try {
+            await v.play();
+            return { success: true, muted: true };
+          } catch (inner) {
+            console.error("Both unmuted and muted play blocked:", inner);
+            return { success: false, muted: true };
+          }
+        }
       },
       pause: () => {
         vA.current?.pause();
         vB.current?.pause();
       },
       unlockAudio: () => {
-        if (vA.current) vA.current.src = videos[0];
-        if (vB.current) vB.current.src = videos[1] || videos[0];
-        // Play and immediately pause both to grant mobile autoplay rights
-        [vA.current, vB.current].forEach(v => {
-          if (!v) return;
-          const p = v.play();
+        if (vA.current) {
+          vA.current.src = videos[0];
+        }
+        if (vB.current) {
+          vB.current.src = videos[1] || videos[0];
+          vB.current.muted = true; // Luôn tắt tiếng buffer ẩn để tránh xung đột audio
+          vB.current.load();
+          const p = vB.current.play();
           if (p instanceof Promise) {
-            p.then(() => v.pause()).catch(() => {});
+            p.then(() => vB.current?.pause()).catch(() => {});
           } else {
-            v.pause();
+            vB.current.pause();
           }
-        });
+        }
       },
       setVideoIndex: (idx: number) => {
         if (idx === activeIndexRef.current || !videos[idx]) return;
@@ -362,7 +377,6 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         
         const nextSrc = videos[idx];
         const nextBuf = idx % 2;
-        const currentMuted = (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true;
 
         if (nextBuf === 0) {
           if (vA.current) {
@@ -370,10 +384,10 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vA.current.src = nextSrc;
               vA.current.load();
             }
-            vA.current.muted = currentMuted;
-            const p = vA.current.play();
-            if (p instanceof Promise) p.catch(() => {});
           }
+          // Hoán đổi active hiển thị sang vA (0) ngay lập tức
+          setActiveBuf(0);
+
           // Preload next clip into inactive buffer (vB)
           if (vB.current && videos[idx + 1]) {
             if (!vB.current.src.endsWith(videos[idx + 1])) {
@@ -387,10 +401,10 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vB.current.src = nextSrc;
               vB.current.load();
             }
-            vB.current.muted = currentMuted;
-            const p = vB.current.play();
-            if (p instanceof Promise) p.catch(() => {});
           }
+          // Hoán đổi active hiển thị sang vB (1) ngay lập tức
+          setActiveBuf(1);
+
           // Preload next clip into inactive buffer (vA)
           if (vA.current && videos[idx + 1]) {
             if (!vA.current.src.endsWith(videos[idx + 1])) {
@@ -406,10 +420,6 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
       },
       isMuted: () => (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true,
     }), [videos, activeBuf]);
-
-    // Handle seamless swap when the background video actually starts playing
-    const handlePlayingA = () => { if (activeIndexRef.current % 2 === 0) setActiveBuf(0); };
-    const handlePlayingB = () => { if (activeIndexRef.current % 2 === 1) setActiveBuf(1); };
 
     // Pause when going inactive
     React.useEffect(() => {
@@ -433,15 +443,23 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         <video
           ref={vA}
           playsInline
-          className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          onPlaying={handlePlayingA}
+          className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
+          style={{
+            opacity: activeBuf === 0 ? 1 : 0.8,
+            zIndex: activeBuf === 0 ? 3 : 2,
+            pointerEvents: activeBuf === 0 ? 'auto' : 'none'
+          }}
           onEnded={() => onEndedRef.current?.()}
         />
         <video
           ref={vB}
           playsInline
-          className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          onPlaying={handlePlayingB}
+          className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
+          style={{
+            opacity: activeBuf === 1 ? 1 : 0.8,
+            zIndex: activeBuf === 1 ? 3 : 2,
+            pointerEvents: activeBuf === 1 ? 'auto' : 'none'
+          }}
           onEnded={() => onEndedRef.current?.()}
         />
 
@@ -796,20 +814,19 @@ export default function CommanderTransmission() {
     mouseY.set(e.clientY - rect.top - rect.height / 2);
   };
 
-  const startTransmission = () => {
+  const startTransmission = async () => {
     audioRef.current?.init();
     const avatar = avatarRef.current;
     if (avatar) {
       avatar.unlockAudio();
       avatar.setVideoIndex(0);
-      avatar.setMuted(false);
-      setIsMuted(false);
       
-      avatar.play().catch(() => {
-        avatar.setMuted(true);
+      const res = await avatar.playActive(false);
+      if (res && res.muted) {
         setIsMuted(true);
-        avatar.play().catch(() => {});
-      });
+      } else {
+        setIsMuted(false);
+      }
     }
     setPhase('dialogue');
     setCurrentVideoIdx(0);
@@ -818,26 +835,25 @@ export default function CommanderTransmission() {
   // Switch to next clip via the imperative handle so we control timing precisely.
   // The first clip is started synchronously in startTransmission(); subsequent
   // clips inherit the user-activation flag granted by that initial click, so
-  // play() here is allowed even though it's called from an effect.
+  // playActive() here is allowed even though it's called from an effect.
   useEffect(() => {
     if (phase !== 'dialogue') return;
     const avatar = avatarRef.current;
     if (!avatar) return;
     avatar.setVideoIndex(currentVideoIdx);
-    avatar.play();
-  }, [phase, currentVideoIdx]);
+    avatar.playActive(isMuted);
+  }, [phase, currentVideoIdx, isMuted]);
 
   // User-triggered mute toggle. Called from the floating button, so it's always
   // a fresh user gesture — unmuted playback is guaranteed to be allowed here.
-  const toggleMute = useCallback(() => {
+  const toggleMute = useCallback(async () => {
     const avatar = avatarRef.current;
     if (!avatar) return;
     const next = !isMuted;
-    avatar.setMuted(next);
     setIsMuted(next);
-    // Re-issue play() in case the video was paused (some browsers pause on
+    // Re-issue playActive() in case the video was paused (some browsers pause on
     // muted→unmuted transitions during low-power conditions).
-    avatar.play();
+    await avatar.playActive(next);
     audioRef.current?.playClick();
   }, [isMuted]);
 
