@@ -77,35 +77,6 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     return () => activeTimeouts.current.forEach(clearTimeout);
   }, []);
 
-  const handleStart = useCallback(() => {
-    playSfx('/audio/sfx/click.mp3', 0.85);
-    
-    // Synchronously unlock videos during user interaction!
-    if (vA.current) {
-      vA.current.src = INTRO_CLIPS[0];
-      vA.current.muted = isMuted;
-      vA.current.play().catch(() => {
-        setIsMuted(true);
-        setAudioBlocked(true);
-        vA.current!.muted = true;
-        vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
-      });
-    }
-    if (vB.current) {
-      vB.current.src = INTRO_CLIPS[1] || INTRO_CLIPS[0];
-      vB.current.muted = isMuted;
-      vB.current.play().then(() => vB.current?.pause()).catch(() => {});
-    }
-
-    setPhase('playing');
-  }, [playSfx, isMuted, handleVideoEnded]);
-
-  const handleSkipImmediate = useCallback(() => {
-    playSfx('/audio/sfx/click.mp3', 0.5);
-    setPhase('done');
-    onComplete();
-  }, [playSfx, onComplete]);
-
   const triggerDissolve = useCallback(() => {
     if (phase === 'dissolving' || phase === 'done') return;
     setPhase('dissolving');
@@ -137,6 +108,35 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       triggerDissolve();
     }
   }, [clipIdx, playSfx, triggerDissolve]);
+
+  const handleStart = useCallback(() => {
+    playSfx('/audio/sfx/click.mp3', 0.85);
+    
+    // Synchronously unlock videos during user interaction!
+    if (vA.current) {
+      vA.current.src = INTRO_CLIPS[0];
+      vA.current.muted = isMuted;
+      vA.current.play().catch(() => {
+        setIsMuted(true);
+        setAudioBlocked(true);
+        vA.current!.muted = true;
+        vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
+      });
+    }
+    if (vB.current) {
+      vB.current.src = INTRO_CLIPS[1] || INTRO_CLIPS[0];
+      vB.current.muted = isMuted;
+      vB.current.play().then(() => vB.current?.pause()).catch(() => {});
+    }
+
+    setPhase('playing');
+  }, [playSfx, isMuted, handleVideoEnded]);
+
+  const handleSkipImmediate = useCallback(() => {
+    playSfx('/audio/sfx/click.mp3', 0.5);
+    setPhase('done');
+    onComplete();
+  }, [playSfx, onComplete]);
 
   // Sync mute state to video elements
   useEffect(() => {
