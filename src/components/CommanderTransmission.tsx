@@ -343,6 +343,8 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         vB.current?.pause();
       },
       unlockAudio: () => {
+        if (vA.current) vA.current.src = videos[0];
+        if (vB.current) vB.current.src = videos[1] || videos[0];
         // Play and immediately pause both to grant mobile autoplay rights
         [vA.current, vB.current].forEach(v => {
           if (!v) return;
@@ -359,24 +361,42 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         activeIndexRef.current = idx;
         
         const nextSrc = videos[idx];
-        const nextBuf = activeBuf === 0 ? 1 : 0;
+        const nextBuf = idx % 2;
         const currentMuted = (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true;
 
         if (nextBuf === 0) {
           if (vA.current) {
-            vA.current.src = nextSrc;
+            if (!vA.current.src.endsWith(nextSrc)) {
+              vA.current.src = nextSrc;
+              vA.current.load();
+            }
             vA.current.muted = currentMuted;
-            vA.current.load();
             const p = vA.current.play();
             if (p instanceof Promise) p.catch(() => {});
           }
+          // Preload next clip into inactive buffer (vB)
+          if (vB.current && videos[idx + 1]) {
+            if (!vB.current.src.endsWith(videos[idx + 1])) {
+              vB.current.src = videos[idx + 1];
+              vB.current.load();
+            }
+          }
         } else {
           if (vB.current) {
-            vB.current.src = nextSrc;
+            if (!vB.current.src.endsWith(nextSrc)) {
+              vB.current.src = nextSrc;
+              vB.current.load();
+            }
             vB.current.muted = currentMuted;
-            vB.current.load();
             const p = vB.current.play();
             if (p instanceof Promise) p.catch(() => {});
+          }
+          // Preload next clip into inactive buffer (vA)
+          if (vA.current && videos[idx + 1]) {
+            if (!vA.current.src.endsWith(videos[idx + 1])) {
+              vA.current.src = videos[idx + 1];
+              vA.current.load();
+            }
           }
         }
       },
@@ -413,16 +433,16 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         <video
           ref={vA}
           playsInline
-          loop
           className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
           onPlaying={handlePlayingA}
+          onEnded={() => onEndedRef.current?.()}
         />
         <video
           ref={vB}
           playsInline
-          loop
           className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
           onPlaying={handlePlayingB}
+          onEnded={() => onEndedRef.current?.()}
         />
 
         {/* Subtle scanlines */}
@@ -1159,7 +1179,7 @@ export default function CommanderTransmission() {
                   className="mt-8 sm:mt-10 px-8 sm:px-12 py-4 sm:py-5 bg-[#010614] text-cyan-300 font-mono text-base sm:text-xl font-bold rounded-xl border-2 border-cyan-400/80 shadow-[0_0_20px_rgba(34,211,238,0.2),inset_0_0_15px_rgba(34,211,238,0.1)] tracking-[0.15em] sm:tracking-[0.2em] transition-all relative overflow-hidden group hover:bg-cyan-900/30 active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-400/30 to-cyan-500/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  <span className="relative z-10 drop-shadow-[0_0_8px_#22d3ee]">KẾT NỐI NGAY</span>
+                  <span className="relative z-10 drop-shadow-[0_0_8px_#22d3ee]">KẾT NỐI ÂM THANH</span>
                 </motion.button>
               </motion.div>
             )}

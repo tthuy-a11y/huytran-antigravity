@@ -85,13 +85,18 @@ const dissolveExit = {
   transition:{ duration:1.2, ease:'easeIn' as const },
 };
 
+const fastDissolveExit = {
+  opacity:0, y:-15, filter:'blur(12px)', scale:0.95,
+  transition:{ duration:0.4, ease:'easeIn' as const },
+};
+
 function getMotionProps(style: DialogueLine['style'], tier: string) {
   switch (style) {
     case 'neon-pink-italic': return {
       initial:{ opacity:0, y:18, filter:'blur(14px)' },
       animate:{ opacity:1, y:[0,-5,0], scale:[1,1.012,1], rotateZ:[0,0.8,0,-0.8,0], filter:'blur(0px)' },
       exit: dissolveExit,
-      transition:{ duration:0.75, ease:[0.16,1,0.3,1] as any,         // ← 1.4 → 0.75 (faster reveal)
+      transition:{ duration:0.75, ease:[0.16,1,0.3,1] as any,
         y:{ duration:3.6, repeat:Infinity, ease:'easeInOut' },
         scale:{ duration:3.6, repeat:Infinity, ease:'easeInOut' },
         rotateZ:{ duration:5, repeat:Infinity, ease:'easeInOut' } },
@@ -99,20 +104,20 @@ function getMotionProps(style: DialogueLine['style'], tier: string) {
     case 'mono-cyan-glitch': return {
       initial:{ opacity:0, x:-18, skewX:5, filter:'blur(8px)' },
       animate:{ opacity:1, x:0, skewX:0, filter:'blur(0px)' },
-      exit: dissolveExit,
-      transition:{ duration:0.95, ease:[0.16,1,0.3,1] as any },
+      exit: fastDissolveExit,
+      transition:{ duration:0.35, ease:[0.16,1,0.3,1] as any },
     };
     case 'large-vibrating': return {
       initial:{ opacity:0, scale:0.65, filter:'blur(12px)' },
       animate:{ opacity:1, scale:1, filter:'blur(0px)' },
-      exit: dissolveExit,
+      exit: fastDissolveExit,
       transition:{ duration:0.8, ease:[0.16,1,0.3,1] as any },
     };
     case 'serif-italic': return {
       initial:{ opacity:0, y:18 },
       animate:{ opacity:1, y:[0,-7,0], scale:[1,1.012,1], rotateZ:[0,-1,0,1,0] },
-      exit: dissolveExit,
-      transition:{ duration:1.3, ease:[0.16,1,0.3,1] as any,
+      exit: fastDissolveExit,
+      transition:{ duration:0.6, ease:[0.16,1,0.3,1] as any,
         y:{ duration:4.5, repeat:Infinity, ease:'easeInOut' },
         scale:{ duration:4.5, repeat:Infinity, ease:'easeInOut' },
         rotateZ:{ duration:7, repeat:Infinity, ease:'easeInOut' } },
@@ -121,7 +126,7 @@ function getMotionProps(style: DialogueLine['style'], tier: string) {
       initial:{ opacity:0, scale:0.85, y:18 },
       animate:{ opacity:1, scale:1, y:0 },
       exit:{ opacity:0, scale:1.1, filter:'blur(16px)' },
-      transition:{ duration:1.2, ease:[0.16,1,0.3,1] as any },
+      transition:{ duration:0.5, ease:[0.16,1,0.3,1] as any },
     };
     case 'custom-d10': return {
       initial:{ opacity:1 }, animate:{ opacity:1 },

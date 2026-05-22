@@ -101,12 +101,12 @@ export function shakeEnvelope(t: number): number {
   
   // 1. Warp acceleration rumble (t = 0.5s to 2.5s)
   if (t > 0.5 && t < 2.5) {
-    rumble += smoothstep(0.5, 1.0, t) * (1 - smoothstep(1.5, 2.5, t)) * 0.05;
+    rumble += THREE.MathUtils.smoothstep(t, 0.5, 1.0) * (1 - THREE.MathUtils.smoothstep(t, 1.5, 2.5)) * 0.05;
   }
   
   // 2. Cosmic dust entry rumble (t = 4.0s to 5.5s)
   if (t > 4.0 && t < 5.5) {
-    rumble += smoothstep(4.0, 4.2, t) * (1 - smoothstep(5.0, 5.5, t)) * 0.03;
+    rumble += THREE.MathUtils.smoothstep(t, 4.0, 4.5) * (1 - THREE.MathUtils.smoothstep(t, 5.0, 5.5)) * 0.08;
   }
 
   // 3. Big Bang explosive shake
