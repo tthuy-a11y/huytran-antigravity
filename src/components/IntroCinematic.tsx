@@ -110,13 +110,14 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   }, [clipIdx, playSfx, triggerDissolve]);
 
   const handleStart = useCallback(() => {
-    playSfx('/audio/sfx/click.mp3', 0.85);
-    
-    // Synchronously unlock videos during user interaction!
+    playSfx('/audio/cues/shockwave.mp3', 0.8);
     if (vA.current) {
-      vA.current.src = INTRO_CLIPS[0];
-      vA.current.muted = isMuted;
-      vA.current.play().catch(() => {
+      vA.current.muted = false;
+      vA.current.play().then(() => {
+        setAudioBlocked(false);
+        setIsMuted(false);
+      }).catch(() => {
+        // Autoplay blocked
         setIsMuted(true);
         setAudioBlocked(true);
         vA.current!.muted = true;
@@ -133,10 +134,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   }, [playSfx, isMuted, handleVideoEnded]);
 
   const handleSkipImmediate = useCallback(() => {
-    playSfx('/audio/sfx/click.mp3', 0.5);
-    setPhase('done');
-    onComplete();
-  }, [playSfx, onComplete]);
+    triggerDissolve();
+  }, [triggerDissolve]);
 
   // Sync mute state to video elements
   useEffect(() => {
@@ -254,8 +253,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
               key="prompt"
               initial={{ scale: 0.75, opacity: 0, y: 40 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 1.15, opacity: 0, filter: 'blur(15px)' }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ scale: 0, opacity: 0, filter: 'blur(40px) brightness(4) hue-rotate(90deg)', rotateZ: -15, skewY: 10 }}
+              transition={{ duration: 0.8, ease: [0.36, 0, 0.66, -0.56] }}
               className="relative max-w-md w-full mx-4 p-8 md:p-10 border border-cyan-400/40 rounded-[2rem] bg-[#02050a]/90 backdrop-blur-3xl shadow-[0_0_120px_-20px_rgba(0,242,254,0.4)] text-center"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 opacity-20 blur-2xl rounded-3xl animate-pulse" />

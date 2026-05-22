@@ -30,10 +30,14 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // ═══════════════════════════════════════════════════════════
     // DEEP ZOOM FLYTHROUGH 0 → 5.5s (distant star → planet flyby → cosmic dust)
     // ═══════════════════════════════════════════════════════════
+    // Heartbeat suspense in the darkness (0-1.5s)
+    cue(0.30, 'meteor-impact',   { volume: 0.90, rate: 0.40 }); // Heartbeat thump 1
+    cue(1.00, 'meteor-impact',   { volume: 0.95, rate: 0.45 }); // Heartbeat thump 2
+    
     cue(0.05, 'warp-jump',       { volume: 0.70, rate: 0.70 }); // Deep bass rumble — warp initiating
     cue(0.20, 'planet-discover', { volume: 0.45, rate: 1.20 }); // Text 1: Trong khoảng lặng
-    cue(0.50, 'shockwave',       { volume: 0.50, rate: 0.40 }); // Space rushing sound — acceleration
-    cue(1.20, 'data-beep',       { volume: 0.30, rate: 1.50 }); // Text 2: tôi tìm thấy
+    cue(1.50, 'shockwave',       { volume: 0.70, rate: 0.40 }); // Space rushing sound — Big reveal
+    cue(1.80, 'data-beep',       { volume: 0.30, rate: 1.50 }); // Text 2: tôi tìm thấy
     cue(2.50, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Text 3: Nơi sáng tạo
     cue(3.60, 'shockwave',       { volume: 0.60, rate: 0.80 }); // Cinematic Doppler swoosh past planet
     cue(4.20, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4: Còn trí tuệ công nghệ

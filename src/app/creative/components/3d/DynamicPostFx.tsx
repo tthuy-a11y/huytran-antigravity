@@ -69,8 +69,8 @@ export function chromaticAt(t: number): number {
   let v = 0;
   
   // Warp speed RGB shift (peaks at 1.5s when speed is highest, decays by 3.5s)
-  if (t > 0.0 && t < 4.0) {
-    v += THREE.MathUtils.lerp(0.0, 0.018, smoothstep(0.5, 1.5, t)) * (1 - smoothstep(1.5, 3.5, t));
+  if (t > 0.0 && t < 4.8) {
+    v += THREE.MathUtils.lerp(0.0, 0.035, smoothstep(0.5, 1.5, t)) * (1 - smoothstep(4.0, 4.8, t));
   }
 
   if (t >= 5.0 && t < 7.5) {

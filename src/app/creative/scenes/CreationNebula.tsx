@@ -710,11 +710,19 @@ function WarpSpeedLines() {
 
   useFrame((_, delta) => {
     const t = useCinematicStore.getState().time;
-    uniforms.uTime.value += delta;
+    // Tăng tốc độ bay theo t để giả lập gia tốc Warp
+    const speedMult = t > 2.0 ? 1.8 : 1.0;
+    uniforms.uTime.value += delta * speedMult;
 
     // Warp lines: delay start to 0.3s, tapers off by 5.5s
-    const intensity = smoothstep(0.3, 0.8, t) * (1.0 - smoothstep(4.0, 5.5, t));
-    uniforms.uIntensity.value = intensity * 0.95;
+    let intensity = smoothstep(0.3, 0.8, t) * (1.0 - smoothstep(4.5, 5.5, t));
+    
+    // Cường điệu hóa độ sáng và dày lúc đâm xuyên hệ hành tinh (2.0s -> 4.5s)
+    if (t > 1.5 && t < 4.8) {
+      intensity *= 2.5;
+    }
+    
+    uniforms.uIntensity.value = intensity;
   });
 
   return (

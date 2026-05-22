@@ -11,7 +11,7 @@ import { useCinematicStore, CINEMATIC_DURATION } from '@/app/creative/lib/cinema
 type DialogueLine = {
   id: string; text: string; start: number; end: number;
   style: 'neon-pink-italic' | 'mono-cyan-glitch' | 'large-vibrating'
-       | 'serif-italic'     | 'gold-scaling'     | 'custom-d10';
+       | 'serif-italic'     | 'gold-scaling'     | 'custom-d10' | 'custom-slam';
 };
 
 const DIALOGUE: DialogueLine[] = [
@@ -39,7 +39,7 @@ const DIALOGUE: DialogueLine[] = [
 
   // FINAL HERO
   { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:24.5, end:27.0, style:'custom-d10' },
+    start:24.5, end:27.0, style:'custom-slam' },
 ];
 
 // ============================================================
@@ -50,8 +50,9 @@ const STYLE_CLS: Record<DialogueLine['style'], string> = {
   'mono-cyan-glitch':  'font-mono text-xl md:text-3xl lg:text-4xl tracking-[0.18em] uppercase',
   'large-vibrating':   'font-bold tracking-[-0.02em] whitespace-nowrap',
   'serif-italic':      'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-wide',
-  'gold-scaling':      'font-serif text-2xl md:text-5xl lg:text-6xl tracking-wide',
-  'custom-d10':        'w-full h-full',
+  'gold-scaling':      'font-sans font-bold text-3xl md:text-5xl lg:text-6xl tracking-tight uppercase',
+  'custom-d10':        'font-serif italic text-4xl md:text-6xl text-white drop-shadow-2xl text-center px-4',
+  'custom-slam':       'font-serif italic text-5xl md:text-7xl lg:text-8xl text-white text-center px-4 font-black tracking-tight',
 };
 
 const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
@@ -65,6 +66,9 @@ const STYLE_INLINE: Record<DialogueLine['style'], React.CSSProperties> = {
     filter:'drop-shadow(0 0 16px rgba(255,200,80,0.55)) drop-shadow(0 0 40px rgba(255,150,40,0.35))',
   },
   'custom-d10': {},
+  'custom-slam': {
+    textShadow: '0 0 20px rgba(255,255,255,0.8), 0 0 60px rgba(100,200,255,0.6)',
+  },
 };
 
 // ============================================================
@@ -122,6 +126,12 @@ function getMotionProps(style: DialogueLine['style'], tier: string) {
       initial:{ opacity:1 }, animate:{ opacity:1 },
       exit:{ opacity:0, scale:1.18, filter:'blur(28px)' },
       transition:{ duration:1.6, ease:[0.16,1,0.3,1] as any },
+    };
+    case 'custom-slam': return {
+      initial:{ opacity:0, scale:8, filter:'blur(40px)' },
+      animate:{ opacity:1, scale:[8, 1, 1.05, 1], filter:['blur(40px)', 'blur(0px)', 'blur(0px)', 'blur(0px)'] },
+      exit:{ opacity:0, scale:0.9, filter:'blur(10px)' },
+      transition:{ duration:0.6, times:[0, 0.15, 0.25, 1], ease:['easeIn', 'easeOut', 'easeInOut'] as any },
     };
   }
 }
@@ -228,6 +238,7 @@ function DialogueLineView({ line, cinematicTime }: { line:DialogueLine; cinemati
       case 'large-vibrating':
         return { top:'44%', left:0, right:0 };
       case 'custom-d10':
+      case 'custom-slam':
         return { top:0, left:0, right:0, bottom:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' };
       default:
         return { bottom:'17%', left:0, right:0 };
