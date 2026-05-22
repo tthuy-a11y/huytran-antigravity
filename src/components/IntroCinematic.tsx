@@ -26,8 +26,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const [phase, setPhase] = useState<Phase>('prompt');
   const [clipIdx, setClipIdx] = useState(0);
   const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
-  const [srcA, setSrcA] = useState<string>(INTRO_CLIPS[0]);
-  const [srcB, setSrcB] = useState<string>('');
+
   
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [subtitle, setSubtitle] = useState('');
@@ -80,8 +79,26 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
 
   const handleStart = useCallback(() => {
     playSfx('/audio/sfx/click.mp3', 0.85);
+    
+    // Synchronously unlock videos during user interaction!
+    if (vA.current) {
+      vA.current.src = INTRO_CLIPS[0];
+      vA.current.muted = isMuted;
+      vA.current.play().catch(() => {
+        setIsMuted(true);
+        setAudioBlocked(true);
+        vA.current!.muted = true;
+        vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
+      });
+    }
+    if (vB.current) {
+      vB.current.src = INTRO_CLIPS[1] || INTRO_CLIPS[0];
+      vB.current.muted = isMuted;
+      vB.current.play().then(() => vB.current?.pause()).catch(() => {});
+    }
+
     setPhase('playing');
-  }, [playSfx]);
+  }, [playSfx, isMuted, handleVideoEnded]);
 
   const handleSkipImmediate = useCallback(() => {
     playSfx('/audio/sfx/click.mp3', 0.5);
@@ -145,34 +162,25 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
     const nextBuf = activeBuf === 0 ? 1 : 0;
 
     if (clipIdx === 0) {
-      // First clip: unlock both
-      if (vA.current) {
-        vA.current.muted = isMuted;
-        vA.current.play().catch(() => {
-          setIsMuted(true);
-          setAudioBlocked(true);
-          vA.current!.muted = true;
-          vA.current!.play().catch(() => setTimeout(handleVideoEnded, 1000));
-        });
-      }
-      if (vB.current) {
-        vB.current.muted = isMuted;
-        vB.current.play().then(() => vB.current?.pause()).catch(() => {});
-      }
+      // First clip: already unlocked and started in handleStart
     } else {
       // Subsequent clips: double buffer swap
       if (nextBuf === 0) {
-        setSrcA(nextSrc);
         if (vA.current) {
+          if (!vA.current.src.endsWith(nextSrc)) {
+            vA.current.src = nextSrc;
+            vA.current.load();
+          }
           vA.current.muted = isMuted;
-          vA.current.load();
           vA.current.play().catch(() => {});
         }
       } else {
-        setSrcB(nextSrc);
         if (vB.current) {
+          if (!vB.current.src.endsWith(nextSrc)) {
+            vB.current.src = nextSrc;
+            vB.current.load();
+          }
           vB.current.muted = isMuted;
-          vB.current.load();
           vB.current.play().catch(() => {});
         }
       }
@@ -316,7 +324,6 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                 {/* DOUBLE BUFFERING VIDEOS */}
                 <video
                   ref={vA}
-                  src={srcA}
                   playsInline
                   preload="auto"
                   className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"
@@ -326,7 +333,6 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                 />
                 <video
                   ref={vB}
-                  src={srcB}
                   playsInline
                   preload="auto"
                   className="absolute inset-0 w-full h-full object-cover z-[1] transition-opacity duration-300"

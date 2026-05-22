@@ -105,6 +105,8 @@ function EnergySeed() {
   // Geometry built once
   const geometry = useMemo(() => new THREE.IcosahedronGeometry(0.35, 4), []);
   
+  const lightRef = useRef<THREE.PointLight>(null);
+
   useSafeDispose([groupRef.current, matRef.current, geometry]);
 
   useFrame((_, delta) => {
@@ -114,21 +116,28 @@ function EnergySeed() {
     uniforms.uTime.value += delta;
 
     // Growth & opacity ramps
-    // Pre-bloom (0–1.5s): seed is fully visible as the ONLY bright dot
-    // 1.5–3.5s: blooms outward (grows scale + fades core)
-    // 3.5s+: dissolved into nebula
-    const growth = smoothstep(1.5, 3.5, t);
+    const growth = smoothstep(2.0, 3.5, t);
     
-    // Start at 1.0 (bright dot), fade down to 0.3 as it blooms, then fade out at the end
-    const opacity =
-      THREE.MathUtils.lerp(1.0, 0.3, growth) * (1 - smoothstep(3.2, 4.5, t));
+    // Start at 0.1, blink for 1s, grow to 3.5 between 1s and 2s
+    let scale = 0.1;
+    if (t < 1.0) scale = 0.1;
+    else if (t < 2.0) scale = THREE.MathUtils.lerp(0.1, 3.5, Math.pow(t - 1.0, 2.0));
+    else scale = THREE.MathUtils.lerp(3.5, 4.5, growth);
+
+    let opacity = 1.0;
+    if (t < 1.0) {
+      opacity = 0.4 + 0.6 * Math.sin(t * 25.0); // Blinking effect
+    } else {
+      opacity = THREE.MathUtils.lerp(1.0, 0.3, growth) * (1 - smoothstep(3.2, 4.5, t));
+    }
 
     uniforms.uGrowth.value = growth;
     uniforms.uOpacity.value = opacity;
-
-    // Scale grows from 0.6 → 3.5 as it dissolves into nebula
-    const scale = THREE.MathUtils.lerp(0.6, 3.5, growth);
     groupRef.current.scale.setScalar(scale);
+
+    if (lightRef.current) {
+      lightRef.current.intensity = opacity * 3.0;
+    }
 
     // Gentle wobble
     groupRef.current.rotation.x += delta * 0.15;
@@ -149,7 +158,7 @@ function EnergySeed() {
         />
       </mesh>
       {/* Local light bath — sells "this is the source of everything" */}
-      <pointLight color={'#ff7adf'} intensity={3.0} distance={20} decay={2} />
+      <pointLight ref={lightRef} color={'#ff7adf'} intensity={3.0} distance={20} decay={2} />
     </group>
   );
 }

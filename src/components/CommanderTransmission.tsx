@@ -326,10 +326,8 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
     
     // 0 = A is active, 1 = B is active
     const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
-    const [srcA, setSrcA] = useState<string>(videos[0]);
-    const [srcB, setSrcB] = useState<string>('');
     
-    const activeIndexRef = useRef(0);
+    const activeIndexRef = useRef(-1);
     const onEndedRef = useRef(onEnded);
     onEndedRef.current = onEnded;
 
@@ -365,16 +363,16 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         const currentMuted = (activeBuf === 0 ? vA.current : vB.current)?.muted ?? true;
 
         if (nextBuf === 0) {
-          setSrcA(nextSrc);
           if (vA.current) {
+            vA.current.src = nextSrc;
             vA.current.muted = currentMuted;
             vA.current.load();
             const p = vA.current.play();
             if (p instanceof Promise) p.catch(() => {});
           }
         } else {
-          setSrcB(nextSrc);
           if (vB.current) {
+            vB.current.src = nextSrc;
             vB.current.muted = currentMuted;
             vB.current.load();
             const p = vB.current.play();
@@ -414,19 +412,17 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         {/* VIDEOS */}
         <video
           ref={vA}
-          src={srcA}
           playsInline
+          loop
           className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 0 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
           onPlaying={handlePlayingA}
-          onEnded={() => onEndedRef.current?.()}
         />
         <video
           ref={vB}
-          src={srcB}
           playsInline
+          loop
           className={`absolute inset-0 w-full h-full object-cover object-top z-[1] transition-opacity duration-300 ${activeBuf === 1 ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
           onPlaying={handlePlayingB}
-          onEnded={() => onEndedRef.current?.()}
         />
 
         {/* Subtle scanlines */}

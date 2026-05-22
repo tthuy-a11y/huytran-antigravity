@@ -31,14 +31,12 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // DEEP ZOOM FLYTHROUGH 0 → 5.5s (distant star → planet flyby → cosmic dust)
     // ═══════════════════════════════════════════════════════════
     cue(0.05, 'warp-jump',       { volume: 0.70, rate: 0.70 }); // Deep bass rumble — warp initiating
+    cue(0.20, 'planet-discover', { volume: 0.45, rate: 1.20 }); // Text 1: Trong khoảng lặng
     cue(0.50, 'shockwave',       { volume: 0.50, rate: 0.40 }); // Space rushing sound — acceleration
-    cue(1.50, 'data-beep',       { volume: 0.25, rate: 2.00 }); // High-speed data flicker
-    cue(2.00, 'planet-discover', { volume: 0.35, rate: 1.30 }); // Galaxy becoming visible
-    cue(2.80, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Outer planet encounter
+    cue(1.20, 'data-beep',       { volume: 0.30, rate: 1.50 }); // Text 2: tôi tìm thấy
+    cue(2.50, 'planet-discover', { volume: 0.50, rate: 0.90 }); // Text 3: Nơi sáng tạo
     cue(3.60, 'shockwave',       { volume: 0.60, rate: 0.80 }); // Cinematic Doppler swoosh past planet
-    cue(3.80, 'planet-discover', { volume: 0.60, rate: 0.75 }); // Planet flyby — close encounter
-    cue(4.00, 'shockwave',       { volume: 0.35, rate: 0.40 }); // Cosmic dust — distant rumble
-    cue(4.80, 'data-beep',       { volume: 0.30, rate: 1.80 }); // TechGrid signal approaching
+    cue(4.20, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4: Còn trí tuệ công nghệ
 
     // ═══════════════════════════════════════════════════════════
     // TECHNOLOGY 5.5 → 8s  (holographic grid sweep — tense rising)
@@ -72,10 +70,12 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     // AWAKENING 17 → 31s  (14 seconds)
     // ═══════════════════════════════════════════════════════════
     cue(17.30, 'planet-discover',{ volume: 0.60, rate: 0.9 }); // Sun reveal
-    cue(20.00, 'data-beep',      { volume: 0.45 });
-    cue(22.50, 'data-beep',      { volume: 0.40, rate: 0.9 });
-    cue(25.00, 'warp-jump',      { volume: 0.75 });            // climax build
-    cue(27.50, 'laser',          { volume: 0.65, rate: 0.9 });
+    
+    // Nhanh, gọn, dứt khoát ending
+    cue(23.50, 'data-beep',      { volume: 0.45, rate: 1.5 }); // Một thời đại mới
+    cue(24.80, 'data-beep',      { volume: 0.50, rate: 1.2 }); // Một kỷ nguyên mới
+    cue(26.10, 'warp-jump',      { volume: 0.65, rate: 1.1 }); // Một vũ trụ mới
+    cue(28.00, 'planet-discover',{ volume: 0.75, rate: 0.9 }); // TH2003
     cue(30.00, 'shockwave',      { volume: 1.0,  rate: 1.6 }); // final hit
 
     if (next >= CINEMATIC_DURATION && !finishedFiredRef.current) {

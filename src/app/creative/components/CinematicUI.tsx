@@ -15,26 +15,41 @@ type DialogueLine = {
 };
 
 const DIALOGUE: DialogueLine[] = [
-  // CREATION 0-4s — text xuất hiện sớm trong lúc camera đang lao về
-  { id:'d1', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:0.6, end:3.8, style:'neon-pink-italic' },
-  // TECHNOLOGY 4-8s — smooth slide entry, gentle glitch
-  { id:'d2', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
-    start:4.2, end:7.5, style:'mono-cyan-glitch' },
-  // CONVERGENCE — vibrating climax text (peak at 8.0s bang)
-  { id:'d3', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
+  // ═══════════════════════════════════════════════════════════
+  // MỞ ĐẦU (Sâu lắng & bừng sáng)
+  // ═══════════════════════════════════════════════════════════
+  { id:'d1', text:'Trong khoảng lặng giữa các vì sao',
+    start:0.2, end:1.8, style:'serif-italic' },
+  { id:'d2', text:'tôi tìm thấy tiếng vọng của chính mình...',
+    start:1.2, end:2.8, style:'serif-italic' },
+  { id:'d3', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
+    start:2.5, end:4.5, style:'neon-pink-italic' },
+  
+  // ═══════════════════════════════════════════════════════════
+  // CÔNG NGHỆ (Vượt qua lớp bụi mờ)
+  // ═══════════════════════════════════════════════════════════
+  { id:'d4', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
+    start:4.2, end:7.0, style:'mono-cyan-glitch' },
+  
+  // ═══════════════════════════════════════════════════════════
+  // GIAO THOA (Cao trào Big Bang)
+  // ═══════════════════════════════════════════════════════════
+  { id:'d5', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
     start:7.0, end:8.3, style:'large-vibrating' },
-  // AWAKENING 17-31s — soft serif overlapping pair
-  { id:'d7', text:'Trong khoảng lặng giữa các vì sao',
-    start:22.5, end:26.0, style:'serif-italic' },
-  { id:'d8', text:'tôi tìm thấy tiếng vọng của chính mình...',
-    start:25.5, end:28.0, style:'serif-italic' },
-  // PRE-CLIMAX
-  { id:'d9', text:'Khởi nguyên... một vũ trụ thức tỉnh',
-    start:28.2, end:29.0, style:'gold-scaling' },
+
+  // ═══════════════════════════════════════════════════════════
+  // ĐOẠN KẾT (Nhanh, gọn, dứt khoát)
+  // ═══════════════════════════════════════════════════════════
+  { id:'d6', text:'Một thời đại mới',
+    start:23.5, end:24.5, style:'mono-cyan-glitch' },
+  { id:'d7', text:'Một kỷ nguyên mới',
+    start:24.8, end:25.8, style:'mono-cyan-glitch' },
+  { id:'d8', text:'Một vũ trụ mới',
+    start:26.1, end:27.5, style:'gold-scaling' },
+  
   // FINAL HERO
-  { id:'d10', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:29.0, end:31.0, style:'custom-d10' },
+  { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
+    start:28.0, end:31.0, style:'custom-d10' },
 ];
 
 // ============================================================
@@ -211,7 +226,8 @@ function DialogueLineView({ line, cinematicTime }: { line:DialogueLine; cinemati
   const position: React.CSSProperties = (() => {
     switch (line.style) {
       case 'serif-italic':
-        return line.id === 'd7' ? { bottom:'32%', left:0, right:0 } : { bottom:'23%', left:0, right:0 };
+        // d1 is the first line ("Trong khoảng lặng..."), d2 is the second ("tôi tìm thấy...")
+        return line.id === 'd1' ? { bottom:'32%', left:0, right:0 } : { bottom:'23%', left:0, right:0 };
       case 'gold-scaling':
         return { top:'40%', left:0, right:0 };
       case 'large-vibrating':
