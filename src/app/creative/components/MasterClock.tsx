@@ -41,21 +41,21 @@ export function MasterClock({ onFinished }: { onFinished?: () => void }) {
     cue(4.00, 'planet-discover', { volume: 0.45, rate: 1.00 }); // Text 3 reveal beep: "Nơi sáng tạo là chìa khóa..."
     cue(4.50, 'glass-shatter',   { volume: 0.65, rate: 1.10 }); // Soft digital tech transition chime
     cue(5.50, 'warp-jump',       { volume: 0.55, rate: 1.20 }); // Sliding into tech grid
-    cue(6.50, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4 reveal beep: "Còn trí tuệ công nghệ..."
+    cue(6.00, 'data-beep',       { volume: 0.35, rate: 1.80 }); // Text 4 reveal beep: "Còn trí tuệ công nghệ..."
     cue(6.80, 'glass-shatter',   { volume: 0.55, rate: 1.15 }); // Grid warning click
     cue(7.50, 'glass-shatter',   { volume: 0.78, rate: 0.85 }); // Final pre-bang crack
 
     // Phase 3: BIG BANG CLIMAX (8.0s → 17.0s)
     cue(BIG_BANG_TIME,       'big-bang',      { volume: 1.00 }); // Explosive Big Bang!
     cue(BIG_BANG_TIME,       'shockwave',     { volume: 1.00 }); // Secondary blast shockwave
-    cue(11.20, 'data-beep',      { volume: 0.40, rate: 1.50 }); // Text 5 reveal beep: "KHI SÁNG TẠO GIAO THOA..."
+    cue(7.50, 'data-beep',       { volume: 0.40, rate: 1.50 }); // Text 5 reveal beep: "KHI SÁNG TẠO GIAO THOA..."
     cue(12.00, 'meteor-impact',  { volume: 0.55, rate: 0.80 }); // Debris settling thump
 
     // Phase 4: AWAKENING & SOLAR SYSTEM BIRTH (17.0s → 28.25s)
     cue(17.30, 'planet-discover', { volume: 0.60, rate: 0.90 }); // Golden sun core reveal
-    cue(20.00, 'planet-discover', { volume: 0.65 });             // Primal discover chime #1 ("Một thời đại mới")
-    cue(21.50, 'planet-discover', { volume: 0.70 });             // Primal discover chime #2 ("Một kỷ nguyên mới")
-    cue(23.00, 'planet-discover', { volume: 0.65 });             // Primal discover chime #3 ("Một vũ trụ mới")
+    cue(20.00, 'planet-discover', { volume: 0.65, rate: 0.95 }); // Primal discover chime #1 ("Một thời đại mới")
+    cue(21.50, 'planet-discover', { volume: 0.70, rate: 1.20 }); // Primal discover chime #2 ("Một kỷ nguyên mới")
+    cue(23.00, 'planet-discover', { volume: 0.65, rate: 1.45 }); // Primal discover chime #3 ("Một vũ trụ mới")
     cue(24.50, 'planet-discover', { volume: 0.95, rate: 0.75 }); // Welcome cristal chime
     cue(24.50, 'meteor-impact',   { volume: 1.00, rate: 0.55 }); // Blockbuster low bass impact slam for text d9!
     cue(27.75, 'shockwave',       { volume: 1.00, rate: 1.40 }); // Warp-out pullback sound starts

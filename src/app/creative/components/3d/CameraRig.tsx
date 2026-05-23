@@ -24,12 +24,14 @@ const KEYS: CameraKey[] = [
   { t: 1.0,  pos: new THREE.Vector3(  0.0,   2.2, 300), target: new THREE.Vector3(0, 0,  0), fov:  35, roll:  0.02 },
 
   // ── PHASE 2: ACCELERATION / WARP SPEED RUSH (1.8s - 3.0s) ──────────────────
-  { t: 2.2,  pos: new THREE.Vector3(  0.0,   3.5, 260), target: new THREE.Vector3(0, 0,  0), fov:  28, roll:  0.06 },
+  // Camera accelerates dramatically to fly deep into the starfield
+  { t: 2.0,  pos: new THREE.Vector3( -5.0,   5.0, 180), target: new THREE.Vector3(0, 0, -5), fov:  24, roll:  0.15 },
+  { t: 2.8,  pos: new THREE.Vector3(  5.0,   4.0,  60), target: new THREE.Vector3(-3, 0, -8), fov:  48, roll: -0.15 },
 
-  // ── PHASE 3: MAJESTIC GALAXY REVEAL & APPROACH (3.0s - 4.8s) ──────────────────
-  // Volumetric neon spiral galaxy looms large, camera zooms close into the colorful star arms
-  { t: 3.5,  pos: new THREE.Vector3(-25.0,  12.0, 160), target: new THREE.Vector3(0, 0,  0), fov:  52, roll:  0.18 },
-  { t: 4.8,  pos: new THREE.Vector3( 22.0,  10.0,  80), target: new THREE.Vector3(0, 0, -2), fov:  46, roll: -0.15 },
+  // ── PHASE 3: MAJESTIC GALAXY FLYTHROUGH (3.0s - 4.8s) ──────────────────
+  // Dive straight through the heart of the galaxy (z=0) and sparkles
+  { t: 3.8,  pos: new THREE.Vector3( -2.0,   2.0,   8), target: new THREE.Vector3(0, 0, -10), fov:  68, roll:  0.22 },
+  { t: 4.5,  pos: new THREE.Vector3(  0.0,   1.5, -20), target: new THREE.Vector3(0, 0, -30), fov:  52, roll:  0.05 },
 
   // ── PHASE 4: TECHNOLOGY GRID SECTOR (4.8s - 8.0s) ──────────────────
   // TechGrid transition phase (planets hidden, storyline progresses through code matrix)

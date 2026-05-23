@@ -33,7 +33,7 @@ export function bloomIntensityAt(t: number): number {
   const bang = Math.exp(
     -((t - BIG_BANG_TIME) * (t - BIG_BANG_TIME)) / (2 * bangSigma * bangSigma)
   );
-  const bangContribution = bang * 3.5;
+  const bangContribution = bang * 5.8;
 
   const buildup =
     t < 7.5
@@ -162,12 +162,13 @@ export function dofFocusAt(t: number): { focusDistance: number; bokehScale: numb
 }
 
 export function flashAt(t: number): number {
-  if (t < BIG_BANG_TIME - 0.05 || t > BIG_BANG_TIME + 0.9) return 0;
+  const duration = 1.2;
+  if (t < BIG_BANG_TIME - 0.05 || t > BIG_BANG_TIME + duration) return 0;
   if (t < BIG_BANG_TIME) {
     return Math.pow((t - (BIG_BANG_TIME - 0.05)) / 0.05, 4) * 0.4;
   }
-  const k = (t - BIG_BANG_TIME) / 0.9;
-  return Math.pow(1 - k, 2.5);
+  const k = (t - BIG_BANG_TIME) / duration;
+  return Math.pow(1 - k, 3.0);
 }
 
 // ============================================================
