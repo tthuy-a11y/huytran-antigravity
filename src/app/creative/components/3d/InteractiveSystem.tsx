@@ -11,6 +11,7 @@ import { useSafeDispose } from '@/app/creative/lib/useSafeDispose';
 import { audioEngine } from '@/app/creative/lib/audioEngine';
 import { getPlanetGeometry, getAtmosphereGeometry } from '@/app/creative/lib/geometryCache';
 import { PresetGasPlanet, type PlanetPresetName } from './GasPlanet';
+import { SpaceshipSquadron } from './SpaceshipSquadron';
 
 // ============================================================
 // PLANET RINGS
@@ -607,6 +608,9 @@ export function InteractiveSystem() {
       {PLANETS.map((planet, i) => (
         <InteractivePlanetNode key={planet.id} data={planet} index={i} />
       ))}
+
+      {/* Spaceship Squadron ambient flight */}
+      <SpaceshipSquadron />
 
       {/* Background Decor: Stars & Nebula Dust */}
       <group position={[0, -10, 0]}>

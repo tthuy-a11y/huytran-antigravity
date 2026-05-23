@@ -7,6 +7,7 @@ import { useFleetStore } from '@/store/useFleetStore';
 import { audioEngine } from '@/app/creative/lib/audioEngine';
 import { AnimatePresence, motion } from 'framer-motion';
 import CreativeOverlayHUD, { type Planet } from '@/components/creative/CreativeOverlayHUD';
+import { CreativeVideoIntro } from '@/app/creative/components/CreativeVideoIntro';
 
 const CinematicDirector = dynamic(
   () => import('./CinematicDirector').then((mod) => mod.CinematicDirector),
@@ -36,7 +37,7 @@ const CinematicDirector = dynamic(
           ĐANG KẾT NỐI HỆ HÀNH TINH<span className="cl-dots" />
         </div>
         <div style={{ marginTop: 12, fontSize: 10, opacity: 0.4, letterSpacing: '0.5em' }}>
-          ━━━ ANTIGRAVITY OS v2.6 ━━━
+          ━━━ ANTIGRAVITY OS v2.7 ━━━
         </div>
       </div>
     ),
@@ -48,8 +49,28 @@ export default function CreativePage() {
   const focusedPlanetId = useCinematicStore((s) => s.focusedPlanetId);
   const isAnyModalOpen = focusedPlanetId !== null;
 
+  // Track video intro playback
+  const [videoIntroDone, setVideoIntroDone] = useState(false);
+
   // Planet modal state cho CreativeOverlayHUD
   const [activePlanet, setActivePlanet] = useState<Planet | null>(null);
+
+  // Check if user has already seen the intro in the current session
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('creative_intro_seen')) {
+      setVideoIntroDone(true);
+      useCinematicStore.getState().skip();
+    }
+  }, []);
+
+  const handleVideoComplete = () => {
+    setVideoIntroDone(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('creative_intro_seen', 'true');
+    }
+    // Transition store instantly into interactive mode
+    useCinematicStore.getState().skip();
+  };
 
   // playSound — bridge sang creative audioEngine
   const playSound = (type: string) => {
@@ -72,11 +93,15 @@ export default function CreativePage() {
 
   return (
     <main style={{ minHeight: "100vh", position: "relative", overflow: "hidden", background: "#000004" }}>
-      {/* 3D Cinematic Sequence */}
-      <CinematicDirector />
+      {!videoIntroDone ? (
+        <CreativeVideoIntro onComplete={handleVideoComplete} />
+      ) : (
+        <>
+          {/* 3D Cinematic Sequence */}
+          <CinematicDirector />
 
-      <AnimatePresence>
-        {hasEnteredSystem && (
+          <AnimatePresence>
+            {hasEnteredSystem && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -120,6 +145,8 @@ export default function CreativePage() {
           </motion.div>
         )}
       </AnimatePresence>
+        </>
+      )}
 
       <style>{`
         .corner-btn {

@@ -5,6 +5,94 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Zap, Cpu, Layers, Globe, DatabaseZap, TerminalSquare, Sun } from 'lucide-react';
 import { useCinematicStore } from '@/app/creative/lib/cinematicStore';
 import { PLANETS, SUN_DATA } from '@/lib/planets-data';
+import { audioEngine } from '@/app/creative/lib/audioEngine';
+
+// Futuristic Diagnostic Terminal Boot & Holographic scan transition
+function TerminalBoot() {
+  const [lines, setLines] = React.useState<string[]>([]);
+  const [active, setActive] = React.useState(true);
+  const soundTriggered = React.useRef(false);
+
+  const LOG_DATA = [
+    '> KHỞI ĐỘNG HẠM ĐỘI THÁM HIỂM TH2003... OK',
+    '> ĐỒNG BỘ QUỸ ĐẠO BÊN TRONG HỆ HÀNH TINH... 100%',
+    '> GIAO THỨC DU HÀNH COGNITIVE: KÍCH HOẠT',
+    '> CHÀO MỪNG NHÀ THÁM HIỂM TIẾN VÀO VŨ TRỤ SÁNG TẠO.',
+  ];
+
+  React.useEffect(() => {
+    // Play transition swoosh sound once upon arrival
+    if (!soundTriggered.current) {
+      soundTriggered.current = true;
+      audioEngine.playCue('warp-jump', { volume: 0.35, rate: 1.15 });
+    }
+
+    const timers = LOG_DATA.map((text, idx) => {
+      return setTimeout(() => {
+        setLines(prev => [...prev, text]);
+        audioEngine.playCue('data-beep', { volume: 0.22, rate: 1.35 + idx * 0.12 });
+      }, idx * 500 + 150);
+    });
+
+    // Fade out console after 3.6s
+    const hideTimer = setTimeout(() => {
+      setActive(false);
+    }, 3600);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearTimeout(hideTimer);
+    };
+  }, []);
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <motion.div
+          key="terminal-boot-overlay"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0, filter: 'blur(12px)', transition: { duration: 0.6, ease: 'easeIn' } }}
+          className="absolute inset-0 z-50 pointer-events-none flex flex-col justify-center items-center bg-black/20"
+        >
+          {/* Holographic grid scan bar sweeping the screen */}
+          <motion.div
+            initial={{ top: '-10%' }}
+            animate={{ top: '110%' }}
+            transition={{ duration: 1.8, ease: 'easeInOut' }}
+            className="absolute left-0 right-0 h-[2px] bg-cyan-400/80 pointer-events-none"
+            style={{ boxShadow: '0 0 25px #00f2fe, 0 0 50px #00f2fe' }}
+          />
+
+          {/* Command Console Box */}
+          <div className="bg-black/90 backdrop-blur-2xl border border-cyan-500/30 p-6 md:p-8 rounded-3xl flex flex-col gap-2.5 max-w-[90%] md:max-w-md w-full shadow-[0_0_80px_rgba(0,242,254,0.15)] font-mono text-[11px] md:text-xs text-cyan-300">
+            <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2 mb-1.5">
+              <span className="text-[9px] tracking-[0.2em] text-cyan-400/60 uppercase">System Sync Protocol</span>
+              <span className="animate-pulse flex items-center gap-1.5 text-cyan-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" /> SECURE
+              </span>
+            </div>
+            {lines.map((ln, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.25 }}
+                className="whitespace-normal leading-relaxed text-left"
+              >
+                {ln}
+              </motion.div>
+            ))}
+            <div className="h-4 flex items-end">
+              {lines.length < LOG_DATA.length && (
+                <span className="w-1.5 h-3.5 bg-cyan-300 animate-pulse ml-0.5" />
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 const ICON_MAP: Record<string, any> = {
   'nexus-01': Cpu,
@@ -67,6 +155,9 @@ export const InteractiveUI = React.memo(function InteractiveUI() {
 
   return (
     <div className="fixed inset-0 z-20 pointer-events-none select-none text-white font-sans">
+      {/* Sci-fi Terminal Sync scan transition overlay */}
+      <TerminalBoot />
+
       {/* Top Branding */}
       <div className="absolute top-8 left-8 flex flex-col gap-4 pointer-events-auto max-w-[280px] md:max-w-[340px]">
         <div className="flex items-center gap-4">
