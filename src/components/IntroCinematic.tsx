@@ -26,6 +26,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
   const [phase, setPhase] = useState<Phase>('prompt');
   const [clipIdx, setClipIdx] = useState(0);
   const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
+  const [srcA, setSrcA] = useState<string>(INTRO_CLIPS[0]);
+  const [srcB, setSrcB] = useState<string>(INTRO_CLIPS[1]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [subtitle, setSubtitle] = useState('');
@@ -189,6 +191,8 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
       }
     }
 
+    setSrcA(INTRO_CLIPS[0]);
+    setSrcB(INTRO_CLIPS[1]);
     setPhase('playing');
     setClipIdx(0);
     setActiveBuf(0);
@@ -233,8 +237,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
           const p = vA.current.play();
           if (p instanceof Promise) p.catch(() => {});
         }
-        // Đổi hiển thị active sang vA ngay lập tức
-        setActiveBuf(0);
+        setSrcA(nextSrc);
         
         // Preload clip tiếp theo (idx + 1) vào vB (inactive buffer)
         const nextClip = INTRO_CLIPS[clipIdx + 1];
@@ -243,6 +246,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
             vB.current.src = nextClip;
             vB.current.load();
           }
+          setSrcB(nextClip);
         }
       } else {
         // Phát trên vB
@@ -255,8 +259,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
           const p = vB.current.play();
           if (p instanceof Promise) p.catch(() => {});
         }
-        // Đổi hiển thị active sang vB ngay lập tức
-        setActiveBuf(1);
+        setSrcB(nextSrc);
 
         // Preload clip tiếp theo (idx + 1) vào vA (inactive buffer)
         const nextClip = INTRO_CLIPS[clipIdx + 1];
@@ -265,6 +268,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
             vA.current.src = nextClip;
             vA.current.load();
           }
+          setSrcA(nextClip);
         }
       }
     } else {
@@ -276,6 +280,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
           vB.current.src = nextClip;
           vB.current.load();
         }
+        setSrcB(nextClip);
       }
     }
 
@@ -366,7 +371,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0, opacity: 0, filter: 'blur(40px) brightness(4) hue-rotate(90deg)', rotateZ: -15, skewY: 10 }}
               transition={{ duration: 0.8, ease: [0.36, 0, 0.66, -0.56] }}
-              className="relative max-w-md w-full mx-4 p-8 md:p-10 border border-cyan-400/40 rounded-[2rem] bg-[#02050a]/90 backdrop-blur-3xl shadow-[0_0_120px_-20px_rgba(0,242,254,0.4)] text-center"
+              className="relative z-50 max-w-md w-full mx-4 p-8 md:p-10 border border-cyan-400/40 rounded-[2rem] bg-[#02050a]/90 backdrop-blur-3xl shadow-[0_0_120px_-20px_rgba(0,242,254,0.4)] text-center"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-cyan-400 opacity-20 blur-2xl rounded-3xl animate-pulse" />
               <div className="relative">
@@ -383,7 +388,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   <button
                     onClick={handleStart}
                     onMouseEnter={() => playSfx('/audio/sfx/hover.mp3', 0.4)}
-                    className="group relative w-full py-5 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-lg uppercase tracking-[3px] rounded-2xl overflow-hidden hover:scale-105 hover:shadow-[0_0_50px_rgba(0,242,254,0.65)] transition-all duration-300"
+                    className="group relative w-full py-5 bg-gradient-to-r from-cyan-400 to-blue-600 text-black font-extrabold text-lg uppercase tracking-[3px] rounded-2xl overflow-hidden hover:scale-105 hover:shadow-[0_0_50px_rgba(0,242,254,0.65)] transition-all duration-300 cursor-pointer"
                   >
                     {/* Glass shimmer sheer sweep */}
                     <span 
@@ -397,7 +402,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                   <button
                     onClick={handleSkipImmediate}
                     onMouseEnter={() => playSfx('/audio/sfx/hover.mp3', 0.4)}
-                    className="w-full py-5 border border-white/10 hover:border-red-500/50 hover:bg-red-500/5 text-white/50 hover:text-red-200 rounded-2xl uppercase tracking-[3px] text-sm transition-all duration-300 hover:shadow-[0_0_24px_rgba(239,68,68,0.15)]"
+                    className="w-full py-5 border border-white/10 hover:border-red-500/50 hover:bg-red-500/5 text-white/50 hover:text-red-200 rounded-2xl uppercase tracking-[3px] text-sm transition-all duration-300 hover:shadow-[0_0_24px_rgba(239,68,68,0.15)] cursor-pointer"
                   >
                     BỎ QUA → VÀO NGAY
                   </button>
@@ -483,7 +488,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                 {/* DOUBLE BUFFERING VIDEOS */}
                 <video
                   ref={vA}
-                  src={INTRO_CLIPS[0]}
+                  src={srcA}
                   playsInline
                   preload="auto"
                   muted={activeBuf === 0 ? isMuted : true}
@@ -494,10 +499,11 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                     pointerEvents: activeBuf === 0 ? 'auto' : 'none'
                   }}
                   onEnded={() => { if (activeBuf === 0) handleVideoEnded(); }}
+                  onPlaying={() => { if (clipIdx % 2 === 0) setActiveBuf(0); }}
                 />
                 <video
                   ref={vB}
-                  src={INTRO_CLIPS[1]}
+                  src={srcB}
                   playsInline
                   preload="auto"
                   muted={activeBuf === 1 ? isMuted : true}
@@ -508,6 +514,7 @@ export default function IntroCinematic({ onComplete }: IntroCinematicProps) {
                     pointerEvents: activeBuf === 1 ? 'auto' : 'none'
                   }}
                   onEnded={() => { if (activeBuf === 1) handleVideoEnded(); }}
+                  onPlaying={() => { if (clipIdx % 2 === 1) setActiveBuf(1); }}
                 />
 
                 {/* Scanlines */}

@@ -634,7 +634,7 @@ export default function ExodusGodTier() {
   if (!osBooted) return <BootTerminal onComplete={() => setOsBooted(true)} />;
 
   return (
-    <main className={`h-screen w-screen bg-[#010103] relative overflow-hidden font-sans text-slate-200 cursor-crosshair select-none transition-all duration-[1200ms] ${warpSpeed ? 'scale-[1.1] blur-[1px] brightness-125' : 'scale-100'} ${deployState !== 'idle' ? 'hue-rotate-[15deg] saturate-150' : ''}`}>
+    <main className={`min-h-screen md:h-screen w-screen bg-[#010103] relative overflow-y-auto md:overflow-hidden font-sans text-slate-200 cursor-crosshair select-none transition-all duration-[1200ms] ${warpSpeed ? 'scale-[1.1] blur-[1px] brightness-125' : 'scale-100'} ${deployState !== 'idle' ? 'hue-rotate-[15deg] saturate-150' : ''}`}>
       
       {/* GOD-TIER CSS (CRT & GLITCH & 3D) */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -1540,7 +1540,7 @@ export default function ExodusGodTier() {
           </div>
         </header>
 
-        <div className="flex-1 flex flex-col items-center justify-center pb-4 w-full px-4 md:px-8 mt-2">
+        <div className="flex-1 flex flex-col items-center justify-center pb-12 md:pb-4 w-full px-4 md:px-8 mt-2">
           
           {/* ===== 3D GLASSMORPHISM STATION HUB ===== */}
           <div className="relative w-full max-w-[1200px] overflow-visible" style={{ perspective: '1200px' }}>
@@ -1699,7 +1699,7 @@ export default function ExodusGodTier() {
       {/* LAYER 2: COMMAND HUD (ACTIVE STATE) */}
       {/* ============================================================================ */}
       {activeData && !warpSpeed && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-4 md:p-10 glitch-trans">
+        <div className="fixed inset-0 z-50 overflow-y-auto lg:overflow-hidden flex flex-col lg:justify-center p-4 md:p-10 pb-24 lg:pb-10 glitch-trans">
           {/* Command Bridge Background */}
           <div 
             className="absolute inset-0 bridge-bg" 
@@ -1721,7 +1721,7 @@ export default function ExodusGodTier() {
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> <span className="font-mono text-sm tracking-[0.2em] font-bold">QUAY LẠI HẠM ĐỘI</span>
           </button>
 
-          <div className={`w-full max-w-[1600px] h-full flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10 perspective-[1500px] transition-all duration-700 ${deployState === 'deployed' ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`w-full max-w-[1600px] h-auto lg:h-full flex flex-col lg:flex-row items-center justify-between gap-8 relative z-10 perspective-[1500px] transition-all duration-700 ${deployState === 'deployed' ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}`}>
             
             {/* TRÁI: METRICS */}
             <div className={`hidden lg:flex flex-col w-[300px] h-[75vh] justify-between transition-transform duration-500 ${deployState !== 'idle' ? '-translate-x-20 opacity-0 pointer-events-none' : ''}`} style={{ '--theme': activeData.hex } as React.CSSProperties}>

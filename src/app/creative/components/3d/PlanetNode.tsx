@@ -146,8 +146,8 @@ export const Sun = forwardRef<SunHandle, SunProps>(function Sun(
     // Light pulse, scales with reveal
     // On mobile: drastically reduce pulse amplitude to avoid flashing
     if (lightRef.current) {
-      const pulseAmp = isMobile ? 0.015 : 0.08;
-      const pulseFreq = isMobile ? 0.3 : 0.7;
+      const pulseAmp = isMobile ? 0.012 : 0.03;
+      const pulseFreq = isMobile ? 0.25 : 0.4;
       const pulse = (1 - pulseAmp) + pulseAmp * Math.sin(t * pulseFreq);
       const baseIntensity = isMobile ? 4.5 : 6.0;
       lightRef.current.intensity = baseIntensity * reveal * pulse;

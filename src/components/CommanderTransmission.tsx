@@ -328,6 +328,8 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
     // 0 = A is active, 1 = B is active
     const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
     const activeBufRef = useRef<0 | 1>(0);
+    const [srcA, setSrcA] = useState<string>(videos[0]);
+    const [srcB, setSrcB] = useState<string>(videos[1] || videos[0]);
     
     const activeIndexRef = useRef(-1);
     const onEndedRef = useRef(onEnded);
@@ -363,6 +365,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
             vA.current.src = videos[0];
           }
         }
+        setSrcA(videos[0]);
         if (vB.current) {
           const targetB = videos[1] || videos[0];
           if (!vB.current.src.endsWith(targetB)) {
@@ -377,6 +380,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
             vB.current.pause();
           }
         }
+        setSrcB(videos[1] || videos[0]);
       },
       setVideoIndex: (idx: number) => {
         if (idx === activeIndexRef.current || !videos[idx]) return;
@@ -393,8 +397,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vA.current.load();
             }
           }
-          // Hoán đổi active hiển thị sang vA (0) ngay lập tức
-          setActiveBuf(0);
+          setSrcA(nextSrc);
 
           // Preload next clip into inactive buffer (vB)
           if (vB.current && videos[idx + 1]) {
@@ -402,6 +405,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vB.current.src = videos[idx + 1];
               vB.current.load();
             }
+            setSrcB(videos[idx + 1]);
           }
         } else {
           if (vB.current) {
@@ -410,8 +414,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vB.current.load();
             }
           }
-          // Hoán đổi active hiển thị sang vB (1) ngay lập tức
-          setActiveBuf(1);
+          setSrcB(nextSrc);
 
           // Preload next clip into inactive buffer (vA)
           if (vA.current && videos[idx + 1]) {
@@ -419,6 +422,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
               vA.current.src = videos[idx + 1];
               vA.current.load();
             }
+            setSrcA(videos[idx + 1]);
           }
         }
       },
@@ -428,6 +432,10 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
       },
       isMuted: () => (activeBufRef.current === 0 ? vA.current : vB.current)?.muted ?? true,
     }), [videos]);
+
+    // Handle seamless swap when the background video actually starts playing
+    const handlePlayingA = () => { if (activeIndexRef.current % 2 === 0) setActiveBuf(0); };
+    const handlePlayingB = () => { if (activeIndexRef.current % 2 === 1) setActiveBuf(1); };
 
     // Pause when going inactive
     React.useEffect(() => {
@@ -450,7 +458,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         {/* VIDEOS */}
         <video
           ref={vA}
-          src={videos[0]}
+          src={srcA}
           playsInline
           preload="auto"
           muted={activeBuf === 0 ? isMuted : true}
@@ -460,11 +468,12 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
             zIndex: activeBuf === 0 ? 3 : 2,
             pointerEvents: activeBuf === 0 ? 'auto' : 'none'
           }}
+          onPlaying={handlePlayingA}
           onEnded={() => onEndedRef.current?.()}
         />
         <video
           ref={vB}
-          src={videos[1] || videos[0]}
+          src={srcB}
           playsInline
           preload="auto"
           muted={activeBuf === 1 ? isMuted : true}
@@ -474,6 +483,7 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
             zIndex: activeBuf === 1 ? 3 : 2,
             pointerEvents: activeBuf === 1 ? 'auto' : 'none'
           }}
+          onPlaying={handlePlayingB}
           onEnded={() => onEndedRef.current?.()}
         />
 
@@ -1220,7 +1230,7 @@ export default function CommanderTransmission() {
                 synchronous play() call satisfy iOS Safari's user-activation rule. */}
             {(phase === 'incoming' || phase === 'dialogue' || phase === 'dossier' || phase === 'dossier-reopen') && (
               <div
-                className={`max-w-[1400px] w-full h-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 p-3 sm:p-4 lg:p-6 relative overflow-y-auto ${
+                className={`max-w-[1400px] w-full h-full flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8 p-3 sm:p-4 lg:p-6 pb-28 lg:pb-6 relative overflow-y-auto ${
                   phase === 'incoming' ? 'opacity-0 pointer-events-none absolute' : ''
                 }`}
                 style={{ scrollbarWidth: 'thin', scrollbarColor: '#22d3ee40 transparent' }}
@@ -1331,7 +1341,7 @@ export default function CommanderTransmission() {
                       initial={{ y: 50, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ type: 'spring', damping: 22 }}
-                      className="flex-1 overflow-y-auto"
+                      className="flex-1 lg:overflow-y-auto overflow-y-visible"
                       style={{ scrollbarWidth: 'thin', scrollbarColor: '#22d3ee40 transparent' }}
                     >
                       <div

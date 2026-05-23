@@ -158,7 +158,7 @@ export default function Sun({ onReady }: SunProps) {
           varying vec3 vNormal;
           void main() {
             float fres = pow(1.0 - abs(dot(vNormal, vec3(0.0,0.0,1.0))), 3.0);
-            float pulse = 0.85 + 0.15 * sin(uTime * 1.5);
+            float pulse = 0.95 + 0.05 * sin(uTime * 0.4);
             gl_FragColor = vec4(uColor * fres * uIntensity * pulse, fres * 0.9);
           }
         `,
@@ -220,7 +220,7 @@ export default function Sun({ onReady }: SunProps) {
 
     if (coreRef.current) {
       coreRef.current.rotation.y += delta * 0.05;
-      const pulse = 1 + Math.sin(t * 1.2) * 0.02;
+      const pulse = 1 + Math.sin(t * 0.4) * 0.006;
       coreRef.current.scale.setScalar(hovered ? pulse * 1.06 : pulse);
     }
     if (corona1Ref.current) corona1Ref.current.rotation.y -= delta * 0.02;

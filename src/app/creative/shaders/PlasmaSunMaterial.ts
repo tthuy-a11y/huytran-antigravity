@@ -159,8 +159,8 @@ const sunFragment = /* glsl */ `
 
     // Pulsing brightness pumps the bloom pass
     // On mobile: reduce pulse amplitude (0.08→0.02) and slow frequency (0.7→0.3)
-    float pulseAmp = mix(0.08, 0.02, uMobileDampen);
-    float pulseFreq = mix(0.7, 0.3, uMobileDampen);
+    float pulseAmp = mix(0.04, 0.015, uMobileDampen);
+    float pulseFreq = mix(0.4, 0.25, uMobileDampen);
     float pulse = (1.0 - pulseAmp) + pulseAmp * sin(uTime * pulseFreq);
     col *= pulse;
 
