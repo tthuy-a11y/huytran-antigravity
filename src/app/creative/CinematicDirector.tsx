@@ -176,6 +176,8 @@ function CinematicScenes() {
     <>
       <CinematicPlanets />
       <CreationNebula />
+      <TechGrid />
+      <BigBangClash />
     </>
   );
 }

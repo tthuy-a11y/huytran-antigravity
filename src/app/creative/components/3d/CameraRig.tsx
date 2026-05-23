@@ -18,22 +18,39 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── PHASE 1: DARKNESS & SPARKLING VOID (0.0s - 1.5s) ──────────────────
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,   2.0, 400), target: new THREE.Vector3(0, 0,  0), fov:   8, roll:  0.00 },
-  { t: 1.0,  pos: new THREE.Vector3(  0.0,   2.2, 380), target: new THREE.Vector3(0, 0,  0), fov:  10, roll:  0.02 },
+  // ── PHASE 1: DENSE SPARKLING VOID (0.0s - 1.8s) ──────────────────
+  // Starts inside a wide, beautiful field of sparkling white stars (FOV=35, Z=320)
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,   2.0, 320), target: new THREE.Vector3(0, 0,  0), fov:  35, roll:  0.00 },
+  { t: 1.0,  pos: new THREE.Vector3(  0.0,   2.2, 300), target: new THREE.Vector3(0, 0,  0), fov:  35, roll:  0.02 },
 
-  // ── PHASE 2: HYPERSPACE ACCELERATION RUSH (1.5s - 3.0s) ──────────────────
+  // ── PHASE 2: ACCELERATION / WARP SPEED RUSH (1.8s - 3.0s) ──────────────────
   { t: 2.2,  pos: new THREE.Vector3(  0.0,   3.5, 260), target: new THREE.Vector3(0, 0,  0), fov:  28, roll:  0.06 },
 
-  // ── PHASE 3: GALAXY WEAVE REVEAL (3.0s - 4.8s) ──────────────────
+  // ── PHASE 3: MAJESTIC GALAXY REVEAL & APPROACH (3.0s - 4.8s) ──────────────────
+  // Volumetric neon spiral galaxy looms large, camera zooms close into the colorful star arms
   { t: 3.5,  pos: new THREE.Vector3(-25.0,  12.0, 160), target: new THREE.Vector3(0, 0,  0), fov:  52, roll:  0.18 },
   { t: 4.8,  pos: new THREE.Vector3( 22.0,  10.0,  80), target: new THREE.Vector3(0, 0, -2), fov:  46, roll: -0.15 },
 
-  // ── PHASE 4: MAJESTIC PLANET FLYBY (4.8s - 5.8s) ──────────────────
-  { t: 5.6,  pos: new THREE.Vector3( -8.0,   6.0,  28), target: new THREE.Vector3(0, 0, -5), fov:  42, roll:  0.08 },
+  // ── PHASE 4: TECHNOLOGY GRID SECTOR (4.8s - 8.0s) ──────────────────
+  // TechGrid transition phase (planets hidden, storyline progresses through code matrix)
+  { t: 5.8,  pos: new THREE.Vector3( -5.0,   1.5,  14), target: new THREE.Vector3(0, 0, -6), fov:  56, roll:  0.18 },
+  { t: 7.0,  pos: new THREE.Vector3(  0.0,   0.5,   8), target: new THREE.Vector3(0, 0,  0), fov:  72, roll: -0.05 },
+  { t: 8.0,  pos: new THREE.Vector3(  0.0,   0.0,   2), target: new THREE.Vector3(0, 0,  0), fov: 130, roll:  0.00 }, // Big Bang Climax!
 
-  // ── PHASE 5: DECELERATION & SMOOTH LANDING (5.8s - 6.5s) ──────────────────
-  { t: 6.5,  pos: new THREE.Vector3(  0.0,  25.0,  55), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.00 },
+  // ── PHASE 5: POST-BANG RECOIL & DEBRIS SETTLING (8.0s - 17.0s) ──────────────────
+  { t: 8.7,  pos: new THREE.Vector3(  4.0,   4.0,  30), target: new THREE.Vector3(0, 0,  0), fov:  62, roll:  0.15 },
+  { t: 11.0, pos: new THREE.Vector3( -6.0,   5.0,  42), target: new THREE.Vector3(0, 0,  0), fov:  55, roll: -0.10 },
+  { t: 14.0, pos: new THREE.Vector3(  5.0,   6.0,  48), target: new THREE.Vector3(0, 0,  0), fov:  50, roll:  0.08 },
+
+  // ── PHASE 6: AWAKENING - SOLAR SYSTEM BIRTH & SINGLE FLYBY (17.0s - 28.25s) ──────────────────
+  // System born! The camera sweeps the neon planets orbiting the sun ONE SINGLE time and lands perfectly
+  { t: 17.0, pos: new THREE.Vector3(  0.0,   8.0,  55), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.00 },
+  { t: 19.5, pos: new THREE.Vector3( 15.0,   6.0,  32), target: new THREE.Vector3(0, 0, -2), fov:  42, roll: -0.08 },
+  { t: 22.0, pos: new THREE.Vector3(-12.0,   4.0,  24), target: new THREE.Vector3(0, 0, -4), fov:  40, roll:  0.10 },
+  { t: 24.5, pos: new THREE.Vector3(  0.0,   2.0,  18), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.00 }, // Welcome Card TH2003
+  { t: 27.0, pos: new THREE.Vector3(  0.0,   1.0,  14), target: new THREE.Vector3(0, 0, -5), fov:  52, roll: -0.15 },
+  { t: 27.75,pos: new THREE.Vector3(  0.0,   0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.35 },
+  { t: 28.25,pos: new THREE.Vector3(  0.0,   0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
 ];
 KEYS.sort((a, b) => a.t - b.t);
 

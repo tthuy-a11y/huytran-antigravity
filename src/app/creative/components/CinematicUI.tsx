@@ -16,16 +16,20 @@ type DialogueLine = {
 
 const DIALOGUE: DialogueLine[] = [
   // ═══════════════════════════════════════════════════════════
-  // PURE SEQUENTIAL DIALOGUE SEQUENCE (0s to 6.5s)
+  // PURE SEQUENTIAL DIALOGUE SEQUENCE (0s to 28.25s)
   // ═══════════════════════════════════════════════════════════
   { id:'d1', text:'Trong khoảng lặng giữa các vì sao',
-    start:0.2, end:1.6, style:'serif-italic' },
+    start:0.2, end:1.8, style:'serif-italic' },
   { id:'d2', text:'tôi tìm thấy tiếng vọng của chính mình...',
-    start:1.8, end:3.2, style:'serif-italic' },
+    start:2.1, end:3.7, style:'serif-italic' },
   { id:'d3', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:3.4, end:4.8, style:'neon-pink-italic' },
+    start:4.0, end:6.2, style:'neon-pink-italic' },
   { id:'d4', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
-    start:5.0, end:6.4, style:'mono-cyan-glitch' }
+    start:6.5, end:9.0, style:'mono-cyan-glitch' },
+  { id:'d5', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
+    start:11.2, end:13.5, style:'large-vibrating' },
+  { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
+    start:24.5, end:28.25, style:'custom-slam' }
 ];
 
 // ============================================================

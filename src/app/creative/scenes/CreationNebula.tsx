@@ -20,8 +20,8 @@ import { NOISE_GLSL } from '@/app/creative/shaders/PlasmaSunMaterial';
 // ============================================================
 const SCENE_START = 0.0;
 const SCENE_FADE_IN_END = 0.9;
-const SCENE_FADE_OUT_START = 4.8;
-const SCENE_END = 6.5;
+const SCENE_FADE_OUT_START = 4.0;
+const SCENE_END = 4.8;
 
 // ============================================================
 // 1. ENERGY SEED — small glowing sphere that blooms into the nebula
@@ -694,8 +694,8 @@ function AmbientSparkles() {
 
       phases[i] = Math.random() * Math.PI * 2;
       sizes[i] = isClose
-        ? 3.5 + Math.random() * 6.5   // Close-up stars are slightly larger to pop
-        : 1.5 + Math.random() * 4.5;  // Distant stars are fine, delicate points
+        ? 14.0 + Math.random() * 22.0  // Large, soft, beautiful glowing spots (bokeh discs)
+        : 4.0 + Math.random() * 8.0;   // Fine background sparkling stars
     }
 
     const geo = new THREE.BufferGeometry();

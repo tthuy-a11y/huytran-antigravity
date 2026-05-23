@@ -69,7 +69,7 @@ export const QUALITY_BUDGETS: Record<DeviceTier, QualityBudget> = {
 };
 
 // ============================================================
-// TIMELINE — ultra punchy 6.5-second cinematic space intro
+// TIMELINE — front-loaded 42s, Big Bang at 8.0s
 // ============================================================
 export type SceneId = 'creation' | 'technology' | 'convergence' | 'awakening';
 
@@ -80,16 +80,18 @@ export interface SceneRange {
 }
 
 export const SCENE_RANGES: SceneRange[] = [
-  { id: 'creation',    start: 0.0,  end: 6.5  },
-  { id: 'awakening',   start: 6.5,  end: 6.5  },
+  { id: 'creation',    start: 0.0,  end: 4.0  },
+  { id: 'technology',  start: 4.0,  end: 8.0  },
+  { id: 'convergence', start: 8.0,  end: 17.0 },
+  { id: 'awakening',   start: 17.0, end: 28.25 },
 ];
 
-export const CINEMATIC_DURATION = 6.5; 
-export const BIG_BANG_TIME      = 999.0; // Disabled big bang to simplify timeline
+export const CINEMATIC_DURATION = 28.25; 
+export const BIG_BANG_TIME      = 8.0; 
 
 const getSceneAt = (t: number): SceneId => {
-  if (t >= 6.5) return 'awakening';
-  return 'creation';
+  for (const r of SCENE_RANGES) if (t >= r.start && t < r.end) return r.id;
+  return 'awakening';
 };
 
 // ============================================================
