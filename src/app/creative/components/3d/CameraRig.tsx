@@ -18,54 +18,22 @@ interface CameraKey {
 }
 
 const KEYS: CameraKey[] = [
-  // ── PHASE 1: DISTANT STAR 0s — tiny dot, telescope lens ──────────────────
-  { t: 0.0,  pos: new THREE.Vector3(  0.0,   2.0, 350), target: new THREE.Vector3(0, 0,  0), fov:   8, roll:  0.00 },
+  // ── PHASE 1: DARKNESS & SPARKLING VOID (0.0s - 1.5s) ──────────────────
+  { t: 0.0,  pos: new THREE.Vector3(  0.0,   2.0, 400), target: new THREE.Vector3(0, 0,  0), fov:   8, roll:  0.00 },
+  { t: 1.0,  pos: new THREE.Vector3(  0.0,   2.2, 380), target: new THREE.Vector3(0, 0,  0), fov:  10, roll:  0.02 },
 
-  // ── PHASE 2: ACCELERATING / BLOOMING 0.8s — energy seed pulses, camera creeps slowly ─────────────
-  { t: 0.8,  pos: new THREE.Vector3(  0.5,   2.2, 330), target: new THREE.Vector3(0, 0,  0), fov:   8, roll:  0.02 },
+  // ── PHASE 2: HYPERSPACE ACCELERATION RUSH (1.5s - 3.0s) ──────────────────
+  { t: 2.2,  pos: new THREE.Vector3(  0.0,   3.5, 260), target: new THREE.Vector3(0, 0,  0), fov:  28, roll:  0.06 },
 
-  // ── PHASE 3: GALAXY RUSH 1.8s — FOV opens wide, galaxy/starry field looms large ──────────
-  { t: 1.8,  pos: new THREE.Vector3( -5.0,   5.0, 180), target: new THREE.Vector3(0, 0, -5), fov:  22, roll:  0.15 },
+  // ── PHASE 3: GALAXY WEAVE REVEAL (3.0s - 4.8s) ──────────────────
+  { t: 3.5,  pos: new THREE.Vector3(-25.0,  12.0, 160), target: new THREE.Vector3(0, 0,  0), fov:  52, roll:  0.18 },
+  { t: 4.8,  pos: new THREE.Vector3( 22.0,  10.0,  80), target: new THREE.Vector3(0, 0, -2), fov:  46, roll: -0.15 },
 
-  // ── PHASE 4: OUTER PLANETS 2.8s ───────
-  { t: 2.8,  pos: new THREE.Vector3(  5.0,   4.0,  60), target: new THREE.Vector3(-3, 0, -8), fov:  48, roll: -0.15 },
+  // ── PHASE 4: MAJESTIC PLANET FLYBY (4.8s - 5.8s) ──────────────────
+  { t: 5.6,  pos: new THREE.Vector3( -8.0,   6.0,  28), target: new THREE.Vector3(0, 0, -5), fov:  42, roll:  0.08 },
 
-  // ── PHASE 5: PLANET FLYBY 3.8s — diving straight through the system ───
-  { t: 3.8,  pos: new THREE.Vector3( -2.0,   2.0,   8), target: new THREE.Vector3(0,  0, -10), fov:  68, roll:  0.22 },
-
-  // ── PHASE 6: COSMIC DUST 4.5s — flown completely past into the deep fog ─
-  { t: 4.5,  pos: new THREE.Vector3(  0.0,   1.5, -20), target: new THREE.Vector3(0,  0, -30), fov:  52, roll:  0.05 },
-
-  // ── HANDOFF TO TECHGRID 5.5s ───────────────────────────────────────────
-  { t: 5.5,  pos: new THREE.Vector3( -5.0,   1.5,  14), target: new THREE.Vector3(0, 0, -6), fov:  56, roll:  0.18 },
-
-  // ── TECHNOLOGY 5.5 → 8s ────────────────────────────────────────────────
-  { t: 6.5,  pos: new THREE.Vector3( -3.0,   2.0,  10), target: new THREE.Vector3(0, 0, -8), fov:  62, roll: -0.18 },
-  { t: 7.1,  pos: new THREE.Vector3(  4.0,   1.5,   6), target: new THREE.Vector3(0, 0, -6), fov:  68, roll:  0.12 },
-
-  // ── PRE-BANG / BANG 7.5 → 8 ──────────────────────────────────
-  { t: 7.6,  pos: new THREE.Vector3(  0.0,  0.5,   8), target: new THREE.Vector3(0, 0,  0), fov:  82, roll:  0.05 },
-  { t: 7.9,  pos: new THREE.Vector3(  0.0,  0.0,   4), target: new THREE.Vector3(0, 0,  0), fov: 110, roll:  0.00 },
-  { t: 8.0,  pos: new THREE.Vector3(  0.0,  0.0,   2), target: new THREE.Vector3(0, 0,  0), fov: 140, roll:  0.00 },
-
-  // ── POST-BANG RECOIL 8 → 12s ─────────────────────────────────
-  { t: 8.7,  pos: new THREE.Vector3(  2.0,  2.0,  22), target: new THREE.Vector3(0, 0,  0), fov:  62, roll: -0.15 },
-  { t: 10.5, pos: new THREE.Vector3( -5.0,  3.0,  30), target: new THREE.Vector3(0, 0,  0), fov:  55, roll:  0.10 },
-  { t: 12.0, pos: new THREE.Vector3(  3.0,  4.0,  36), target: new THREE.Vector3(0, 0,  0), fov:  52, roll: -0.08 },
-
-  // ── CIVILIZATION / PILLARS 12 → 17s ──────────────────────────
-  { t: 14.0, pos: new THREE.Vector3( -4.0,  3.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  50, roll:  0.06 },
-  { t: 17.0, pos: new THREE.Vector3(  0.0,  6.0,  40), target: new THREE.Vector3(0, 0,  0), fov:  48, roll:  0.00 },
-
-  // ── AWAKENING / OUTRO 17 → 28.25s (25% extended final title) ───────────
-  { t: 19.5, pos: new THREE.Vector3(  2.0,  4.0,  32), target: new THREE.Vector3(0, 0,  0), fov:  46, roll: -0.04 },
-  { t: 22.0, pos: new THREE.Vector3(  1.0,  2.0,  24), target: new THREE.Vector3(0, 0,  0), fov:  44, roll:  0.00 },
-  { t: 24.5, pos: new THREE.Vector3(  0.0,  2.0,  18), target: new THREE.Vector3(0, 0,  0), fov:  46, roll:  0.12 },
-  { t: 27.0, pos: new THREE.Vector3(  0.0,  0.5,  12), target: new THREE.Vector3(0, 0, -5), fov:  55, roll: -0.25 },
-
-  // ── FINAL WARP PULL 27.75 → 28.25s (Extended by +0.75s) ───────────
-  { t: 27.75, pos: new THREE.Vector3(  0.0,  0.0,   1), target: new THREE.Vector3(0, 0,-200), fov: 130, roll:  0.40 },
-  { t: 28.25, pos: new THREE.Vector3(  0.0,  0.0,-300), target: new THREE.Vector3(0, 0,-600), fov: 160, roll:  0.00 },
+  // ── PHASE 5: DECELERATION & SMOOTH LANDING (5.8s - 6.5s) ──────────────────
+  { t: 6.5,  pos: new THREE.Vector3(  0.0,  25.0,  55), target: new THREE.Vector3(0, 0,  0), fov:  45, roll:  0.00 },
 ];
 KEYS.sort((a, b) => a.t - b.t);
 

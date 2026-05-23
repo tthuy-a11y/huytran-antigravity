@@ -52,24 +52,24 @@ export interface QualityBudget {
 
 export const QUALITY_BUDGETS: Record<DeviceTier, QualityBudget> = {
   low: {
-    nebulaParticles: 2500, starCount: 1500, gridDensity: 12,
+    nebulaParticles: 2000, starCount: 1000, gridDensity: 12,
     explosionParticles: 4000, debrisCount: 60,
-    bloomResolution: 128, dpr: [1, 1.25], shadows: false, msaa: false,
+    bloomResolution: 128, dpr: [1, 1.0], shadows: false, msaa: false,
   },
   mid: {
-    nebulaParticles: 7000, starCount: 4000, gridDensity: 20,
-    explosionParticles: 15000, debrisCount: 180,
-    bloomResolution: 256, dpr: [1, 1.5], shadows: false, msaa: false,
+    nebulaParticles: 5000, starCount: 3000, gridDensity: 20,
+    explosionParticles: 10000, debrisCount: 180,
+    bloomResolution: 256, dpr: [1, 1.25], shadows: false, msaa: false,
   },
   high: {
-    nebulaParticles: 18000, starCount: 10000, gridDensity: 32,
-    explosionParticles: 45000, debrisCount: 400,
-    bloomResolution: 512, dpr: [1, 2], shadows: true, msaa: true,
+    nebulaParticles: 14000, starCount: 7000, gridDensity: 32,
+    explosionParticles: 30000, debrisCount: 400,
+    bloomResolution: 512, dpr: [1, 1.5], shadows: true, msaa: false, // Turn off MSAA for massive fill-rate performance boost on Retina/4K
   },
 };
 
 // ============================================================
-// TIMELINE — front-loaded 42s, Big Bang at 9.5s
+// TIMELINE — ultra punchy 6.5-second cinematic space intro
 // ============================================================
 export type SceneId = 'creation' | 'technology' | 'convergence' | 'awakening';
 
@@ -80,18 +80,16 @@ export interface SceneRange {
 }
 
 export const SCENE_RANGES: SceneRange[] = [
-  { id: 'creation',    start: 0.0,  end: 4.0  },
-  { id: 'technology',  start: 4.0,  end: 8.0  },
-  { id: 'convergence', start: 8.0,  end: 17.0 },
-  { id: 'awakening',   start: 17.0, end: 28.25 },
+  { id: 'creation',    start: 0.0,  end: 6.5  },
+  { id: 'awakening',   start: 6.5,  end: 6.5  },
 ];
 
-export const CINEMATIC_DURATION = 28.25;   // ← tăng thêm 0.75s ở cuối (25% cảnh kết)
-export const BIG_BANG_TIME      = 8.0;    // ← bang ở giây 8
+export const CINEMATIC_DURATION = 6.5; 
+export const BIG_BANG_TIME      = 999.0; // Disabled big bang to simplify timeline
 
 const getSceneAt = (t: number): SceneId => {
-  for (const r of SCENE_RANGES) if (t >= r.start && t < r.end) return r.id;
-  return 'awakening';
+  if (t >= 6.5) return 'awakening';
+  return 'creation';
 };
 
 // ============================================================

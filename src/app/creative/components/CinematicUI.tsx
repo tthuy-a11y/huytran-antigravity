@@ -16,30 +16,16 @@ type DialogueLine = {
 
 const DIALOGUE: DialogueLine[] = [
   // ═══════════════════════════════════════════════════════════
-  // MỞ ĐẦU (Sâu lắng & bừng sáng)
+  // PURE SEQUENTIAL DIALOGUE SEQUENCE (0s to 6.5s)
   // ═══════════════════════════════════════════════════════════
   { id:'d1', text:'Trong khoảng lặng giữa các vì sao',
-    start:0.2, end:1.8, style:'serif-italic' },
+    start:0.2, end:1.6, style:'serif-italic' },
   { id:'d2', text:'tôi tìm thấy tiếng vọng của chính mình...',
-    start:1.2, end:2.8, style:'serif-italic' },
+    start:1.8, end:3.2, style:'serif-italic' },
   { id:'d3', text:'Nơi sáng tạo là chìa khóa mở ra cánh cửa đến tận cùng vũ trụ',
-    start:2.5, end:4.5, style:'neon-pink-italic' },
-  
-  // ═══════════════════════════════════════════════════════════
-  // CÔNG NGHỆ (Vượt qua lớp bụi mờ)
-  // ═══════════════════════════════════════════════════════════
+    start:3.4, end:4.8, style:'neon-pink-italic' },
   { id:'d4', text:'Còn trí tuệ công nghệ là công cụ dẫn dắt xuyên qua thời không',
-    start:4.2, end:7.0, style:'mono-cyan-glitch' },
-  
-  // ═══════════════════════════════════════════════════════════
-  // GIAO THOA (Cao trào Big Bang)
-  // ═══════════════════════════════════════════════════════════
-  { id:'d5', text:'KHI SÁNG TẠO GIAO THOA VỚI TRÍ TUỆ CÔNG NGHỆ...',
-    start:7.0, end:8.3, style:'large-vibrating' },
-
-  // FINAL HERO
-  { id:'d9', text:'Chào mừng đến với Hệ Hành Tinh TH2003',
-    start:24.5, end:28.25, style:'custom-slam' },
+    start:5.0, end:6.4, style:'mono-cyan-glitch' }
 ];
 
 // ============================================================

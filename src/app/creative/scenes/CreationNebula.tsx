@@ -20,8 +20,8 @@ import { NOISE_GLSL } from '@/app/creative/shaders/PlasmaSunMaterial';
 // ============================================================
 const SCENE_START = 0.0;
 const SCENE_FADE_IN_END = 0.9;
-const SCENE_FADE_OUT_START = 4.5;
-const SCENE_END = 6.0;
+const SCENE_FADE_OUT_START = 4.8;
+const SCENE_END = 6.5;
 
 // ============================================================
 // 1. ENERGY SEED — small glowing sphere that blooms into the nebula

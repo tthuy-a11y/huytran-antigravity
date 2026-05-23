@@ -134,7 +134,7 @@ function DistantStarfield({ count }: { count: number }) {
       float d = length(uv);
       if (d > 0.5) discard;
       float falloff = pow(1.0 - d * 2.0, 3.0);
-      gl_FragColor = vec4(vColor * vTwinkle * 1.5, falloff * vTwinkle * uReveal);
+      gl_FragColor = vec4(vec3(1.2) * vTwinkle, falloff * vTwinkle * uReveal);
     }
   `;
 
@@ -176,8 +176,6 @@ function CinematicScenes() {
     <>
       <CinematicPlanets />
       <CreationNebula />
-      <TechGrid />
-      <BigBangClash />
     </>
   );
 }

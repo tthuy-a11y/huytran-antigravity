@@ -293,8 +293,8 @@ export default function CinematicPlanets() {
 
   // We read time reactively for JSX-level decisions
   const t = useCinematicStore((s) => s.time);
-  // Delayed reveal: starts at 2.2, fades in over 0.8s. Fades out over 2.0s at the end.
-  const opacity = fadeWindow(t, 2.2, 6.5, 0.8, 2.0);
+  // Delayed reveal: starts at 2.2, reaches full opacity at 3.2s, and stays fully visible until the end
+  const opacity = smoothstep(2.2, 3.2, t);
   const isVisible = t >= 2.2 && t <= 6.5;
 
   // Sun bursts into view from the EnergySeed between 2.2 and 3.0s
