@@ -232,18 +232,20 @@ export function DynamicPostFx() {
   }), []);
 
   useFrame(() => {
-    const t = useCinematicStore.getState().time;
+    const store = useCinematicStore.getState();
+    const t = store.time;
+    const hasEntered = store.hasEnteredSystem;
 
     // ---------- BLOOM ----------
-    let intensity = bloomIntensityAt(t);
+    let intensity = hasEntered ? 0.65 : bloomIntensityAt(t);
     // On mobile: reduce bloom intensity in the interactive system phase
     // to prevent the sun's additive glow from causing visible flashing
-    if (isMobileRef.current && t >= 17.0) {
+    if (isMobileRef.current && (hasEntered || t >= 17.0)) {
       intensity *= 0.6;
     }
     bloomEffect.intensity = intensity;
 
-    const flash = flashAt(t);
+    const flash = hasEntered ? 0.0 : flashAt(t);
     const threshold = THREE.MathUtils.lerp(0.7, 0.0, flash);
     if (bloomEffect.luminanceMaterial) {
       bloomEffect.luminanceMaterial.threshold = threshold;
@@ -251,7 +253,7 @@ export function DynamicPostFx() {
     }
 
     // ---------- CHROMATIC ABERRATION ----------
-    const ca = chromaticAt(t);
+    const ca = hasEntered ? 0.0 : chromaticAt(t);
     chromaticOffset.set(ca, ca);
     if (chromaticEffect.offset) {
       chromaticEffect.offset.set(ca, ca);
@@ -260,7 +262,7 @@ export function DynamicPostFx() {
     }
 
     // ---------- VIGNETTE ----------
-    const v = vignetteAt(t);
+    const v = hasEntered ? 0.55 : vignetteAt(t);
     if (vignetteEffect.uniforms?.get) {
       vignetteEffect.uniforms.get('darkness')!.value = v;
       vignetteEffect.uniforms.get('offset')!.value = THREE.MathUtils.lerp(0.5, 0.3, v);
@@ -271,11 +273,14 @@ export function DynamicPostFx() {
 
     // ---------- NOISE ----------
     if (noiseEffect.blendMode) {
-      noiseEffect.blendMode.opacity.value = noiseAt(t);
+      noiseEffect.blendMode.opacity.value = hasEntered ? 0.03 : noiseAt(t);
     }
 
     // ---------- DEPTH OF FIELD ----------
-    const { focusDistance, bokehScale } = dofFocusAt(t);
+    const { focusDistance, bokehScale } = hasEntered
+      ? { focusDistance: 1.0, bokehScale: 0.0 }
+      : dofFocusAt(t);
+      
     if (dofEffect.circleOfConfusionMaterial) {
       dofEffect.circleOfConfusionMaterial.uniforms.focusDistance.value = focusDistance;
     }

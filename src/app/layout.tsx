@@ -1,7 +1,20 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter, Lora } from 'next/font/google';
 import './globals.css';
 import { WarpCanvasWrapper } from '@/components/canvas/WarpCanvasWrapper';
 import CommanderTransmission from '@/components/CommanderTransmission';
+
+const inter = Inter({
+  subsets: ['vietnamese', 'latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const lora = Lora({
+  subsets: ['vietnamese', 'latin'],
+  variable: '--font-serif',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Thanh Huy | Creative Developer • 2003',
@@ -24,7 +37,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className="dark" suppressHydrationWarning>
-      <body className="antialiased bg-[#010204] text-white overflow-x-hidden">
+      <body className={`${inter.variable} ${lora.variable} antialiased bg-[#010204] text-white overflow-x-hidden`}>
         {/* TẦNG 3D GLOBAL — tắt tự động trên các route có Canvas riêng */}
         <div className="fixed inset-0 z-0 pointer-events-none">
           <WarpCanvasWrapper />

@@ -514,7 +514,8 @@ export function InteractiveSystem() {
       // RESET POSITION to ensure the planetary system looks identical 
       // whether the user watched the cinematic (camera ends up at z=-300) 
       // or skipped it (camera stays at default z=200).
-      persp.position.set(0, 0, 200);
+      // Slanted position [0, 25, 55] ensures orbits are beautiful ellipses.
+      persp.position.set(0, 25, 55);
       persp.lookAt(0, 0, 0);
     }
   }, [hasEnteredSystem, camera]);

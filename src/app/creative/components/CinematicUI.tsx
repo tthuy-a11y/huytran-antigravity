@@ -49,7 +49,7 @@ const STYLE_CLS: Record<DialogueLine['style'], string> = {
   'neon-pink-italic':  'italic font-light text-2xl md:text-4xl lg:text-5xl tracking-wide',
   'mono-cyan-glitch':  'font-mono text-xl md:text-3xl lg:text-4xl tracking-[0.18em] uppercase',
   'large-vibrating':   'font-bold tracking-[-0.02em] whitespace-nowrap',
-  'serif-italic':      'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-wide',
+  'serif-italic':      'italic font-serif text-xl md:text-3xl lg:text-4xl tracking-normal',
   'gold-scaling':      'font-sans font-bold text-3xl md:text-5xl lg:text-6xl tracking-tight uppercase',
   'custom-d10':        'font-serif italic text-4xl md:text-6xl text-white drop-shadow-2xl text-center px-4',
   'custom-slam':       'w-full h-full flex flex-col items-center justify-center pointer-events-none select-none',
