@@ -6,7 +6,7 @@ export const cvData = {
   },
   contact: {
     phone: "0944.329.202",
-    email: "huytran.work.01@gmail.com",
+    email: "huytran.work.02@gmail.com",
     address: "Ninh Kiều, Cần Thơ",
     linkedin: "linkedin.com/in/huytran4",
     github: "github.com/BLGCK44",

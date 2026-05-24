@@ -322,22 +322,19 @@ interface HolographicAvatarProps {
 
 const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, HolographicAvatarProps>(
   ({ isActive, onEnded, videos, isMuted }, ref) => {
-    const vA = useRef<HTMLVideoElement | null>(null);
-    const vB = useRef<HTMLVideoElement | null>(null);
+    const v0 = useRef<HTMLVideoElement | null>(null);
+    const v1 = useRef<HTMLVideoElement | null>(null);
+    const v2 = useRef<HTMLVideoElement | null>(null);
+    const videoRefs = [v0, v1, v2];
     
-    // 0 = A is active, 1 = B is active
-    const [activeBuf, setActiveBuf] = useState<0 | 1>(0);
-    const activeBufRef = useRef<0 | 1>(0);
-    const [srcA, setSrcA] = useState<string>(videos[0]);
-    const [srcB, setSrcB] = useState<string>(videos[1] || videos[0]);
-    
-    const activeIndexRef = useRef(-1);
+    const [activeIndexState, setActiveIndexState] = useState<number>(0);
+    const activeIndexRef = useRef<number>(0);
     const onEndedRef = useRef(onEnded);
     onEndedRef.current = onEnded;
 
     React.useImperativeHandle(ref, () => ({
       playActive: async (muted: boolean) => {
-        const v = activeBufRef.current === 0 ? vA.current : vB.current;
+        const v = videoRefs[activeIndexRef.current]?.current;
         if (!v) return { success: false, muted };
         v.muted = muted;
         try {
@@ -356,92 +353,65 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         }
       },
       pause: () => {
-        vA.current?.pause();
-        vB.current?.pause();
+        videoRefs.forEach(r => r.current?.pause());
       },
       unlockAudio: () => {
-        if (vA.current) {
-          if (!vA.current.src.endsWith(videos[0])) {
-            vA.current.src = videos[0];
+        // Warm up and unlock all 3 videos simultaneously on user interaction
+        videoRefs.forEach((r) => {
+          const v = r.current;
+          if (v) {
+            v.muted = true;
+            v.load();
+            const p = v.play();
+            if (p instanceof Promise) {
+              p.then(() => {
+                v.pause();
+                v.currentTime = 0;
+              }).catch(() => {});
+            } else {
+              v.pause();
+              v.currentTime = 0;
+            }
           }
-        }
-        setSrcA(videos[0]);
-        if (vB.current) {
-          const targetB = videos[1] || videos[0];
-          if (!vB.current.src.endsWith(targetB)) {
-            vB.current.src = targetB;
-          }
-          vB.current.muted = true; // Luôn tắt tiếng buffer ẩn để tránh xung đột audio
-          vB.current.load();
-          const p = vB.current.play();
-          if (p instanceof Promise) {
-            p.then(() => vB.current?.pause()).catch(() => {});
-          } else {
-            vB.current.pause();
-          }
-        }
-        setSrcB(videos[1] || videos[0]);
+        });
       },
       setVideoIndex: (idx: number) => {
         if (idx === activeIndexRef.current || !videos[idx]) return;
-        activeIndexRef.current = idx;
         
-        const nextSrc = videos[idx];
-        const nextBuf = (idx % 2) as 0 | 1;
-
-        activeBufRef.current = nextBuf;
-        if (nextBuf === 0) {
-          if (vA.current) {
-            if (!vA.current.src.endsWith(nextSrc)) {
-              vA.current.src = nextSrc;
-              vA.current.load();
-            }
-          }
-          setSrcA(nextSrc);
-
-          // Preload next clip into inactive buffer (vB)
-          if (vB.current && videos[idx + 1]) {
-            if (!vB.current.src.endsWith(videos[idx + 1])) {
-              vB.current.src = videos[idx + 1];
-              vB.current.load();
-            }
-            setSrcB(videos[idx + 1]);
-          }
-        } else {
-          if (vB.current) {
-            if (!vB.current.src.endsWith(nextSrc)) {
-              vB.current.src = nextSrc;
-              vB.current.load();
-            }
-          }
-          setSrcB(nextSrc);
-
-          // Preload next clip into inactive buffer (vA)
-          if (vA.current && videos[idx + 1]) {
-            if (!vA.current.src.endsWith(videos[idx + 1])) {
-              vA.current.src = videos[idx + 1];
-              vA.current.load();
-            }
-            setSrcA(videos[idx + 1]);
-          }
+        // Pause current video
+        const prevVideo = videoRefs[activeIndexRef.current]?.current;
+        if (prevVideo) {
+          prevVideo.pause();
+        }
+        
+        activeIndexRef.current = idx;
+        setActiveIndexState(idx);
+        
+        // Seek to 0
+        const nextVideo = videoRefs[idx]?.current;
+        if (nextVideo) {
+          nextVideo.currentTime = 0;
         }
       },
       setMuted: (muted: boolean) => {
-        if (vA.current) vA.current.muted = muted;
-        if (vB.current) vB.current.muted = muted;
+        videoRefs.forEach(r => {
+          if (r.current) r.current.muted = muted;
+        });
       },
-      isMuted: () => (activeBufRef.current === 0 ? vA.current : vB.current)?.muted ?? true,
+      isMuted: () => videoRefs[activeIndexRef.current]?.current?.muted ?? true,
     }), [videos]);
 
-    // Handle seamless swap when the background video actually starts playing
-    const handlePlayingA = () => { if (activeIndexRef.current % 2 === 0) setActiveBuf(0); };
-    const handlePlayingB = () => { if (activeIndexRef.current % 2 === 1) setActiveBuf(1); };
+    // Handle seamless swap when the video actually starts playing
+    const handlePlaying = (idx: number) => {
+      if (idx === activeIndexRef.current) {
+        setActiveIndexState(idx);
+      }
+    };
 
     // Pause when going inactive
     React.useEffect(() => {
       if (!isActive) {
-        vA.current?.pause();
-        vB.current?.pause();
+        videoRefs.forEach(r => r.current?.pause());
       }
     }, [isActive]);
 
@@ -456,36 +426,24 @@ const HolographicAvatar = memo(React.forwardRef<HolographicAvatarHandle, Hologra
         </div>
 
         {/* VIDEOS */}
-        <video
-          ref={vA}
-          src={srcA}
-          playsInline
-          preload="auto"
-          muted={activeBuf === 0 ? isMuted : true}
-          className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
-          style={{
-            opacity: activeBuf === 0 ? 1 : 0.8,
-            zIndex: activeBuf === 0 ? 3 : 2,
-            pointerEvents: activeBuf === 0 ? 'auto' : 'none'
-          }}
-          onPlaying={handlePlayingA}
-          onEnded={() => onEndedRef.current?.()}
-        />
-        <video
-          ref={vB}
-          src={srcB}
-          playsInline
-          preload="auto"
-          muted={activeBuf === 1 ? isMuted : true}
-          className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300"
-          style={{
-            opacity: activeBuf === 1 ? 1 : 0.8,
-            zIndex: activeBuf === 1 ? 3 : 2,
-            pointerEvents: activeBuf === 1 ? 'auto' : 'none'
-          }}
-          onPlaying={handlePlayingB}
-          onEnded={() => onEndedRef.current?.()}
-        />
+        {videos.map((src, idx) => (
+          <video
+            key={idx}
+            ref={videoRefs[idx]}
+            src={src}
+            playsInline
+            preload="auto"
+            muted={idx === activeIndexState ? isMuted : true}
+            className="absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500"
+            style={{
+              opacity: idx === activeIndexState ? 1 : 0,
+              zIndex: idx === activeIndexState ? 3 : 1,
+              pointerEvents: idx === activeIndexState ? 'auto' : 'none'
+            }}
+            onPlaying={() => handlePlaying(idx)}
+            onEnded={() => onEndedRef.current?.()}
+          />
+        ))}
 
         {/* Subtle scanlines */}
         <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_3px,rgba(0,242,254,0.04)_3px,rgba(0,242,254,0.04)_4px)] pointer-events-none z-10" />
@@ -750,7 +708,7 @@ export default function CommanderTransmission() {
         sessionStart = Date.now().toString();
         localStorage.setItem(`${COMMANDER_KEY}_session`, sessionStart);
       }
-      const conditionA = Date.now() - parseInt(sessionStart) >= 240000;
+      const conditionA = Date.now() - parseInt(sessionStart) >= 200000;
       const visitedCreative = localStorage.getItem(`${COMMANDER_KEY}_creative`) === 'true';
       const visitedSystem = localStorage.getItem(`${COMMANDER_KEY}_system`) === 'true';
       let bothTime = localStorage.getItem(`${COMMANDER_KEY}_both`);
@@ -789,6 +747,11 @@ export default function CommanderTransmission() {
         setIsTypingState(false);
         setIsSpeaking(false);
         setDisplayText(text);
+        
+        // Auto-advance to next line after 3.8 seconds of reading time
+        autoNextTimeout.current = setTimeout(() => {
+          nextLineRef.current();
+        }, 3800);
       }
     };
     type();
@@ -854,7 +817,18 @@ export default function CommanderTransmission() {
     }
     setPhase('dialogue');
     setCurrentVideoIdx(0);
+    setCurrentLine(0);
+    startTypewriter(TRANSMISSION_LINES[0].text);
   };
+
+  // Synchronize the active video index based on the current dialogue line index
+  useEffect(() => {
+    if (phase !== 'dialogue') return;
+    const targetVideoIdx = getVideoIndex(currentLineState);
+    if (targetVideoIdx !== currentVideoIdx) {
+      setCurrentVideoIdx(targetVideoIdx);
+    }
+  }, [phase, currentLineState, currentVideoIdx]);
 
   // Switch to next clip via the imperative handle so we control timing precisely.
   // The first clip is started synchronously in startTransmission(); subsequent
@@ -1239,9 +1213,11 @@ export default function CommanderTransmission() {
                 {/* AVATAR — dialogue: large centered, dossier: left side */}
                 <div className={phase === 'dialogue' || phase === 'incoming' ? 'flex-1 flex flex-col items-center justify-center relative' : 'lg:w-[38%] flex flex-col items-center relative'}>
                   <motion.div
-                    className={`hologram-container relative cursor-grab active:cursor-grabbing ${phase === 'dialogue' || phase === 'incoming' ? 'w-[240px] h-[320px] sm:w-[340px] sm:h-[440px] lg:w-[420px] lg:h-[520px]' : 'w-48 h-48 sm:w-80 sm:h-80 lg:w-96 lg:h-96'}`}
+                    className={`hologram-container relative ${phase === 'dialogue' ? 'cursor-pointer hover:brightness-110' : 'cursor-grab active:cursor-grabbing'} ${phase === 'dialogue' || phase === 'incoming' ? 'w-[240px] h-[320px] sm:w-[340px] sm:h-[440px] lg:w-[420px] lg:h-[520px]' : 'w-48 h-48 sm:w-80 sm:h-80 lg:w-96 lg:h-96'} transition-all`}
                     onMouseMove={handleMouseMove}
                     onMouseLeave={() => { mouseX.set(0); mouseY.set(0); }}
+                    onClick={phase === 'dialogue' ? handleSkipOrNext : undefined}
+                    title={phase === 'dialogue' ? "Click vào Commander để tiếp tục hoặc bỏ qua" : undefined}
                     style={{ rotateX: springRotateX, rotateY: springRotateY, transformStyle: 'preserve-3d' }}
                   >
                     <div
@@ -1388,8 +1364,8 @@ export default function CommanderTransmission() {
                               <a href="tel:0944329202" onMouseEnter={() => audioRef.current?.playType()} className="flex items-center gap-4 hover:bg-cyan-900/40 p-3 rounded-xl transition-all text-cyan-100 hover:text-white border border-transparent hover:border-cyan-500/40 shadow-[inset_0_0_0_rgba(34,211,238,0)] hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.2)]">
                                 <Phone className="w-5 h-5 text-cyan-400 shrink-0 drop-shadow-[0_0_8px_#22d3ee]" /> <span className="tracking-[0.1em]">0944.329.202</span>
                               </a>
-                              <a href="mailto:huytran.work.01@gmail.com" onMouseEnter={() => audioRef.current?.playType()} className="flex items-center gap-4 hover:bg-cyan-900/40 p-3 rounded-xl transition-all text-cyan-100 hover:text-white border border-transparent hover:border-cyan-500/40 shadow-[inset_0_0_0_rgba(34,211,238,0)] hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.2)]">
-                                <Mail className="w-5 h-5 text-cyan-400 shrink-0 drop-shadow-[0_0_8px_#22d3ee]" /> <span className="tracking-wider">huytran.work.01@gmail.com</span>
+                              <a href="mailto:huytran.work.02@gmail.com" onMouseEnter={() => audioRef.current?.playType()} className="flex items-center gap-4 hover:bg-cyan-900/40 p-3 rounded-xl transition-all text-cyan-100 hover:text-white border border-transparent hover:border-cyan-500/40 shadow-[inset_0_0_0_rgba(34,211,238,0)] hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.2)]">
+                                <Mail className="w-5 h-5 text-cyan-400 shrink-0 drop-shadow-[0_0_8px_#22d3ee]" /> <span className="tracking-wider">huytran.work.02@gmail.com</span>
                               </a>
                               <a href="https://linkedin.com/in/huytran4" target="_blank" rel="noreferrer" onMouseEnter={() => audioRef.current?.playType()} className="flex items-center gap-4 hover:bg-cyan-900/40 p-3 rounded-xl transition-all text-cyan-100 hover:text-white border border-transparent hover:border-cyan-500/40 shadow-[inset_0_0_0_rgba(34,211,238,0)] hover:shadow-[inset_0_0_15px_rgba(34,211,238,0.2)]">
                                 <ExternalLink className="w-5 h-5 text-cyan-400 shrink-0 drop-shadow-[0_0_8px_#22d3ee]" /> <span className="tracking-wider">/in/huytran4</span>

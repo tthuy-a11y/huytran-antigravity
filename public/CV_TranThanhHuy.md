@@ -140,7 +140,7 @@ author: Trần Thanh Huy
   <h2>Frontend Developer & UI/UX Explorer</h2>
   <div class="contact-info">
     <span>📞 0944 329 202</span>
-    <span>✉️ huytran.work.01@gmail.com</span>
+    <span>✉️ huytran.work.02@gmail.com</span>
     <span>📍 Ninh Kiều, Cần Thơ</span>
   </div>
   <div class="contact-info" style="margin-top: 5px;">

@@ -32,33 +32,33 @@ export default function Contact() {
             </p>
 
             <div className="space-y-8">
-              <a href="mailto:your.email@example.com" className="flex items-center gap-6 group">
+              <a href="mailto:huytran.work.02@gmail.com" className="flex items-center gap-6 group">
                 <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center group-hover:bg-cyan-400/20 transition-colors">
                   <Mail className="w-7 h-7 text-cyan-300" />
                 </div>
                 <div>
                   <div className="text-white/70">Email</div>
-                  <div className="text-lg text-white group-hover:text-cyan-300 transition-colors">huy@thanhhuy.dev</div>
+                  <div className="text-lg text-white group-hover:text-cyan-300 transition-colors">huytran.work.02@gmail.com</div>
                 </div>
               </a>
 
-              <a href="#" className="flex items-center gap-6 group">
+              <a href="https://github.com/BLGCK44" target="_blank" rel="noreferrer" className="flex items-center gap-6 group">
                 <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center group-hover:bg-purple-400/20 transition-colors">
                   <Code2 className="w-7 h-7 text-purple-300" />
                 </div>
                 <div>
                   <div className="text-white/70">GitHub</div>
-                  <div className="text-lg text-white group-hover:text-purple-300 transition-colors">@thanhhuy</div>
+                  <div className="text-lg text-white group-hover:text-purple-300 transition-colors">github.com/BLGCK44</div>
                 </div>
               </a>
 
-              <a href="#" className="flex items-center gap-6 group">
+              <a href="https://linkedin.com/in/huytran4" target="_blank" rel="noreferrer" className="flex items-center gap-6 group">
                 <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center group-hover:bg-pink-400/20 transition-colors">
                   <Link className="w-7 h-7 text-pink-300" />
                 </div>
                 <div>
                   <div className="text-white/70">LinkedIn</div>
-                  <div className="text-lg text-white group-hover:text-pink-300 transition-colors">Thanh Huy</div>
+                  <div className="text-lg text-white group-hover:text-pink-300 transition-colors">linkedin.com/in/huytran4</div>
                 </div>
               </a>
             </div>

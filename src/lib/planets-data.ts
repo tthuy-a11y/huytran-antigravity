@@ -22,7 +22,7 @@ export interface PlanetData {
 export const SUN_DATA: PlanetData = {
   id: "sun-core",
   name: "Trần Thanh Huy",
-  code: "CREATOR-2003",
+  code: "CMDR-2003",
   description: "Frontend Developer Intern khám phá điểm giao giữa thiết kế, công nghệ và AI. Sẵn sàng kiến tạo những không gian số có trọng lực riêng.",
   color: "#FFB347",
   emissiveColor: "#FFA000",
@@ -41,9 +41,9 @@ export const SUN_DATA: PlanetData = {
   ],
   technologies: ["React", "Next.js", "Three.js", "Framer Motion", "WebGL", "GenAI"],
   contact: [
-    { label: "Email", value: "huy@thanhhuy.dev", href: "mailto:huy@thanhhuy.dev" },
-    { label: "GitHub", value: "@thanhhuy", href: "https://github.com/thanhhuy" },
-    { label: "LinkedIn", value: "Thanh Huy", href: "https://linkedin.com/in/thanhhuy" }
+    { label: "Email", value: "huytran.work.02@gmail.com", href: "mailto:huytran.work.02@gmail.com" },
+    { label: "GitHub", value: "github.com/BLGCK44", href: "https://github.com/BLGCK44" },
+    { label: "LinkedIn", value: "linkedin.com/in/huytran4", href: "https://linkedin.com/in/huytran4" }
   ]
 };
 

@@ -234,9 +234,9 @@ Kèm theo: 6 tiểu hành tinh bay ngang + 40 mảnh vỡ nổ tung + Flash tr�
 3. **Neon Physics Playground** — React, Canvas, Physics, Framer Motion
 
 ### [Contact.tsx](file:///C:/Users/Dell%2014%20Pro%20PA14250/.gemini/antigravity/worktrees/huytran-antigravity/refactor-3d-project-view/src/components/sections/Contact.tsx) — Liên Hệ
-- Email: huy@thanhhuy.dev
-- GitHub: @thanhhuy
-- LinkedIn: Thanh Huy
+- Email: huytran.work.02@gmail.com
+- GitHub: github.com/BLGCK44
+- LinkedIn: linkedin.com/in/huytran4
 - Form: Name + Email + Message, nút gradient cyan→purple
 
 ---
@@ -491,7 +491,7 @@ C:\Users\Dell 14 Pro PA14250\.gemini\antigravity\worktrees\huytran-antigravity\r
 | Học vấn | Đại học Tây Đô, Công nghệ Thông tin, 2021-2025 |
 | Địa chỉ | Ninh Kiều, Cần Thơ |
 | Số điện thoại | 0944329202 |
-| Email | huytran.work.01@gmail.com |
+| Email | huytran.work.02@gmail.com |
 | LinkedIn | huytran4 |
 | GitHub | BLGCK44 |
 | Triết lý | "Không gian số có trọng lực riêng" |
